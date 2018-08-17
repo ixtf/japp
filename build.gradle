@@ -55,21 +55,21 @@ subprojects {
         // serialVersionUID is basically guaranteed to be useless in our tests
         options.compilerArgs += ["-Xlint:-serial"]
     }
-//    javadoc.options {
-//        encoding = 'UTF-8'
-//        use = true
-//        links 'https://docs.oracle.com/javase/8/docs/api/'
-//    }
-//    task javadocJar(type: Jar) {
-//        classifier = 'javadoc'
-//        from javadoc
-//    }
-//    task sourcesJar(type: Jar) {
-//        classifier = 'sources'
-//        from sourceSets.main.allSource
-//    }
-//    artifacts {
-//        archives javadocJar, sourcesJar
-//    }
+    javadoc.options {
+        encoding = 'UTF-8'
+        use = true
+        links 'https://docs.oracle.com/javase/8/docs/api/'
+    }
+    task javadocJar(type: Jar) {
+        classifier = 'javadoc'
+        from javadoc
+    }
+    task sourcesJar(type: Jar) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+    artifacts {
+        archives javadocJar, sourcesJar
+    }
 
 }
