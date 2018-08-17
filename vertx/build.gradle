@@ -1,0 +1,17 @@
+dependencies {
+    compile project(':core'),
+            "com.google.inject:guice:${guiceVersion}",
+            "io.vertx:vertx-rx-java2:${vertxVersion}",
+            "io.vertx:vertx-web:${vertxVersion}",
+            "io.vertx:vertx-config-yaml:${vertxVersion}",
+            "io.vertx:vertx-service-discovery:${vertxVersion}",
+            "io.vertx:vertx-circuit-breaker:${vertxVersion}",
+            "io.vertx:vertx-service-proxy:${vertxVersion}",
+            "io.vertx:vertx-health-check:${vertxVersion}",
+            "io.vertx:vertx-dropwizard-metrics:${vertxVersion}",
+
+            "org.hibernate.validator:hibernate-validator:${validatorVersion}",
+            "org.glassfish:javax.el:${elVersion}"
+
+    testCompile "io.vertx:vertx-unit:${vertxVersion}"
+}

@@ -1,0 +1,11 @@
+rootProject.name = 'com.github.ixtf.japp'
+include 'core'
+include 'poi'
+include 'zxing'
+include 'print'
+include 'image'
+include 'ee'
+include 'pinyin'
+include 'codec'
+include 'vertx'
+
