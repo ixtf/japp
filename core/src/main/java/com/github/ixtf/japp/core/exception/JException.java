@@ -1,8 +1,11 @@
 package com.github.ixtf.japp.core.exception;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Getter;
 
 import java.util.Map;
+
+import static com.github.ixtf.japp.core.Constant.MAPPER;
 
 public class JException extends Exception {
     @Getter
@@ -24,6 +27,11 @@ public class JException extends Exception {
     public JException(String errorCode, Map<String, String> params) {
         this.errorCode = errorCode;
         this.params = params;
+    }
+
+    public JsonNode toJsonNode() {
+        return MAPPER.createObjectNode()
+                .put("errorCode", errorCode);
     }
 
 }
