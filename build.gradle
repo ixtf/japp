@@ -25,6 +25,7 @@ subprojects {
                 "com.google.guava:guava:${guavaVersion}",
                 "ch.qos.logback:logback-classic:${logbackVersion}",
                 "ch.qos.logback:logback-access:${logbackVersion}",
+                "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}",
                 "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:${jacksonVersion}",
                 "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jacksonVersion}",
                 "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}",
