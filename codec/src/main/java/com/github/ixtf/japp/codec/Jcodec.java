@@ -28,7 +28,6 @@ public class Jcodec {
 
     /**
      * @param names 注意:不要排序，不要 parallel stream，全部原始顺序
-     * @return
      */
     public static final UUID _uuid(final String... names) {
         final String join = String.join(",", names);

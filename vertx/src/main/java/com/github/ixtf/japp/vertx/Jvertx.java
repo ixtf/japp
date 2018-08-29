@@ -31,10 +31,6 @@ import static com.github.ixtf.japp.core.Constant.MAPPER;
 @Slf4j
 public class Jvertx {
     public static void enableCommon(Router router, SessionStore sessionStore) {
-        router.route().handler(CookieHandler.create());
-        router.route().handler(SessionHandler.create(sessionStore));
-        router.route().handler(BodyHandler.create());
-        router.route().handler(ResponseContentTypeHandler.create());
         Set<String> allowHeaders = new HashSet<>();
         allowHeaders.add("x-requested-with");
         allowHeaders.add("Access-Control-Allow-Origin");
@@ -42,7 +38,6 @@ public class Jvertx {
         allowHeaders.add("Content-Type");
         allowHeaders.add("accept");
         allowHeaders.add("Authorization");
-
         router.route().handler(CorsHandler.create("*")
                 .allowedHeaders(allowHeaders)
                 .allowedMethod(HttpMethod.GET)
@@ -51,6 +46,10 @@ public class Jvertx {
                 .allowedMethod(HttpMethod.POST)
                 .allowedMethod(HttpMethod.DELETE)
                 .allowedMethod(HttpMethod.PATCH));
+        router.route().handler(BodyHandler.create());
+        router.route().handler(ResponseContentTypeHandler.create());
+        router.route().handler(CookieHandler.create());
+        router.route().handler(SessionHandler.create(sessionStore));
     }
 
     public static void failureHandler(RoutingContext rc) {
