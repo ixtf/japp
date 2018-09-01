@@ -36,6 +36,9 @@ import static com.github.ixtf.japp.core.Constant.MAPPER;
  * @author jzb 2018-08-17
  */
 public interface Jvertx {
+    String JSON_CONTENT_TYPE = "application/json";
+    String TEXT_CONTENT_TYPE = "text/plain";
+
     static void enableCommon(Router router, SessionStore sessionStore) {
         Set<String> allowHeaders = new HashSet<>();
         allowHeaders.add("x-requested-with");
