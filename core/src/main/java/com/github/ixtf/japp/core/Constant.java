@@ -35,11 +35,12 @@ public class Constant {
     public static class ErrorCode {
         public static final String SYSTEM = "E00000";
         // 多错误类型
-        public static final String MULTI = "E00001";
-        public static final String AUTHENTICATION = "E00002";
+        public static final String MULTI = "E00000_0";
+        public static final String AUTHENTICATION = "E00000_1";
         //权限不足
-        public static final String AUTHORIZATION = "E00003";
-        public static final String TOKEN = "E00004";
+        public static final String AUTHORIZATION = "E00000_2";
+        public static final String TOKEN = "E00000_3";
+        public static final String EB_ACTION = "E00000_4";
     }
 //    public static void main(String[] args) {
 //        UUID uuid = UUID.nameUUIDFromBytes("SHARE_JWT_KEY_ORG_JZB".getBytes(StandardCharsets.UTF_8));

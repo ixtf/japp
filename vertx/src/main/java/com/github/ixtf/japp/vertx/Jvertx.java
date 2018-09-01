@@ -3,6 +3,7 @@ package com.github.ixtf.japp.vertx;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.ixtf.japp.core.exception.JException;
 import com.github.ixtf.japp.core.exception.JMultiException;
+import com.github.ixtf.japp.vertx.exception.EBActionException;
 import io.reactivex.CompletableObserver;
 import io.reactivex.SingleObserver;
 import io.reactivex.annotations.NonNull;
@@ -173,17 +174,15 @@ public interface Jvertx {
         reply.fail(-1, error.getMessage());
     }
 
-    interface EB {
-        static void noAction(Message reply) {
-            reply.fail(-1, "action not exist");
-        }
+    static void noAction(Message reply) {
+        handleError(reply, new EBActionException());
+    }
 
-        interface Header {
-            String action = "action";
-        }
+    interface Header {
+        String action = "action";
+    }
 
-        interface Body {
-            String principal = "principal";
-        }
+    interface Body {
+        String principal = "principal";
     }
 }
