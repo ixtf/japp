@@ -18,7 +18,7 @@ subprojects {
     targetCompatibility = 1.8
 
     dependencies {
-        compile 'org.apache.commons:commons-lang3:3.7',
+        compile "org.apache.commons:commons-lang3:3.7",
                 "org.apache.commons:commons-text:1.4",
                 "org.apache.commons:commons-collections4:4.2",
                 'commons-io:commons-io:2.6',
@@ -31,10 +31,13 @@ subprojects {
                 "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}",
                 "com.fasterxml.jackson.module:jackson-module-parameter-names:${jacksonVersion}"
 
-        compileOnly "org.projectlombok:lombok:${lombokVersion}"
+        compileOnly "org.projectlombok:lombok:${lombokVersion}",
+                "io.vertx:vertx-codegen:${vertxVersion}"
 
         testCompile "junit:junit:4.12",
-                "org.projectlombok:lombok:${lombokVersion}"
+                "org.projectlombok:lombok:${lombokVersion}",
+                "io.vertx:vertx-unit:${vertxVersion}",
+                "io.vertx:vertx-web-client:${vertxVersion}"
     }
 
     jar.manifest {
