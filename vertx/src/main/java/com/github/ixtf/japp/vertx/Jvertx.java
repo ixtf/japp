@@ -30,6 +30,9 @@ import static com.github.ixtf.japp.core.Constant.MAPPER;
  */
 @Slf4j
 public class Jvertx {
+    public static final String JSON_CONTENT_TYPE = "application/json";
+    public static final String TEXT_CONTENT_TYPE = "text/plain";
+
     public static void enableCommon(Router router, SessionStore sessionStore) {
         Set<String> allowHeaders = new HashSet<>();
         allowHeaders.add("x-requested-with");
