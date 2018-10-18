@@ -26,6 +26,7 @@ import javax.validation.ValidatorFactory;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.github.ixtf.japp.core.Constant.ErrorCode;
@@ -103,7 +104,7 @@ public class Jvertx {
         return checkCommand(command);
     }
 
-    private static <T> T checkCommand(T command) throws JException {
+    public static <T> T checkCommand(T command) throws JException {
         final ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
         final Validator validator = validatorFactory.getValidator();
         final Set<ConstraintViolation<T>> violations = validator.validate(command);
@@ -122,7 +123,7 @@ public class Jvertx {
         throw new JMultiException(exceptions);
     }
 
-    static <T> SingleObserver<T> toSingleObserver(Message reply) {
+    public static <T> SingleObserver<T> toSingleObserver(Message reply) {
         AtomicBoolean completed = new AtomicBoolean();
         return new SingleObserver<T>() {
             @Override
@@ -145,7 +146,7 @@ public class Jvertx {
         };
     }
 
-    static CompletableObserver toCompletableObserver(Message reply) {
+    public static CompletableObserver toCompletableObserver(Message reply) {
         AtomicBoolean completed = new AtomicBoolean();
         return new CompletableObserver() {
             @Override
@@ -168,8 +169,8 @@ public class Jvertx {
         };
     }
 
-    static void handleError(Message reply, Throwable error) {
-        LoggerFactory.getLogger(reply.address()).error("", error);
+    public static void handleError(Message reply, Throwable error) {
+        log.error("", error);
         reply.fail(-1, error.getMessage());
     }
 
