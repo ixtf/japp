@@ -174,15 +174,7 @@ public class Jvertx {
         reply.fail(-1, error.getMessage());
     }
 
-    static void noAction(Message reply) {
+    public static void noAction(Message reply) {
         handleError(reply, new EBActionException());
-    }
-
-    interface Header {
-        String action = "action";
-    }
-
-    interface Body {
-        String principal = "principal";
     }
 }

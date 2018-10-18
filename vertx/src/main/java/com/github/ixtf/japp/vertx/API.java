@@ -26,7 +26,7 @@ public interface API {
         final Vertx vertx = rc.vertx();
         vertx.eventBus().<String>rxSend(service, mergePrincipal(message, rc), deliveryOptions)
                 .subscribeOn(RxHelper.scheduler(vertx))
-                .subscribe(toObserver(rc));
+                .subscribe(toSingleObserver(rc));
     }
 
     static JsonObject mergePrincipal(JsonObject message, RoutingContext rc) {
@@ -38,7 +38,7 @@ public interface API {
                 .orElse(result);
     }
 
-    static SingleObserver<Message<String>> toObserver(RoutingContext rc) {
+    static SingleObserver<Message<String>> toSingleObserver(RoutingContext rc) {
         final AtomicBoolean completed = new AtomicBoolean();
         return new SingleObserver<Message<String>>() {
             @Override
