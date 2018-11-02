@@ -1,5 +1,6 @@
 dependencies {
     compile project(':core'),
+            "javax:javaee-api:8.0",
             "com.google.inject:guice:${guiceVersion}",
             "io.vertx:vertx-rx-java2:${vertxVersion}",
             "io.vertx:vertx-web:${vertxVersion}",
@@ -12,6 +13,4 @@ dependencies {
 
             "org.hibernate.validator:hibernate-validator:${validatorVersion}",
             "org.glassfish:javax.el:${elVersion}"
-
-    testCompile "io.vertx:vertx-unit:${vertxVersion}"
 }
