@@ -3,8 +3,8 @@ package com.github.ixtf.japp.vertx.spi;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.ext.auth.User;
 import io.vertx.reactivex.ext.web.Router;
+import io.vertx.reactivex.ext.web.RoutingContext;
 
 /**
  * @author jzb 2018-11-01
@@ -19,7 +19,7 @@ public interface ApiGateway {
 
     Completable rxConsume(Vertx vertx);
 
-    Single<String> rxPrincipal(Vertx vertx, User user);
+    Single<String> rxPrincipal(RoutingContext rc);
 
     <T> T getProxy(Class<T> clazz);
 }

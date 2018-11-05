@@ -77,7 +77,7 @@ public abstract class ApiRoute {
         final Single<JsonArray> args$;
         final Vertx vertx = rc.vertx();
         if (argsExtr.isHasPrincipal()) {
-            args$ = apiGateway.rxPrincipal(vertx, rc.user())
+            args$ = apiGateway.rxPrincipal(rc)
                     .map(J::defaultString)
                     .map(principal -> argsExtr.extr(rc, principal));
         } else {

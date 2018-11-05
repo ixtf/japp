@@ -1,6 +1,6 @@
 allprojects {
     group 'com.github.ixtf'
-    version '1.3'
+    version '1.5'
 
     apply plugin: 'idea'
     apply plugin: 'maven'
