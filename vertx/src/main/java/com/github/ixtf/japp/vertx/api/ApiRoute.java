@@ -64,9 +64,6 @@ public abstract class ApiRoute {
     public Completable rxMount(Router router) {
         return Completable.fromAction(() -> {
             final Route route = route(router);
-            if (argsExtr.isHasPrincipal()) {
-                // todo 添加 security
-            }
             Arrays.stream(produces()).forEach(route::produces);
             Arrays.stream(consumes()).forEach(route::consumes);
             route.handler(this::handler);

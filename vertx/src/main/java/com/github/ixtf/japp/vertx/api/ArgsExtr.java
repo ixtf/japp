@@ -16,6 +16,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.MatrixParam;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import java.io.IOException;
@@ -76,10 +77,10 @@ public class ArgsExtr {
             final String name = queryParam.value();
             final List<String> values = ListUtils.emptyIfNull(rc.queryParam(name));
 
-            if (List.class.isAssignableFrom(type)) {
-                return values;
-            } else if (Set.class.isAssignableFrom(type)) {
+            if (Set.class.isAssignableFrom(type)) {
                 return Sets.newHashSet(values);
+            } else if (Collection.class.isAssignableFrom(type)) {
+                return values;
             }
 
             final String value = J.isEmpty(values) ? null : values.get(0);
@@ -93,12 +94,20 @@ public class ArgsExtr {
             }
             return J.defaultString(value);
         }
+        // todo MatrixParam支持
+        final MatrixParam matrixParam = parameter.getAnnotation(MatrixParam.class);
 
-        if (Collection.class.isAssignableFrom(type)) {
+        if (JsonObject.class.isAssignableFrom(type)) {
+            return rc.getBodyAsJson();
+        }
+        if (JsonArray.class.isAssignableFrom(type)) {
             return rc.getBodyAsJsonArray();
         }
 
         final String bodyAsString = rc.getBodyAsString();
+        if (String.class.isAssignableFrom(type)) {
+            return bodyAsString;
+        }
         if (J.isBlank(bodyAsString)) {
             return null;
         }
@@ -134,16 +143,38 @@ public class ArgsExtr {
             return arg;
         }
         if (Long.class.isAssignableFrom(type)) {
-            return new Long(arg.toString());
+            final String stringValue = arg.toString();
+            if (J.isBlank(stringValue)) {
+                return null;
+            }
+            return new Long(stringValue);
         }
         if (long.class.isAssignableFrom(type)) {
-            return new Long(arg.toString()).longValue();
+            final String stringValue = arg.toString();
+            if (J.isBlank(stringValue)) {
+                return 0;
+            }
+            return new Long(stringValue).longValue();
         }
         if (Integer.class.isAssignableFrom(type)) {
-            return new Integer(arg.toString());
+            final String stringValue = arg.toString();
+            if (J.isBlank(stringValue)) {
+                return null;
+            }
+            return new Integer(stringValue);
         }
         if (int.class.isAssignableFrom(type)) {
-            return new Integer(arg.toString()).intValue();
+            final String stringValue = arg.toString();
+            if (J.isBlank(stringValue)) {
+                return 0;
+            }
+            return new Integer(stringValue).intValue();
+        }
+        if (JsonObject.class.isAssignableFrom(type)) {
+            return arg;
+        }
+        if (JsonArray.class.isAssignableFrom(type)) {
+            return arg;
         }
         if (Collection.class.isAssignableFrom(type)) {
             final ParameterizedType parameterizedType = (ParameterizedType) parameter.getParameterizedType();
