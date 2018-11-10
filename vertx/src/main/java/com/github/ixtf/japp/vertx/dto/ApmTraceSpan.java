@@ -23,6 +23,7 @@ import static com.github.ixtf.japp.core.Constant.MAPPER;
 @Data
 public class ApmTraceSpan implements Serializable {
     private String traceId;
+    private String type;
     private int parentId = 0;
     private int spanId;
     private long start = System.currentTimeMillis();

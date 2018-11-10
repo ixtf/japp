@@ -26,6 +26,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Optional;
 
 import static com.github.ixtf.japp.core.Constant.MAPPER;
 
@@ -45,7 +46,7 @@ public abstract class ApiRoute {
     @Getter
     protected final Method method;
     protected final ArgsExtr argsExtr;
-    protected final boolean apmTrace;
+    protected final ApmTrace apmTrace;
 
     protected ApiRoute(String path, Method method) {
         this.path = path;
@@ -55,12 +56,9 @@ public abstract class ApiRoute {
         apmTrace = _apmTrace();
     }
 
-    private boolean _apmTrace() {
-        final ApmTrace annotation = method.getAnnotation(ApmTrace.class);
-        if (annotation != null) {
-            return true;
-        }
-        return method.getDeclaringClass().getAnnotation(ApmTrace.class) != null;
+    private ApmTrace _apmTrace() {
+        return Optional.ofNullable(method.getAnnotation(ApmTrace.class))
+                .orElseGet(() -> method.getDeclaringClass().getAnnotation(ApmTrace.class));
     }
 
     private String _address() {
@@ -87,9 +85,10 @@ public abstract class ApiRoute {
     private void handler(RoutingContext rc) {
         argsExtr.rxToMessage(rc).flatMap(message -> {
             final DeliveryOptions deliveryOptions = new DeliveryOptions();
-            if (apmTrace) {
+            if (apmTrace != null) {
                 final ApmTraceSpan apmTraceSpan = new ApmTraceSpan();
                 apmTraceSpan.setTraceId(Jcodec.uuid());
+                apmTraceSpan.setType(apmTrace.type());
                 apmTraceSpan.setSpanId(1000);
                 apmTraceSpan.setAddress(address);
                 apmTraceSpan.requestBy(rc);
@@ -137,9 +136,10 @@ public abstract class ApiRoute {
         return Completable.fromAction(() -> {
             final String replyString = result instanceof String ? (String) result : MAPPER.writeValueAsString(result);
             final DeliveryOptions deliveryOptions = new DeliveryOptions();
-            if (apmTrace) {
+            if (apmTrace != null) {
                 final ApmTraceSpan parentApmTraceSpan = ApmTraceSpan.decode(reply);
                 final ApmTraceSpan apmTraceSpan = parentApmTraceSpan.next();
+                apmTraceSpan.setType(apmTrace.type());
                 apmTraceSpan.getReceive().put("body", reply.body().encode());
                 apmTraceSpan.getResponse().put("reply", replyString);
                 apiGateway.submitApmSpan(apmTraceSpan);
@@ -150,9 +150,10 @@ public abstract class ApiRoute {
 
     private void errorReplyHandler(Message<JsonArray> reply, Throwable ex) {
         log.error("", ex);
-        if (apmTrace) {
+        if (apmTrace != null) {
             final ApmTraceSpan parentApmTraceSpan = ApmTraceSpan.decode(reply);
             final ApmTraceSpan apmTraceSpan = parentApmTraceSpan.next();
+            apmTraceSpan.setType(apmTrace.type());
             apmTraceSpan.setError(true);
             apmTraceSpan.setErrorMessage(ex.getMessage());
             apiGateway.submitApmSpan(apmTraceSpan);
