@@ -27,6 +27,7 @@ public class ApmTraceSpan implements Serializable {
     private int parentId = 0;
     private int spanId;
     private long start = System.currentTimeMillis();
+    private long end;
     private String name;
     private String address;
     private ObjectNode request = MAPPER.createObjectNode();

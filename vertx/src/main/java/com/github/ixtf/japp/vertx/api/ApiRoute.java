@@ -89,8 +89,8 @@ public abstract class ApiRoute {
                 final ApmTraceSpan apmTraceSpan = new ApmTraceSpan();
                 apmTraceSpan.setTraceId(Jcodec.uuid());
                 apmTraceSpan.setType(apmTrace.type());
-                apmTraceSpan.setSpanId(1000);
                 apmTraceSpan.setAddress(address);
+                apmTraceSpan.setSpanId(1000);
                 apmTraceSpan.requestBy(rc);
                 apmTraceSpan.addMeta("invoke_args", message.encode());
                 apiGateway.submitApmSpan(apmTraceSpan);
@@ -140,9 +140,11 @@ public abstract class ApiRoute {
                 final ApmTraceSpan parentApmTraceSpan = ApmTraceSpan.decode(reply);
                 final ApmTraceSpan apmTraceSpan = parentApmTraceSpan.next();
                 apmTraceSpan.setType(apmTrace.type());
+                apmTraceSpan.setAddress(address);
                 apmTraceSpan.getReceive().put("body", reply.body().encode());
                 apmTraceSpan.getResponse().put("reply", replyString);
                 apiGateway.submitApmSpan(apmTraceSpan);
+                apmTraceSpan.fillData(deliveryOptions);
             }
             reply.reply(replyString, deliveryOptions);
         });
@@ -154,8 +156,10 @@ public abstract class ApiRoute {
             final ApmTraceSpan parentApmTraceSpan = ApmTraceSpan.decode(reply);
             final ApmTraceSpan apmTraceSpan = parentApmTraceSpan.next();
             apmTraceSpan.setType(apmTrace.type());
+            apmTraceSpan.setAddress(address);
             apmTraceSpan.setError(true);
             apmTraceSpan.setErrorMessage(ex.getMessage());
+            apmTraceSpan.setEnd(System.currentTimeMillis());
             apiGateway.submitApmSpan(apmTraceSpan);
         }
         reply.fail(400, ex.getMessage());
