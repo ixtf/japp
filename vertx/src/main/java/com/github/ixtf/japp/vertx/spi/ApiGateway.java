@@ -1,5 +1,6 @@
 package com.github.ixtf.japp.vertx.spi;
 
+import com.github.ixtf.japp.vertx.dto.ApmTraceSpan;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.Vertx;
@@ -22,4 +23,7 @@ public interface ApiGateway {
     Single<String> rxPrincipal(RoutingContext rc);
 
     <T> T getProxy(Class<T> clazz);
+
+    default void submitApmSpan(ApmTraceSpan apmSpan) {
+    }
 }

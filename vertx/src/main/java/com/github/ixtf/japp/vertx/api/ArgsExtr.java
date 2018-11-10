@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.type.CollectionLikeType;
 import com.github.ixtf.japp.core.J;
 import com.github.ixtf.japp.core.exception.JException;
 import com.github.ixtf.japp.vertx.Jvertx;
+import com.github.ixtf.japp.vertx.spi.ApiGateway;
 import com.google.common.collect.Sets;
 import com.sun.security.auth.UserPrincipal;
 import io.reactivex.Single;
@@ -36,6 +37,7 @@ import static com.github.ixtf.japp.core.Constant.MAPPER;
  * @author jzb 2018-11-01
  */
 public class ArgsExtr {
+    private final ApiGateway apiGateway = Jvertx.apiGateway();
     private final Parameter[] parameters;
     @Getter
     private final boolean hasPrincipal;
@@ -47,6 +49,17 @@ public class ArgsExtr {
                 .filter(Principal.class::isAssignableFrom)
                 .findFirst()
                 .isPresent();
+    }
+
+    public Single<JsonArray> rxToMessage(RoutingContext rc) {
+        final Single<JsonArray> args$;
+        if (hasPrincipal) {
+            return apiGateway.rxPrincipal(rc)
+                    .map(J::defaultString)
+                    .map(principal -> extr(rc, principal));
+        } else {
+            return Single.fromCallable(() -> extr(rc, null));
+        }
     }
 
     public JsonArray extr(RoutingContext rc, String principal) throws IOException, JException {
@@ -185,7 +198,4 @@ public class ArgsExtr {
         return MAPPER.readValue(((JsonObject) arg).encode(), type);
     }
 
-    public Single<JsonObject> toMessage(RoutingContext rc) {
-        return null;
-    }
 }

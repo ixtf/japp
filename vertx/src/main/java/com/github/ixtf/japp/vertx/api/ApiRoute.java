@@ -1,12 +1,16 @@
 package com.github.ixtf.japp.vertx.api;
 
+import com.github.ixtf.japp.codec.Jcodec;
 import com.github.ixtf.japp.core.J;
 import com.github.ixtf.japp.vertx.Jvertx;
 import com.github.ixtf.japp.vertx.annotations.Address;
+import com.github.ixtf.japp.vertx.annotations.ApmTrace;
+import com.github.ixtf.japp.vertx.dto.ApmTraceSpan;
 import com.github.ixtf.japp.vertx.spi.ApiGateway;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.eventbus.Message;
@@ -41,15 +45,25 @@ public abstract class ApiRoute {
     @Getter
     protected final Method method;
     protected final ArgsExtr argsExtr;
+    protected final boolean apmTrace;
 
     protected ApiRoute(String path, Method method) {
         this.path = path;
         this.method = method;
         argsExtr = new ArgsExtr(method);
-        address = address();
+        address = _address();
+        apmTrace = _apmTrace();
     }
 
-    private String address() {
+    private boolean _apmTrace() {
+        final ApmTrace annotation = method.getAnnotation(ApmTrace.class);
+        if (annotation != null) {
+            return true;
+        }
+        return method.getDeclaringClass().getAnnotation(ApmTrace.class) != null;
+    }
+
+    private String _address() {
         final Address annotation = method.getAnnotation(Address.class);
         if (annotation != null) {
             return annotation.value();
@@ -71,27 +85,28 @@ public abstract class ApiRoute {
     }
 
     private void handler(RoutingContext rc) {
-        final Single<JsonArray> args$;
-        final Vertx vertx = rc.vertx();
-        if (argsExtr.isHasPrincipal()) {
-            args$ = apiGateway.rxPrincipal(rc)
-                    .map(J::defaultString)
-                    .map(principal -> argsExtr.extr(rc, principal));
-        } else {
-            args$ = Single.fromCallable(() -> argsExtr.extr(rc, null));
-        }
-        args$.flatMap(it -> vertx.eventBus().<String>rxSend(address, it)).subscribe(it -> {
+        argsExtr.rxToMessage(rc).flatMap(message -> {
+            final DeliveryOptions deliveryOptions = new DeliveryOptions();
+            if (apmTrace) {
+                final ApmTraceSpan apmTraceSpan = new ApmTraceSpan();
+                apmTraceSpan.setTraceId(Jcodec.uuid());
+                apmTraceSpan.setSpanId(1000);
+                apmTraceSpan.setAddress(address);
+                apmTraceSpan.requestBy(rc);
+                apmTraceSpan.addMeta("invoke_args", message.encode());
+                apiGateway.submitApmSpan(apmTraceSpan);
+                apmTraceSpan.fillData(deliveryOptions);
+            }
+            return rc.vertx().eventBus().<String>rxSend(address, message, deliveryOptions);
+        }).subscribe(message -> {
             final HttpServerResponse response = rc.response();
-            final String body = it.body();
-            if (body == null) {
+            final String body = message.body();
+            if (J.isBlank(body)) {
                 response.end();
             } else {
                 response.end(body);
             }
-        }, ex -> {
-            log.error("", ex);
-            rc.fail(ex);
-        });
+        }, rc::fail);
     }
 
     public Completable rxConsume(Vertx vertx) {
@@ -99,36 +114,50 @@ public abstract class ApiRoute {
         return vertx.eventBus().<JsonArray>consumer(address, reply -> Single.fromCallable(() -> {
                     final Object[] args = argsExtr.extr(reply);
                     return method.invoke(proxy, args);
-                }).flatMapCompletable(it -> retHandler(it, reply))
-                        .doOnError(ex -> {
-                            log.error("", ex);
-                            reply.fail(400, ex.getMessage());
-                        })
+                }).flatMapCompletable(it -> replyHandler(it, reply))
+                        .doOnError(ex -> errorReplyHandler(reply, ex))
                         .subscribe()
         ).rxCompletionHandler();
     }
 
-    private Completable retHandler(Object result, Message reply) {
+    private Completable replyHandler(Object result, Message<JsonArray> reply) {
         if (result == null) {
             reply.reply(null);
             return Completable.complete();
         }
         if (result instanceof Single) {
-            return ((Single) result).flatMapCompletable(it -> retHandler(it, reply));
+            return ((Single) result).flatMapCompletable(it -> replyHandler(it, reply));
         }
         if (result instanceof Flowable) {
-            return ((Flowable) result).toList().flatMapCompletable(it -> retHandler(it, reply));
+            return ((Flowable) result).toList().flatMapCompletable(it -> replyHandler(it, reply));
         }
         if (result instanceof Completable) {
             return ((Completable) result).doOnComplete(() -> reply.reply(null));
         }
         return Completable.fromAction(() -> {
-            if (result instanceof String) {
-                reply.reply(result);
-            } else {
-                reply.reply(MAPPER.writeValueAsString(result));
+            final String replyString = result instanceof String ? (String) result : MAPPER.writeValueAsString(result);
+            final DeliveryOptions deliveryOptions = new DeliveryOptions();
+            if (apmTrace) {
+                final ApmTraceSpan parentApmTraceSpan = ApmTraceSpan.decode(reply);
+                final ApmTraceSpan apmTraceSpan = parentApmTraceSpan.next();
+                apmTraceSpan.getReceive().put("body", reply.body().encode());
+                apmTraceSpan.getResponse().put("reply", replyString);
+                apiGateway.submitApmSpan(apmTraceSpan);
             }
+            reply.reply(replyString, deliveryOptions);
         });
+    }
+
+    private void errorReplyHandler(Message<JsonArray> reply, Throwable ex) {
+        log.error("", ex);
+        if (apmTrace) {
+            final ApmTraceSpan parentApmTraceSpan = ApmTraceSpan.decode(reply);
+            final ApmTraceSpan apmTraceSpan = parentApmTraceSpan.next();
+            apmTraceSpan.setError(true);
+            apmTraceSpan.setErrorMessage(ex.getMessage());
+            apiGateway.submitApmSpan(apmTraceSpan);
+        }
+        reply.fail(400, ex.getMessage());
     }
 
     private String[] consumes() {
