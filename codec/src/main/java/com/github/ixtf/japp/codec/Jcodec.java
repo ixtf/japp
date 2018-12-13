@@ -20,7 +20,7 @@ import java.util.UUID;
 /**
  * @author jzb 2018-08-17
  */
-public class Jcodec {
+public final class Jcodec {
 
     public static final UUID _uuid() {
         return Generators.timeBasedGenerator().generate();

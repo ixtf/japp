@@ -19,12 +19,12 @@ import java.util.Base64;
 public final class Jimage {
     public static final BufferedImage resize(File file, int newWidth, float quality) throws IOException {
         Validate.inclusiveBetween(0, 1, quality);
-        ImageIcon ii = new ImageIcon(file.getCanonicalPath());
-        Image i = ii.getImage();
+        final ImageIcon ii = new ImageIcon(file.getCanonicalPath());
+        final Image i = ii.getImage();
         Image resizedImage = null;
 
-        int iWidth = i.getWidth(null);
-        int iHeight = i.getHeight(null);
+        final int iWidth = i.getWidth(null);
+        final int iHeight = i.getHeight(null);
         if (iWidth > iHeight) {
             resizedImage = i.getScaledInstance(newWidth, (newWidth * iHeight) / iWidth, Image.SCALE_SMOOTH);
         } else {
@@ -32,12 +32,12 @@ public final class Jimage {
         }
 
         // This code ensures that all the pixels in the image are loaded.
-        Image temp = new ImageIcon(resizedImage).getImage();
+        final Image temp = new ImageIcon(resizedImage).getImage();
 
         // Create the buffered image.
         BufferedImage bufferedImage = new BufferedImage(temp.getWidth(null), temp.getHeight(null), BufferedImage.TYPE_INT_RGB);
         // Copy image to buffered image.
-        Graphics g = bufferedImage.createGraphics();
+        final Graphics g = bufferedImage.createGraphics();
 
         // Clear background and paint the image.
         g.setColor(Color.white);
@@ -46,11 +46,11 @@ public final class Jimage {
         g.dispose();
 
         // Soften.
-        float softenFactor = 0.05f;
-        float[] softenArray = {0, softenFactor, 0, softenFactor,
+        final float softenFactor = 0.05f;
+        final float[] softenArray = {0, softenFactor, 0, softenFactor,
                 1 - (softenFactor * 4), softenFactor, 0, softenFactor, 0};
-        Kernel kernel = new Kernel(3, 3, softenArray);
-        ConvolveOp cOp = new ConvolveOp(kernel, ConvolveOp.EDGE_NO_OP, null);
+        final Kernel kernel = new Kernel(3, 3, softenArray);
+        final ConvolveOp cOp = new ConvolveOp(kernel, ConvolveOp.EDGE_NO_OP, null);
         bufferedImage = cOp.filter(bufferedImage, null);
         return bufferedImage;
     }
