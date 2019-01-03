@@ -183,6 +183,34 @@ public class ArgsExtr {
             }
             return new Integer(stringValue).intValue();
         }
+        if (Double.class.isAssignableFrom(type)) {
+            final String stringValue = arg.toString();
+            if (J.isBlank(stringValue)) {
+                return null;
+            }
+            return new Double(stringValue);
+        }
+        if (double.class.isAssignableFrom(type)) {
+            final String stringValue = arg.toString();
+            if (J.isBlank(stringValue)) {
+                return new Double(0).doubleValue();
+            }
+            return new Double(stringValue).doubleValue();
+        }
+        if (Float.class.isAssignableFrom(type)) {
+            final String stringValue = arg.toString();
+            if (J.isBlank(stringValue)) {
+                return null;
+            }
+            return new Float(stringValue);
+        }
+        if (float.class.isAssignableFrom(type)) {
+            final String stringValue = arg.toString();
+            if (J.isBlank(stringValue)) {
+                return new Float(0).floatValue();
+            }
+            return new Float(stringValue).floatValue();
+        }
         if (JsonObject.class.isAssignableFrom(type)) {
             return arg;
         }
