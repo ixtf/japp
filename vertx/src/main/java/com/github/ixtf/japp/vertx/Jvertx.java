@@ -79,6 +79,7 @@ public class Jvertx {
         allowHeaders.add("accept");
         allowHeaders.add("Authorization");
         router.route().handler(CorsHandler.create("*")
+                .allowCredentials(false)
                 .allowedHeaders(allowHeaders)
                 .allowedMethod(HttpMethod.GET)
                 .allowedMethod(HttpMethod.PUT)
