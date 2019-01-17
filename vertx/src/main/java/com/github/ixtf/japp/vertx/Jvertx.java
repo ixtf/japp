@@ -5,6 +5,7 @@ import com.github.ixtf.japp.core.J;
 import com.github.ixtf.japp.core.exception.JException;
 import com.github.ixtf.japp.core.exception.JMultiException;
 import com.github.ixtf.japp.vertx.spi.ApiGateway;
+import com.google.common.collect.Sets;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -22,7 +23,7 @@ import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import javax.ws.rs.Path;
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -71,22 +72,6 @@ public class Jvertx {
     }
 
     public static void enableCommon(Router router) {
-        Set<String> allowHeaders = new HashSet<>();
-        allowHeaders.add("x-requested-with");
-        allowHeaders.add("Access-Control-Allow-Origin");
-        allowHeaders.add("origin");
-        allowHeaders.add("Content-Type");
-        allowHeaders.add("accept");
-        allowHeaders.add("Authorization");
-        router.route().handler(CorsHandler.create("*")
-                .allowCredentials(false)
-                .allowedHeaders(allowHeaders)
-                .allowedMethod(HttpMethod.GET)
-                .allowedMethod(HttpMethod.PUT)
-                .allowedMethod(HttpMethod.OPTIONS)
-                .allowedMethod(HttpMethod.POST)
-                .allowedMethod(HttpMethod.DELETE)
-                .allowedMethod(HttpMethod.PATCH));
         router.route().handler(BodyHandler.create());
         router.route().handler(ResponseContentTypeHandler.create());
         router.route().handler(CookieHandler.create());
@@ -95,6 +80,27 @@ public class Jvertx {
     public static void enableCommon(Router router, SessionStore sessionStore) {
         enableCommon(router);
         router.route().handler(SessionHandler.create(sessionStore));
+    }
+
+    public static void enableCors(Router router, Set<String> domains) {
+        final Collection<String> patterns = Sets.newHashSet("localhost", "127\\.0\\.0\\.1");
+        patterns.addAll(domains);
+        final String domainP = patterns.stream().collect(Collectors.joining("|"));
+        router.route().handler(CorsHandler.create("^http(s)?://(" + domainP + ")(:[1-9]\\d+)?")
+                .allowCredentials(false)
+                .allowedHeader("x-requested-with")
+                .allowedHeader("access-control-allow-origin")
+                .allowedHeader("origin")
+                .allowedHeader("content-type")
+                .allowedHeader("accept")
+                .allowedHeader("authorization")
+                .allowedMethod(HttpMethod.POST)
+                .allowedMethod(HttpMethod.PUT)
+                .allowedMethod(HttpMethod.PATCH)
+                .allowedMethod(HttpMethod.GET)
+                .allowedMethod(HttpMethod.DELETE)
+                .allowedMethod(HttpMethod.HEAD)
+                .allowedMethod(HttpMethod.OPTIONS));
     }
 
     public static void failureHandler(RoutingContext rc) {
