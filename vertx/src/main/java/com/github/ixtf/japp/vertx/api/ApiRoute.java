@@ -211,7 +211,7 @@ public abstract class ApiRoute {
         } else {
             returnType = genericReturnType;
         }
-        if (FileDownload.DTO.class.isAssignableFrom(returnType.getClass())) {
+        if (FileDownload.DTO.class.isAssignableFrom((Class<?>) returnType)) {
             return true;
         }
         throw new RuntimeException("文件下载返回类型错误，必须为【" + FileDownload.DTO.class + "】");
