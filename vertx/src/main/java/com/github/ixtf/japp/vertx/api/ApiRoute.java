@@ -33,6 +33,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.ixtf.japp.core.Constant.MAPPER;
 
@@ -93,6 +94,9 @@ public abstract class ApiRoute {
     private void handler(RoutingContext rc) {
         argsExtr.rxToMessage(rc).flatMap(message -> {
             final DeliveryOptions deliveryOptions = new DeliveryOptions();
+            if (isFileDownload) {
+                deliveryOptions.setSendTimeout(TimeUnit.HOURS.toMillis(1));
+            }
             if (apmTrace != null) {
                 final ApmTraceSpan apmTraceSpan = new ApmTraceSpan();
                 apmTraceSpan.setTraceId(Jcodec.uuid());
