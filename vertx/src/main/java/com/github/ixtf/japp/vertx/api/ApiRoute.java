@@ -5,6 +5,7 @@ import com.github.ixtf.japp.core.J;
 import com.github.ixtf.japp.vertx.Jvertx;
 import com.github.ixtf.japp.vertx.annotations.Address;
 import com.github.ixtf.japp.vertx.annotations.ApmTrace;
+import com.github.ixtf.japp.vertx.annotations.FileDownload;
 import com.github.ixtf.japp.vertx.dto.ApmTraceSpan;
 import com.github.ixtf.japp.vertx.spi.ApiGateway;
 import io.reactivex.Completable;
@@ -13,6 +14,7 @@ import io.reactivex.Single;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.reactivex.core.Vertx;
+import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.eventbus.Message;
 import io.vertx.reactivex.core.http.HttpServerResponse;
 import io.vertx.reactivex.ext.web.Route;
@@ -25,8 +27,13 @@ import lombok.extern.slf4j.Slf4j;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.ixtf.japp.core.Constant.MAPPER;
 
@@ -45,12 +52,14 @@ public abstract class ApiRoute {
     protected final String address;
     @Getter
     protected final Method method;
+    protected final boolean isFileDownload;
     protected final ArgsExtr argsExtr;
     protected final ApmTrace apmTrace;
 
     protected ApiRoute(String path, Method method) {
         this.path = path;
         this.method = method;
+        this.isFileDownload = checkAndGetFileDownload();
         argsExtr = new ArgsExtr(method);
         address = _address();
         apmTrace = _apmTrace();
@@ -85,6 +94,9 @@ public abstract class ApiRoute {
     private void handler(RoutingContext rc) {
         argsExtr.rxToMessage(rc).flatMap(message -> {
             final DeliveryOptions deliveryOptions = new DeliveryOptions();
+            if (isFileDownload) {
+                deliveryOptions.setSendTimeout(TimeUnit.HOURS.toMillis(1));
+            }
             if (apmTrace != null) {
                 final ApmTraceSpan apmTraceSpan = new ApmTraceSpan();
                 apmTraceSpan.setTraceId(Jcodec.uuid());
@@ -102,6 +114,11 @@ public abstract class ApiRoute {
             final String body = message.body();
             if (J.isBlank(body)) {
                 response.end();
+            } else if (isFileDownload) {
+                final FileDownload.DTO dto = MAPPER.readValue(body, FileDownload.DTO.class);
+                final String fileName = URLEncoder.encode(dto.getFileName(), StandardCharsets.UTF_8.name());
+                response.putHeader("Content-Disposition", "attachment;filename=" + fileName)
+                        .end(Buffer.buffer(dto.getContent()));
             } else {
                 response.end(body);
             }
@@ -179,6 +196,29 @@ public abstract class ApiRoute {
             annotation = method.getDeclaringClass().getAnnotation(Produces.class);
         }
         return annotation == null ? new String[0] : annotation.value();
+    }
+
+    private boolean checkAndGetFileDownload() {
+        FileDownload annotation = method.getAnnotation(FileDownload.class);
+        if (annotation == null) {
+            annotation = method.getDeclaringClass().getAnnotation(FileDownload.class);
+        }
+        if (annotation == null) {
+            return false;
+        }
+        final Type returnType;
+        final Type genericReturnType = method.getGenericReturnType();
+        if (genericReturnType instanceof ParameterizedType) {
+            final ParameterizedType parameterizedType = (ParameterizedType) genericReturnType;
+            final Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+            returnType = actualTypeArguments[0];
+        } else {
+            returnType = genericReturnType;
+        }
+        if (FileDownload.DTO.class.isAssignableFrom((Class<?>) returnType)) {
+            return true;
+        }
+        throw new RuntimeException("文件下载返回类型错误，必须为【" + FileDownload.DTO.class + "】");
     }
 
 }
