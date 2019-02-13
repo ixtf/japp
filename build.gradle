@@ -1,15 +1,17 @@
 plugins {
+    id 'io.spring.dependency-management' version '1.0.6.RELEASE'
     id 'io.franzbecker.gradle-lombok' version '1.14'
     id 'com.palantir.docker' version "0.20.1"
     id 'com.github.johnrengelman.shadow' version '4.0.3'
 }
 allprojects {
-    group 'com.github.ixtf'
-    version '1.5'
+    group 'com.github.ixtf.japp'
+    version '1.6'
 
     apply plugin: 'idea'
     apply plugin: 'maven'
     apply plugin: 'maven-publish'
+    apply plugin: "io.spring.dependency-management"
 
     repositories {
         mavenLocal()
@@ -17,6 +19,12 @@ allprojects {
         maven { url 'https://plugins.gradle.org/m2' }
         maven { url 'https://jitpack.io' }
     }
+
+//    dependencyManagement {
+//        imports {
+//            mavenBom 'com.github.ixtf:japp-bom:b22950a8df'
+//        }
+//    }
 }
 subprojects {
     apply plugin: 'java'

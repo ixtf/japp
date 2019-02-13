@@ -1,2 +1,3 @@
 jdk:
-  - oraclejdk11
+  - openjdk11
+#  - oraclejdk11
