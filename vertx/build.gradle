@@ -1,17 +1,16 @@
 dependencies {
-    compile project(':core'),
-            project(':codec'),
-            "javax:javaee-api:8.0",
-            "com.google.inject:guice:${guiceVersion}",
-            "io.vertx:vertx-rx-java2:${vertxVersion}",
-            "io.vertx:vertx-web:${vertxVersion}",
-            "io.vertx:vertx-config-yaml:${vertxVersion}",
-            "io.vertx:vertx-service-discovery:${vertxVersion}",
-            "io.vertx:vertx-circuit-breaker:${vertxVersion}",
-            "io.vertx:vertx-service-proxy:${vertxVersion}",
-            "io.vertx:vertx-health-check:${vertxVersion}",
-            "io.vertx:vertx-dropwizard-metrics:${vertxVersion}",
+    compile project(':codec'),
+            "io.vertx:vertx-rx-java2",
+            "io.vertx:vertx-web",
+            "io.vertx:vertx-config-yaml",
+            "io.vertx:vertx-service-discovery",
+            "io.vertx:vertx-circuit-breaker",
+            "io.vertx:vertx-service-proxy",
+            "io.vertx:vertx-health-check",
+            "io.vertx:vertx-dropwizard-metrics",
 
-            "org.hibernate.validator:hibernate-validator:${validatorVersion}",
-            "org.glassfish:javax.el:${elVersion}"
+            "com.google.inject:guice",
+            "javax:javaee-api",
+            "org.hibernate.validator:hibernate-validator",
+            "org.glassfish:javax.el"
 }

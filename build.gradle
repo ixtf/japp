@@ -20,11 +20,11 @@ allprojects {
         maven { url 'https://jitpack.io' }
     }
 
-//    dependencyManagement {
-//        imports {
-//            mavenBom 'com.github.ixtf:japp-bom:b22950a8df'
-//        }
-//    }
+    dependencyManagement {
+        imports {
+            mavenBom "com.github.ixtf:bom:${bomVersion}"
+        }
+    }
 }
 subprojects {
     apply plugin: 'java'
@@ -37,26 +37,26 @@ subprojects {
     }
     
     dependencies {
-        compile "org.apache.commons:commons-lang3:3.8.1",
-                "org.apache.commons:commons-text:1.6",
-                "org.apache.commons:commons-collections4:4.2",
-                'commons-io:commons-io:2.6',
-                "com.google.guava:guava:${guavaVersion}",
-                "ch.qos.logback:logback-classic:${logbackVersion}",
-                "ch.qos.logback:logback-access:${logbackVersion}",
-                "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}",
-                "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:${jacksonVersion}",
-                "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jacksonVersion}",
-                "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}",
-                "com.fasterxml.jackson.module:jackson-module-parameter-names:${jacksonVersion}"
+        compile "org.apache.commons:commons-lang3",
+                "org.apache.commons:commons-text",
+                "org.apache.commons:commons-collections4",
+                'commons-io:commons-io',
+                "com.google.guava:guava",
+                "ch.qos.logback:logback-classic",
+                "ch.qos.logback:logback-access",
+                "com.fasterxml.jackson.core:jackson-annotations",
+                "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider",
+                "com.fasterxml.jackson.datatype:jackson-datatype-jdk8",
+                "com.fasterxml.jackson.datatype:jackson-datatype-jsr310",
+                "com.fasterxml.jackson.module:jackson-module-parameter-names"
 
-        compileOnly "org.projectlombok:lombok:${lombokVersion}",
-                "io.vertx:vertx-codegen:${vertxVersion}"
+        compileOnly "org.projectlombok:lombok",
+                "io.vertx:vertx-codegen"
 
-        testCompile "junit:junit:4.12",
-                "org.projectlombok:lombok:${lombokVersion}",
-                "io.vertx:vertx-unit:${vertxVersion}",
-                "io.vertx:vertx-web-client:${vertxVersion}"
+        testCompile "junit:junit",
+                "org.projectlombok:lombok",
+                "io.vertx:vertx-unit",
+                "io.vertx:vertx-web-client"
     }
 
     jar.manifest {
