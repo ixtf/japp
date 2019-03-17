@@ -6,7 +6,7 @@ plugins {
 }
 allprojects {
     group 'com.github.ixtf.japp'
-    version '1.6'
+    version '1.6.1'
 
     apply plugin: 'idea'
     apply plugin: 'maven'
@@ -35,7 +35,7 @@ subprojects {
         version = "${lombokVersion}"
         sha256 = ""
     }
-    
+
     dependencies {
         compile "org.apache.commons:commons-lang3",
                 "org.apache.commons:commons-text",
@@ -44,17 +44,16 @@ subprojects {
                 "com.google.guava:guava",
                 "ch.qos.logback:logback-classic",
                 "ch.qos.logback:logback-access",
+                "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.8",
                 "com.fasterxml.jackson.core:jackson-annotations",
                 "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider",
                 "com.fasterxml.jackson.datatype:jackson-datatype-jdk8",
                 "com.fasterxml.jackson.datatype:jackson-datatype-jsr310",
                 "com.fasterxml.jackson.module:jackson-module-parameter-names"
 
-        compileOnly "org.projectlombok:lombok",
-                "io.vertx:vertx-codegen"
+        compileOnly "io.vertx:vertx-codegen"
 
         testCompile "junit:junit",
-                "org.projectlombok:lombok",
                 "io.vertx:vertx-unit",
                 "io.vertx:vertx-web-client"
     }
@@ -69,32 +68,32 @@ subprojects {
                 'Target-Compatibility': targetCompatibility
         )
     }
-    [compileJava, compileTestJava].each() {
-//        it.options.compilerArgs += ["-Xlint:all", "-Xlint:-options", "-Xlint:-path"]
-        it.options.encoding = "UTF-8"
-        if (rootProject.hasProperty('failOnWarnings') && rootProject.failOnWarnings.toBoolean()) {
-            it.options.compilerArgs += ["-Werror"]
-        }
-    }
-    compileTestJava {
-        // serialVersionUID is basically guaranteed to be useless in our tests
-        options.compilerArgs += ["-Xlint:-serial"]
-    }
-    javadoc.options {
-        encoding = 'UTF-8'
-        use = true
-        links 'https://docs.oracle.com/javase/8/docs/api/'
-    }
-    task javadocJar(type: Jar) {
-        classifier = 'javadoc'
-        from javadoc
-    }
-    task sourcesJar(type: Jar) {
-        classifier = 'sources'
-        from sourceSets.main.allSource
-    }
-    artifacts {
-        archives javadocJar, sourcesJar
-    }
+//    [compileJava, compileTestJava].each() {
+////        it.options.compilerArgs += ["-Xlint:all", "-Xlint:-options", "-Xlint:-path"]
+//        it.options.encoding = "UTF-8"
+//        if (rootProject.hasProperty('failOnWarnings') && rootProject.failOnWarnings.toBoolean()) {
+//            it.options.compilerArgs += ["-Werror"]
+//        }
+//    }
+//    compileTestJava {
+//        // serialVersionUID is basically guaranteed to be useless in our tests
+//        options.compilerArgs += ["-Xlint:-serial"]
+//    }
+//    javadoc.options {
+//        encoding = 'UTF-8'
+//        use = true
+//        links 'https://docs.oracle.com/javase/8/docs/api/'
+//    }
+//    task javadocJar(type: Jar) {
+//        classifier = 'javadoc'
+//        from javadoc
+//    }
+//    task sourcesJar(type: Jar) {
+//        classifier = 'sources'
+//        from sourceSets.main.allSource
+//    }
+//    artifacts {
+//        archives javadocJar, sourcesJar
+//    }
 
 }

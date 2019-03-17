@@ -193,16 +193,16 @@ public class ArgsExtr {
         if (double.class.isAssignableFrom(type)) {
             final String stringValue = arg.toString();
             if (J.isBlank(stringValue)) {
-                return new Double(0).doubleValue();
+                return Double.valueOf(0).doubleValue();
             }
-            return new Double(stringValue).doubleValue();
+            return Double.valueOf(stringValue).doubleValue();
         }
         if (Float.class.isAssignableFrom(type)) {
             final String stringValue = arg.toString();
             if (J.isBlank(stringValue)) {
                 return null;
             }
-            return new Float(stringValue);
+            return Float.valueOf(stringValue);
         }
         if (float.class.isAssignableFrom(type)) {
             final String stringValue = arg.toString();
