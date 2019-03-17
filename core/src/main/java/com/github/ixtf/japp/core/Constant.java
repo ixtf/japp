@@ -2,6 +2,7 @@ package com.github.ixtf.japp.core;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
@@ -11,6 +12,13 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
  */
 public class Constant {
     public static final ObjectMapper MAPPER = new ObjectMapper()
+            .registerModule(new ParameterNamesModule())
+            .registerModule(new Jdk8Module())
+            .registerModule(new JavaTimeModule())
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY)
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+    public static final ObjectMapper YAML_MAPPER = new YAMLMapper()
             .registerModule(new ParameterNamesModule())
             .registerModule(new Jdk8Module())
             .registerModule(new JavaTimeModule())

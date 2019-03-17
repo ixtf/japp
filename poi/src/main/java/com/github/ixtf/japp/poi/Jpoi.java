@@ -20,6 +20,16 @@ import java.util.Collection;
 import java.util.Optional;
 
 public final class Jpoi {
+
+    public static final Cell cell(Row row, char c) {
+        return CellUtil.getCell(row, c - 'A');
+    }
+
+    public static Cell cell(Sheet sheet, int rowIndex, int columnIndex) {
+        final Row row = CellUtil.getRow(rowIndex, sheet);
+        return CellUtil.getCell(row, columnIndex);
+    }
+
     public static final String toHtml(File file) throws IOException {
         DocumentConverter converter = new DocumentConverter();
         Result<String> result = converter.convertToHtml(file);
@@ -211,10 +221,5 @@ public final class Jpoi {
         } catch (InvalidFormatException | IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static Cell cell(Sheet sheet, int rowIndex, int columnIndex) {
-        final Row row = CellUtil.getRow(rowIndex, sheet);
-        return CellUtil.getCell(row, columnIndex);
     }
 }

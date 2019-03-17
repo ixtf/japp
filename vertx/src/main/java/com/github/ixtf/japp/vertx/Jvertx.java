@@ -142,12 +142,10 @@ public class Jvertx {
         if (violations.size() == 0) {
             return command;
         }
-        final List<JException> exceptions = violations.stream()
-                .map(violation -> {
-                    final String propertyPath = violation.getPropertyPath().toString();
-                    return new JException(Constant.ErrorCode.SYSTEM, propertyPath + ":" + violation.getMessage());
-                })
-                .collect(Collectors.toList());
+        final List<JException> exceptions = violations.stream().map(violation -> {
+            final String propertyPath = violation.getPropertyPath().toString();
+            return new JException(Constant.ErrorCode.SYSTEM, propertyPath + ":" + violation.getMessage());
+        }).collect(Collectors.toList());
         if (violations.size() == 1) {
             throw exceptions.get(0);
         }
