@@ -10,6 +10,7 @@ import com.github.ixtf.japp.core.cli.SaferExec;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StrSubstitutor;
 
@@ -222,6 +223,18 @@ public class J {
 
     public static String defaultString(String s, String defaultStr) {
         return StringUtils.defaultString(s, defaultStr);
+    }
+
+//    public static <T> T[] emptyIfNull(T[] array) {
+//        return (T[]) ArrayUtils.nullToEmpty(array);
+//    }
+
+    public static <T> boolean isEmpty(T[] array) {
+        return ArrayUtils.isEmpty(array);
+    }
+
+    public static <T> boolean nonEmpty(T[] array) {
+        return ArrayUtils.isNotEmpty(array);
     }
 
     public static <T> Collection<T> emptyIfNull(Collection<T> collection) {
