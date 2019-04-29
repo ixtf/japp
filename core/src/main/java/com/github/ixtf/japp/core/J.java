@@ -7,12 +7,12 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.ixtf.japp.core.cli.SaferExec;
+import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StrSubstitutor;
+import org.apache.commons.text.StringSubstitutor;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,8 +31,18 @@ import static com.github.ixtf.japp.core.Constant.MAPPER;
 
 public class J {
 
+    @SneakyThrows
+    public static <T> Class<T> actualClass(Class<T> clazz) {
+        final String className = clazz.getName();
+        if (J.contains(className, "CGLIB")) {
+            final String actualClassName = J.split(className, "$$")[0];
+            return (Class<T>) Class.forName(actualClassName);
+        }
+        return clazz;
+    }
+
     public static String strTpl(final String tpl, Map<String, String> map) {
-        return StrSubstitutor.replace(tpl, map);
+        return StringSubstitutor.replace(tpl, map);
     }
 
     public static String exeCli(final String command) {
@@ -223,18 +233,6 @@ public class J {
 
     public static String defaultString(String s, String defaultStr) {
         return StringUtils.defaultString(s, defaultStr);
-    }
-
-//    public static <T> T[] emptyIfNull(T[] array) {
-//        return (T[]) ArrayUtils.nullToEmpty(array);
-//    }
-
-    public static <T> boolean isEmpty(T[] array) {
-        return ArrayUtils.isEmpty(array);
-    }
-
-    public static <T> boolean nonEmpty(T[] array) {
-        return ArrayUtils.isNotEmpty(array);
     }
 
     public static <T> Collection<T> emptyIfNull(Collection<T> collection) {
