@@ -2,27 +2,22 @@ package com.github.ixtf.japp.vertx;
 
 import com.github.ixtf.japp.core.Constant;
 import com.github.ixtf.japp.core.J;
-import com.github.ixtf.japp.core.exception.JException;
-import com.github.ixtf.japp.core.exception.JMultiException;
+import com.github.ixtf.japp.core.exception.JError;
 import com.github.ixtf.japp.vertx.spi.ApiGateway;
 import com.google.common.collect.Sets;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.http.HttpServerResponse;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.handler.*;
 import io.vertx.reactivex.ext.web.sstore.SessionStore;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.IterableUtils;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
+import javax.validation.*;
 import javax.ws.rs.Path;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -108,19 +103,8 @@ public class Jvertx {
         final Throwable failure = rc.failure();
         final JsonObject result = new JsonObject();
         // todo response content-type 为 json
-        if (failure instanceof JMultiException) {
-            final JMultiException ex = (JMultiException) failure;
-            final JsonArray errors = new JsonArray();
-            result.put("errorCode", Constant.ErrorCode.MULTI)
-                    .put("errors", errors);
-            ex.getExceptions().forEach(it -> {
-                final JsonObject error = new JsonObject()
-                        .put("errorCode", it.getErrorCode())
-                        .put("errorMessage", it.getMessage());
-                errors.add(error);
-            });
-        } else if (failure instanceof JException) {
-            final JException ex = (JException) failure;
+        if (failure instanceof JError) {
+            final JError ex = (JError) failure;
             result.put("errorCode", ex.getErrorCode())
                     .put("errorMessage", ex.getMessage());
         } else {
@@ -130,26 +114,24 @@ public class Jvertx {
         response.end(result.encode());
     }
 
-    public static <T> T readCommand(Class<T> clazz, String json) throws IOException, JException {
+    @SneakyThrows
+    public static <T> T readCommand(Class<T> clazz, String json) {
         final T command = MAPPER.readValue(json, clazz);
         return checkCommand(command);
     }
 
-    public static <T> T checkCommand(T command) throws JException {
+    public static <T> T checkCommand(T command) {
         final ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
         final Validator validator = validatorFactory.getValidator();
         final Set<ConstraintViolation<T>> violations = validator.validate(command);
         if (violations.size() == 0) {
             return command;
         }
-        final List<JException> exceptions = violations.stream().map(violation -> {
+        final List<Throwable> exceptions = violations.stream().map(violation -> {
             final String propertyPath = violation.getPropertyPath().toString();
-            return new JException(Constant.ErrorCode.SYSTEM, propertyPath + ":" + violation.getMessage());
+            return new RuntimeException(propertyPath + ":" + violation.getMessage());
         }).collect(Collectors.toList());
-        if (violations.size() == 1) {
-            throw exceptions.get(0);
-        }
-        throw new JMultiException(exceptions);
+        throw new ConstraintViolationException(violations);
     }
 
     public synchronized static ApiGateway apiGateway() {

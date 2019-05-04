@@ -2,7 +2,7 @@ package com.github.ixtf.japp.vertx.api;
 
 import com.fasterxml.jackson.databind.type.CollectionLikeType;
 import com.github.ixtf.japp.core.J;
-import com.github.ixtf.japp.core.exception.JException;
+import com.github.ixtf.japp.core.exception.JError;
 import com.github.ixtf.japp.vertx.Jvertx;
 import com.github.ixtf.japp.vertx.spi.ApiGateway;
 import com.google.common.collect.Sets;
@@ -62,7 +62,7 @@ public class ArgsExtr {
         }
     }
 
-    public JsonArray extr(RoutingContext rc, String principal) throws IOException, JException {
+    public JsonArray extr(RoutingContext rc, String principal) throws IOException, JError {
         final JsonArray result = new JsonArray();
         if (ArrayUtils.isEmpty(parameters)) {
             return new JsonArray();
@@ -73,7 +73,7 @@ public class ArgsExtr {
         return result;
     }
 
-    private Object getValue(Parameter parameter, RoutingContext rc, String principal) throws IOException, JException {
+    private Object getValue(Parameter parameter, RoutingContext rc, String principal) throws IOException, JError {
         final Class<?> type = parameter.getType();
         if (Principal.class.isAssignableFrom(type)) {
             return principal;

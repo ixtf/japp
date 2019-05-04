@@ -7,24 +7,24 @@ import java.util.Map;
 
 import static com.github.ixtf.japp.core.Constant.MAPPER;
 
-public class JException extends Exception {
+public class JError extends Exception {
     @Getter
     private final String errorCode;
     @Getter
     private final Map<String, String> params;
 
-    public JException(String errorCode) {
+    public JError(String errorCode) {
         this.errorCode = errorCode;
         this.params = null;
     }
 
-    public JException(String errorCode, String message) {
+    public JError(String errorCode, String message) {
         super(message);
         this.errorCode = errorCode;
         this.params = null;
     }
 
-    public JException(String errorCode, Map<String, String> params) {
+    public JError(String errorCode, Map<String, String> params) {
         this.errorCode = errorCode;
         this.params = params;
     }
