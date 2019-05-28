@@ -7,7 +7,7 @@ import java.util.Map;
 
 import static com.github.ixtf.japp.core.Constant.MAPPER;
 
-public class JError extends Exception {
+public class JError extends Error {
     @Getter
     private final String errorCode;
     @Getter
