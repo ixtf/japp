@@ -1,15 +1,16 @@
 plugins {
     id 'io.spring.dependency-management' version '1.0.7.RELEASE'
-    id 'io.franzbecker.gradle-lombok' version '2.2'
+    id 'io.franzbecker.gradle-lombok' version '3.0.0'
 }
 allprojects {
     group 'com.github.ixtf.japp'
-    version '1.6.4'
+    version '1.6.5'
 
     apply plugin: 'idea'
     apply plugin: 'maven'
     apply plugin: 'maven-publish'
     apply plugin: "io.spring.dependency-management"
+    apply plugin: 'io.franzbecker.gradle-lombok'
 
     repositories {
         mavenLocal()
@@ -28,17 +29,12 @@ subprojects {
     apply plugin: 'java'
     sourceCompatibility = 11
     targetCompatibility = 11
-    apply plugin: 'io.franzbecker.gradle-lombok'
-    lombok {
-        version = "${lombokVersion}"
-        sha256 = ""
-    }
 
     dependencies {
         compile "org.apache.commons:commons-lang3",
                 "org.apache.commons:commons-text",
                 "org.apache.commons:commons-collections4",
-                'commons-io:commons-io',
+                "commons-io:commons-io",
                 "com.google.guava:guava",
                 "ch.qos.logback:logback-classic",
                 "ch.qos.logback:logback-access",
