@@ -4,7 +4,7 @@ plugins {
 }
 allprojects {
     group 'com.github.ixtf.japp'
-    version '1.6.3'
+    version '1.6.4'
 
     apply plugin: 'idea'
     apply plugin: 'maven'
