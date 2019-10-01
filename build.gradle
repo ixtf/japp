@@ -38,7 +38,7 @@ subprojects {
                 "com.google.guava:guava",
                 "ch.qos.logback:logback-classic",
                 "ch.qos.logback:logback-access",
-                "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.8",
+                "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml",
                 "com.fasterxml.jackson.core:jackson-annotations",
                 "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider",
                 "com.fasterxml.jackson.datatype:jackson-datatype-jdk8",
