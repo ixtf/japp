@@ -11,6 +11,7 @@ import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
 
@@ -257,6 +258,14 @@ public class J {
 
     public static boolean nonEmpty(Map map) {
         return !isEmpty(map);
+    }
+
+    public static <T> boolean isEmpty(T[] array) {
+        return ArrayUtils.isEmpty(array);
+    }
+
+    public static <T> boolean nonEmpty(T[] array) {
+        return !isEmpty(array);
     }
 
     public static String substring(final String str, int start) {
