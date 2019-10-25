@@ -17,10 +17,7 @@ import org.apache.commons.text.StringSubstitutor;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.time.temporal.TemporalAccessor;
 import java.util.Collection;
@@ -274,14 +271,6 @@ public class J {
 
     public static String substring(final String str, int start, int end) {
         return StringUtils.substring(str, start, end);
-    }
-
-    public static String urlEncode(final String s) {
-        try {
-            return URLEncoder.encode(s, StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public static boolean isGet(Method method) {
