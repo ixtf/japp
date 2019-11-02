@@ -36,6 +36,7 @@ subprojects {
                 "org.apache.commons:commons-collections4",
                 "commons-io:commons-io",
                 "com.google.guava:guava",
+                "org.codehaus.janino:janino",
                 "ch.qos.logback:logback-classic",
                 "ch.qos.logback:logback-access",
                 "com.fasterxml.jackson.core:jackson-core",
