@@ -39,7 +39,7 @@ public final class Jpoi {
     public static String stringValue(Cell cell) {
         return Optional.ofNullable(cell)
                 .map(it -> {
-                    switch (cell.getCellTypeEnum()) {
+                    switch (cell.getCellType()) {
                         case STRING:
                             return cell.getStringCellValue();
                         case NUMERIC:
@@ -138,7 +138,7 @@ public final class Jpoi {
         dest.setKerning(src.getKerning());
         dest.setShadow(src.isShadowed());
         dest.setSmallCaps(src.isSmallCaps());
-        dest.setSubscript(src.getSubscript());
+//        dest.setSubscript(src.getSubscript());
         if (src.getFontSize() > 0) {
             dest.setFontSize(src.getFontSize());
         }
