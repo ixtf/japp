@@ -72,6 +72,9 @@ subprojects {
         withJavadocJar()
         withSourcesJar()
     }
+    artifacts {
+        archives javadocJar, sourcesJar
+    }
 //    [compileJava, compileTestJava].each() {
 ////        it.options.compilerArgs += ["-Xlint:all", "-Xlint:-options", "-Xlint:-path"]
 //        it.options.encoding = "UTF-8"
@@ -95,9 +98,6 @@ subprojects {
 //    task sourcesJar(type: Jar) {
 //        classifier = 'sources'
 //        from sourceSets.main.allSource
-//    }
-//    artifacts {
-//        archives javadocJar, sourcesJar
 //    }
 
 }
