@@ -20,10 +20,9 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.time.*;
 import java.time.temporal.TemporalAccessor;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.github.ixtf.japp.core.Constant.MAPPER;
 
@@ -98,6 +97,41 @@ public class J {
                 .map(it -> it.atDate(LocalDate.now()))
                 .map(J::date)
                 .orElseThrow(() -> new NullPointerException());
+    }
+
+    public static <E> ArrayList<E> newArrayList() {
+        return new ArrayList<>();
+    }
+
+    public static <E> ArrayList<E> newArrayList(E... elements) {
+        int capacity = 5 + elements.length + elements.length / 10;
+        ArrayList<E> list = new ArrayList<>(capacity);
+        Collections.addAll(list, elements);
+        return list;
+    }
+
+    public static <K, V> HashMap<K, V> newHashMap() {
+        return new HashMap<>();
+    }
+
+    public static <K, V> ConcurrentMap<K, V> newConcurrentMap() {
+        return new ConcurrentHashMap<>();
+    }
+
+    public static boolean deleteQuietly(File file) {
+        return FileUtils.deleteQuietly(file);
+    }
+
+    public static void forceDelete(File file) throws IOException {
+        FileUtils.forceDelete(file);
+    }
+
+    public static Collection<File> listFiles(final String directory, final String[] extensions, final boolean recursive) {
+        return FileUtils.listFiles(getFile(directory), extensions, recursive);
+    }
+
+    public static Collection<File> listFiles(final File directory, final String[] extensions, final boolean recursive) {
+        return FileUtils.listFiles(directory, extensions, recursive);
     }
 
     public static File getFile(String... names) {
