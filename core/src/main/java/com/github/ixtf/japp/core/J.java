@@ -22,7 +22,6 @@ import java.time.*;
 import java.time.temporal.TemporalAccessor;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static com.github.ixtf.japp.core.Constant.MAPPER;
 
@@ -110,11 +109,11 @@ public class J {
         return list;
     }
 
-    public static <K, V> HashMap<K, V> newHashMap() {
+    public static <K, V> Map<K, V> newHashMap() {
         return new HashMap<>();
     }
 
-    public static <K, V> ConcurrentMap<K, V> newConcurrentMap() {
+    public static <K, V> Map<K, V> newConcurrentMap() {
         return new ConcurrentHashMap<>();
     }
 
