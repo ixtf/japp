@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.ixtf.japp.core.cli.SaferExec;
 import lombok.SneakyThrows;
+import lombok.val;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FileUtils;
@@ -24,6 +25,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.github.ixtf.japp.core.Constant.MAPPER;
+import static com.github.ixtf.japp.core.Constant.YAML_MAPPER;
 
 public class J {
 
@@ -103,8 +105,8 @@ public class J {
     }
 
     public static <E> ArrayList<E> newArrayList(E... elements) {
-        int capacity = 5 + elements.length + elements.length / 10;
-        ArrayList<E> list = new ArrayList<>(capacity);
+        val capacity = 5 + elements.length + elements.length / 10;
+        val list = new ArrayList<E>(capacity);
         Collections.addAll(list, elements);
         return list;
     }
@@ -149,6 +151,16 @@ public class J {
         FileUtils.moveFile(srcFile, destFile);
     }
 
+    @SneakyThrows(IOException.class)
+    public static JsonNode readJson(File file) {
+        return MAPPER.readTree(file);
+    }
+
+    @SneakyThrows(IOException.class)
+    public static JsonNode readYaml(File file) {
+        return YAML_MAPPER.readTree(file);
+    }
+
     public static String toJson(Object o) {
         if (o instanceof String) {
             return (String) o;
@@ -168,24 +180,21 @@ public class J {
      * @param o 需要转换的对象
      * @return null 变为 {@link NullNode};{@link String} 变为 {@link ObjectMapper#readTree};{@link Collection} 变为 {@link ArrayNode}
      */
+    @SneakyThrows(IOException.class)
     public static JsonNode toJsonNode(Object o) {
-        try {
-            if (o == null) {
-                return NullNode.instance;
-            } else if (o instanceof String) {
-                String s = (String) o;
-                return MAPPER.readTree(s);
-            } else if (o.getClass().isPrimitive()) {
-                throw new IllegalArgumentException();
-            } else if (o instanceof JsonNode) {
-                return (JsonNode) o;
-            } else if (o instanceof Collection) {
-                return toArrayNode((Collection) o);
-            }
-            return MAPPER.getNodeFactory().pojoNode(o);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (o == null) {
+            return NullNode.instance;
+        } else if (o instanceof String) {
+            String s = (String) o;
+            return MAPPER.readTree(s);
+        } else if (o.getClass().isPrimitive()) {
+            throw new IllegalArgumentException();
+        } else if (o instanceof JsonNode) {
+            return (JsonNode) o;
+        } else if (o instanceof Collection) {
+            return toArrayNode((Collection) o);
         }
+        return MAPPER.getNodeFactory().pojoNode(o);
     }
 
     public static ObjectNode toObjectNode(Object o) {
@@ -195,7 +204,7 @@ public class J {
     }
 
     public static ArrayNode toArrayNode(Collection c) {
-        ArrayNode arrayNode = MAPPER.createArrayNode();
+        val arrayNode = MAPPER.createArrayNode();
         c.stream().forEach(it -> arrayNode.add(J.toJsonNode(it)));
         return arrayNode;
     }
