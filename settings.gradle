@@ -8,5 +8,7 @@ include 'ee'
 include 'pinyin'
 include 'codec'
 //include 'vertx'
+include 'pdf'
+
 include 'guice'
 
