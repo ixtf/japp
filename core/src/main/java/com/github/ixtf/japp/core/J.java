@@ -157,8 +157,23 @@ public class J {
     }
 
     @SneakyThrows(IOException.class)
+    public static JsonNode readJson(String json) {
+        return MAPPER.readTree(json);
+    }
+
+    @SneakyThrows(IOException.class)
+    public static JsonNode readJson(byte[] bytes) {
+        return MAPPER.readTree(bytes);
+    }
+
+    @SneakyThrows(IOException.class)
     public static JsonNode readYaml(File file) {
         return YAML_MAPPER.readTree(file);
+    }
+
+    @SneakyThrows(IOException.class)
+    public static JsonNode readYaml(byte[] bytes) {
+        return YAML_MAPPER.readTree(bytes);
     }
 
     public static String toJson(Object o) {
