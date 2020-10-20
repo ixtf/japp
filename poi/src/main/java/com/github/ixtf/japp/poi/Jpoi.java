@@ -1,6 +1,8 @@
 package com.github.ixtf.japp.poi;
 
+import com.github.ixtf.japp.core.J;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -18,38 +20,58 @@ import org.zwobble.mammoth.Result;
 import java.io.*;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import static java.util.Optional.ofNullable;
+import static java.util.Spliterators.spliteratorUnknownSize;
 
 public final class Jpoi {
+
+    public static Stream<Row> rowStream(Sheet sheet) {
+        return StreamSupport.stream(spliteratorUnknownSize(sheet.rowIterator(), Spliterator.ORDERED), false);
+    }
 
     public static final Cell cell(Row row, char c) {
         return CellUtil.getCell(row, c - 'A');
     }
 
     public static Cell cell(Sheet sheet, int rowIndex, int columnIndex) {
-        final Row row = CellUtil.getRow(rowIndex, sheet);
+        final var row = CellUtil.getRow(rowIndex, sheet);
         return CellUtil.getCell(row, columnIndex);
+    }
+
+    public static Optional<String> stringOpt(Cell cell) {
+        return ofNullable(cell).map(it -> {
+            switch (cell.getCellType()) {
+                case STRING:
+                    return cell.getStringCellValue();
+                case NUMERIC:
+                    final Number numeric = cell.getNumericCellValue();
+                    return "" + numeric.intValue();
+                default:
+                    return null;
+            }
+        });
+    }
+
+    public static Optional<String> stringOpt(Row row, char c) {
+        return stringOpt(cell(row, c));
+    }
+
+    public static Optional<String> idOpt(Row row, char c) {
+        return stringOpt(row, c)
+                .map(J::deleteWhitespace)
+                .filter(J::nonBlank)
+                .filter(StringUtils::isAsciiPrintable)
+                .map(String::toUpperCase);
     }
 
     public static final String toHtml(File file) throws IOException {
         DocumentConverter converter = new DocumentConverter();
         Result<String> result = converter.convertToHtml(file);
         return result.getValue(); // The generated HTML
-    }
-
-    public static String stringValue(Cell cell) {
-        return Optional.ofNullable(cell)
-                .map(it -> {
-                    switch (cell.getCellType()) {
-                        case STRING:
-                            return cell.getStringCellValue();
-                        case NUMERIC:
-                            final Number numeric = cell.getNumericCellValue();
-                            return "" + numeric.intValue();
-                        default:
-                            return null;
-                    }
-                })
-                .orElse(null);
     }
 
     public static void append(XWPFDocument dest, File... files) throws IOException {
@@ -143,14 +165,14 @@ public final class Jpoi {
             dest.setFontSize(src.getFontSize());
         }
 
-        Optional.ofNullable(src.getCTR())
+        ofNullable(src.getCTR())
                 .ifPresent(ctr -> copyCTR(dest.getCTR(), ctr));
 
         copyEmbeddedPictures(paragraph, src.getEmbeddedPictures());
     }
 
     private static void copyCTR(CTR dest, CTR src) {
-        Optional.ofNullable(src.getRPr())
+        ofNullable(src.getRPr())
                 .ifPresent(ctrPr -> copyCTRPr(dest.addNewRPr(), ctrPr));
 //        dest.setNoBreakHyphenArray(src.getNoBreakHyphenList());
 //        Optional.ofNullable(src.getBrList())
