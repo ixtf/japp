@@ -33,6 +33,17 @@ public final class Jpoi {
         return StreamSupport.stream(spliteratorUnknownSize(sheet.rowIterator(), Spliterator.ORDERED), false);
     }
 
+    public static Optional<Row> prevOpt(Row row) {
+        final var sheet = row.getSheet();
+        final var prev = row.getRowNum() - 1;
+        return prev < 0 ? Optional.empty() : ofNullable(sheet.getRow(prev));
+    }
+
+    public static Optional<Row> nextOpt(Row row) {
+        final var sheet = row.getSheet();
+        return ofNullable(sheet.getRow(row.getRowNum() + 1));
+    }
+
     public static final Cell cell(Row row, char c) {
         return CellUtil.getCell(row, c - 'A');
     }
