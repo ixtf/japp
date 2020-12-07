@@ -1,4 +1,6 @@
 dependencies {
+//    compile "javax:javaee-api:8.0.1"
+//    compile "org.hibernate.validator:hibernate-validator:7.0.0.Alpha6"
     compile "org.hibernate.validator:hibernate-validator"
     compile "org.glassfish:jakarta.el"
     compile "org.apache.commons:commons-lang3"

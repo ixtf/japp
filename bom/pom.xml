@@ -14,7 +14,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <jappVersion>1.0.0</jappVersion>
-        <validatorVersion>6.1.6.Final</validatorVersion>
+        <validatorVersion>7.0.0.Alpha6</validatorVersion>
         <vertxVersion>3.9.4</vertxVersion>
         <reactorVersion>2020.0.1</reactorVersion>
         <guiceVersion>4.2.3</guiceVersion>
@@ -57,16 +57,6 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeineVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate.validator</groupId>
-                <artifactId>hibernate-validator</artifactId>
-                <version>${validatorVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish</groupId>
-                <artifactId>jakarta.el</artifactId>
-                <version>4.0.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -279,6 +269,16 @@
                 <version>${keycloakVersion}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.hibernate.validator</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>${validatorVersion}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish</groupId>
+                <artifactId>jakarta.el</artifactId>
+                <version>4.0.0</version>
+            </dependency>
             <dependency>
                 <groupId>jakarta.platform</groupId>
                 <artifactId>jakarta.jakartaee-bom</artifactId>
