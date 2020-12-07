@@ -1,11 +1,11 @@
 dependencies {
-    compile project(':core'),
-            "org.apache.poi:poi",
-            "org.apache.poi:poi-scratchpad",
-            "org.apache.poi:poi-ooxml",
-            "org.apache.poi:poi-ooxml-schemas",
-            "org.apache.xmlbeans:xmlbeans",
-            "org.apache.poi:ooxml-schemas",
+    compile project(':core')
+    compile "org.apache.poi:poi"
+    compile "org.apache.poi:poi-scratchpad"
+    compile "org.apache.poi:poi-ooxml"
+    compile "org.apache.poi:poi-ooxml-schemas"
+    compile "org.apache.xmlbeans:xmlbeans"
+    compile "org.apache.poi:ooxml-schemas"
 
-            "org.zwobble.mammoth:mammoth"
+    compile "org.zwobble.mammoth:mammoth"
 }

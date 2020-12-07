@@ -7,7 +7,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.ixtf.japp.core.cli.SaferExec;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validation;
 import lombok.SneakyThrows;
+import lombok.val;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FileUtils;
@@ -20,12 +23,11 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.time.*;
 import java.time.temporal.TemporalAccessor;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.github.ixtf.japp.core.Constant.MAPPER;
+import static com.github.ixtf.japp.core.Constant.YAML_MAPPER;
 
 public class J {
 
@@ -100,6 +102,41 @@ public class J {
                 .orElseThrow(() -> new NullPointerException());
     }
 
+    public static <E> ArrayList<E> newArrayList() {
+        return new ArrayList<>();
+    }
+
+    public static <E> ArrayList<E> newArrayList(E... elements) {
+        val capacity = 5 + elements.length + elements.length / 10;
+        val list = new ArrayList<E>(capacity);
+        Collections.addAll(list, elements);
+        return list;
+    }
+
+    public static <K, V> Map<K, V> newHashMap() {
+        return new HashMap<>();
+    }
+
+    public static <K, V> Map<K, V> newConcurrentMap() {
+        return new ConcurrentHashMap<>();
+    }
+
+    public static boolean deleteQuietly(File file) {
+        return FileUtils.deleteQuietly(file);
+    }
+
+    public static void forceDelete(File file) throws IOException {
+        FileUtils.forceDelete(file);
+    }
+
+    public static Collection<File> listFiles(final String directory, final String[] extensions, final boolean recursive) {
+        return FileUtils.listFiles(getFile(directory), extensions, recursive);
+    }
+
+    public static Collection<File> listFiles(final File directory, final String[] extensions, final boolean recursive) {
+        return FileUtils.listFiles(directory, extensions, recursive);
+    }
+
     public static File getFile(String... names) {
         return FileUtils.getFile(names);
     }
@@ -114,6 +151,31 @@ public class J {
 
     public static void moveFile(File srcFile, File destFile) throws IOException {
         FileUtils.moveFile(srcFile, destFile);
+    }
+
+    @SneakyThrows(IOException.class)
+    public static JsonNode readJson(File file) {
+        return MAPPER.readTree(file);
+    }
+
+    @SneakyThrows(IOException.class)
+    public static JsonNode readJson(String json) {
+        return MAPPER.readTree(json);
+    }
+
+    @SneakyThrows(IOException.class)
+    public static JsonNode readJson(byte[] bytes) {
+        return MAPPER.readTree(bytes);
+    }
+
+    @SneakyThrows(IOException.class)
+    public static JsonNode readYaml(File file) {
+        return YAML_MAPPER.readTree(file);
+    }
+
+    @SneakyThrows(IOException.class)
+    public static JsonNode readYaml(byte[] bytes) {
+        return YAML_MAPPER.readTree(bytes);
     }
 
     public static String toJson(Object o) {
@@ -135,24 +197,21 @@ public class J {
      * @param o 需要转换的对象
      * @return null 变为 {@link NullNode};{@link String} 变为 {@link ObjectMapper#readTree};{@link Collection} 变为 {@link ArrayNode}
      */
+    @SneakyThrows(IOException.class)
     public static JsonNode toJsonNode(Object o) {
-        try {
-            if (o == null) {
-                return NullNode.instance;
-            } else if (o instanceof String) {
-                String s = (String) o;
-                return MAPPER.readTree(s);
-            } else if (o.getClass().isPrimitive()) {
-                throw new IllegalArgumentException();
-            } else if (o instanceof JsonNode) {
-                return (JsonNode) o;
-            } else if (o instanceof Collection) {
-                return toArrayNode((Collection) o);
-            }
-            return MAPPER.getNodeFactory().pojoNode(o);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (o == null) {
+            return NullNode.instance;
+        } else if (o instanceof String) {
+            String s = (String) o;
+            return MAPPER.readTree(s);
+        } else if (o.getClass().isPrimitive()) {
+            throw new IllegalArgumentException();
+        } else if (o instanceof JsonNode) {
+            return (JsonNode) o;
+        } else if (o instanceof Collection) {
+            return toArrayNode((Collection) o);
         }
+        return MAPPER.getNodeFactory().pojoNode(o);
     }
 
     public static ObjectNode toObjectNode(Object o) {
@@ -162,7 +221,7 @@ public class J {
     }
 
     public static ArrayNode toArrayNode(Collection c) {
-        ArrayNode arrayNode = MAPPER.createArrayNode();
+        val arrayNode = MAPPER.createArrayNode();
         c.stream().forEach(it -> arrayNode.add(J.toJsonNode(it)));
         return arrayNode;
     }
@@ -235,6 +294,33 @@ public class J {
 
     public static <T> Collection<T> emptyIfNull(Collection<T> collection) {
         return CollectionUtils.emptyIfNull(collection);
+    }
+
+    public static <T> T checkAndGetCommand(T command) {
+        final var validatorFactory = Validation.buildDefaultValidatorFactory();
+        final var validator = validatorFactory.getValidator();
+        final var violations = validator.validate(command);
+        if (J.nonEmpty(violations)) {
+            throw new ConstraintViolationException(violations);
+        }
+        return command;
+    }
+
+    @SneakyThrows(IOException.class)
+    public static <T> T checkAndGetCommand(Class<T> clazz, byte[] bytes) {
+        final T command = MAPPER.readValue(bytes, clazz);
+        return checkAndGetCommand(command);
+    }
+
+    @SneakyThrows(JsonProcessingException.class)
+    public static <T> T checkAndGetCommand(Class<T> clazz, String json) {
+        final T command = MAPPER.readValue(json, clazz);
+        return checkAndGetCommand(command);
+    }
+
+    public static <T> T checkAndGetCommand(Class<T> clazz, JsonNode jsonNode) {
+        final T command = MAPPER.convertValue(jsonNode, clazz);
+        return checkAndGetCommand(command);
     }
 
     public static boolean isEmpty(Collection collection) {
