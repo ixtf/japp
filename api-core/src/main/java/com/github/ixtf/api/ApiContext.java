@@ -33,7 +33,7 @@ public interface ApiContext {
     }
 
     default <T> T command(Class<T> clazz) {
-        return checkAndGetCommand(clazz, body());
+        return J.checkAndGetCommand(clazz, body());
     }
 
     default String header(String key) {
