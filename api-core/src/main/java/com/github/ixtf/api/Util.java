@@ -1,6 +1,5 @@
 package com.github.ixtf.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.ixtf.J;
 import com.sun.security.auth.UserPrincipal;
@@ -10,12 +9,8 @@ import io.opentracing.propagation.TextMapAdapter;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import lombok.SneakyThrows;
 
-import jakarta.validation.ConstraintViolationException;
-import jakarta.validation.Validation;
 import java.io.File;
-import java.io.IOException;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Map;
@@ -28,39 +23,17 @@ import static java.util.stream.Collectors.toMap;
 
 public class Util {
 
-    @SneakyThrows(IOException.class)
-    public static <T> T checkAndGetCommand(Class<T> clazz, byte[] bytes) {
-        final T command = MAPPER.readValue(bytes, clazz);
-        return checkAndGetCommand(command);
-    }
-
-    @SneakyThrows(JsonProcessingException.class)
-    public static <T> T checkAndGetCommand(Class<T> clazz, String json) {
-        final T command = MAPPER.readValue(json, clazz);
-        return checkAndGetCommand(command);
-    }
-
     public static <T> T checkAndGetCommand(Class<T> clazz, JsonNode jsonNode) {
         final T command = MAPPER.convertValue(jsonNode, clazz);
-        return checkAndGetCommand(command);
+        return J.checkAndGetCommand(command);
     }
 
     public static <T> T checkAndGetCommand(Class<T> clazz, JsonObject jsonObject) {
-        return checkAndGetCommand(clazz, jsonObject.encode());
+        return J.checkAndGetCommand(clazz, jsonObject.encode());
     }
 
     public static <T> T checkAndGetCommand(Class<T> clazz, JsonArray jsonArray) {
-        return checkAndGetCommand(clazz, jsonArray.encode());
-    }
-
-    public static <T> T checkAndGetCommand(T command) {
-        final var validatorFactory = Validation.buildDefaultValidatorFactory();
-        final var validator = validatorFactory.getValidator();
-        final var violations = validator.validate(command);
-        if (J.nonEmpty(violations)) {
-            throw new ConstraintViolationException(violations);
-        }
-        return command;
+        return J.checkAndGetCommand(clazz, jsonArray.encode());
     }
 
     public static JsonObject config(final String env, final String defaultV) {

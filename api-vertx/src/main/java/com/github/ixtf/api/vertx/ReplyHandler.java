@@ -1,8 +1,8 @@
 package com.github.ixtf.api.vertx;
 
+import com.github.ixtf.J;
 import com.github.ixtf.api.ApiAction;
 import com.github.ixtf.api.ApiResponse;
-import com.github.ixtf.J;
 import com.github.ixtf.exception.JError;
 import com.google.inject.Inject;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Function;
@@ -28,6 +29,7 @@ import static com.github.ixtf.guice.GuiceModule.injectMembers;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderValues.TEXT_PLAIN;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Optional.ofNullable;
 
 public class ReplyHandler implements Handler<Message<Object>> {
     private final Object instance;
@@ -60,6 +62,12 @@ public class ReplyHandler implements Handler<Message<Object>> {
         final var handler = new ReplyHandler(method);
         injectMembers(handler);
         getInstance(Vertx.class).eventBus().consumer(handler.address, handler);
+    }
+
+    public static void localConsumer(Method method) {
+        final var handler = new ReplyHandler(method);
+        injectMembers(handler);
+        getInstance(Vertx.class).eventBus().localConsumer(handler.address, handler);
     }
 
     @Override
@@ -100,6 +108,12 @@ public class ReplyHandler implements Handler<Message<Object>> {
     }
 
     private void fail(Message<Object> reply, Throwable e, Optional<Span> spanOpt) {
+//        todo check Exception to log
+//        if (e instanceof InvocationTargetException) {
+//            final var ite = (InvocationTargetException) e;
+//            ofNullable(ite.getTargetException()).ifPresent(it -> fail(reply, it, spanOpt));
+//            return;
+//        }
         reply.fail(400, e.getMessage());
         if (!(e instanceof JError)) {
             log.error(address, e);
