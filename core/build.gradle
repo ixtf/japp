@@ -1,0 +1,18 @@
+dependencies {
+    compile "org.hibernate.validator:hibernate-validator"
+    compile "org.glassfish:jakarta.el"
+    compile "org.apache.commons:commons-lang3"
+    compile "org.apache.commons:commons-text"
+    compile "org.apache.commons:commons-collections4"
+    compile "commons-io:commons-io"
+    compile "io.github.classgraph:classgraph"
+    compile "com.github.ben-manes.caffeine:caffeine"
+    compile "com.google.guava:guava"
+    compile "ch.qos.logback:logback-classic"
+    compile "ch.qos.logback:logback-access"
+    compile "com.fasterxml.jackson.core:jackson-databind"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
+    compile "com.fasterxml.jackson.module:jackson-module-parameter-names"
+}
