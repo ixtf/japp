@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.ixtf.japp.core.cli.SaferExec;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validation;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.apache.commons.collections4.CollectionUtils;
@@ -292,6 +294,33 @@ public class J {
 
     public static <T> Collection<T> emptyIfNull(Collection<T> collection) {
         return CollectionUtils.emptyIfNull(collection);
+    }
+
+    public static <T> T checkAndGetCommand(T command) {
+        final var validatorFactory = Validation.buildDefaultValidatorFactory();
+        final var validator = validatorFactory.getValidator();
+        final var violations = validator.validate(command);
+        if (J.nonEmpty(violations)) {
+            throw new ConstraintViolationException(violations);
+        }
+        return command;
+    }
+
+    @SneakyThrows(IOException.class)
+    public static <T> T checkAndGetCommand(Class<T> clazz, byte[] bytes) {
+        final T command = MAPPER.readValue(bytes, clazz);
+        return checkAndGetCommand(command);
+    }
+
+    @SneakyThrows(JsonProcessingException.class)
+    public static <T> T checkAndGetCommand(Class<T> clazz, String json) {
+        final T command = MAPPER.readValue(json, clazz);
+        return checkAndGetCommand(command);
+    }
+
+    public static <T> T checkAndGetCommand(Class<T> clazz, JsonNode jsonNode) {
+        final T command = MAPPER.convertValue(jsonNode, clazz);
+        return checkAndGetCommand(command);
     }
 
     public static boolean isEmpty(Collection collection) {
