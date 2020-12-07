@@ -3,15 +3,16 @@ plugins {
     id "maven"
     id "maven-publish"
     id "io.spring.dependency-management" version "1.0.9.RELEASE" apply false
-    id "io.freefair.lombok" version "5.1.0" apply false
-    id "com.github.johnrengelman.shadow" version "6.0.0" apply false
+    id "io.freefair.lombok" version "5.3.0" apply false
+    id "com.github.johnrengelman.shadow" version "6.1.0" apply false
     id "com.palantir.docker" version "0.25.0" apply false
-    id "com.google.protobuf" version "0.8.12" apply false
+    id "com.google.protobuf" version "0.8.14" apply false
+    id "io.swagger.core.v3.swagger-gradle-plugin" version "2.1.6" apply false
 }
 
 subprojects {
     group "com.github.ixtf.japp"
-    version "1.6.5"
+    version "1.0.0"
 
     apply plugin: "idea"
     apply plugin: "maven"
@@ -26,91 +27,42 @@ subprojects {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven { url 'https://plugins.gradle.org/m2' }
-        maven { url 'https://jitpack.io' }
+        maven { url "https://plugins.gradle.org/m2" }
+        maven { url "https://jitpack.io" }
+        maven { url "http://maven.geo-solutions.it" }
     }
 
     dependencyManagement {
         imports {
-            mavenBom "com.github.ixtf:bom:${bomVersion}"
+            mavenBom "com.github.ixtf.japp:bom:${bomVersion}"
         }
     }
-}
-subprojects {
-    apply plugin: 'java'
-    sourceCompatibility = 11
-    targetCompatibility = 11
 
     dependencies {
-        compile "org.apache.commons:commons-lang3",
-                "org.apache.commons:commons-text",
-                "org.apache.commons:commons-collections4",
-                "commons-io:commons-io",
-                "io.github.classgraph:classgraph",
-                "com.github.ben-manes.caffeine:caffeine",
-                "com.google.guava:guava",
-                "ch.qos.logback:logback-classic",
-                "ch.qos.logback:logback-access",
-                "org.hibernate.validator:hibernate-validator",
-                "org.glassfish:jakarta.el",
-                // todo fix jakarta-ee
-                "javax:javaee-api",
-                "org.glassfish:javax.el:3.0.0",
-                // todo fix jakarta-ee
-                "com.fasterxml.jackson.core:jackson-databind",
-                "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml",
-                "com.fasterxml.jackson.datatype:jackson-datatype-jdk8",
-                "com.fasterxml.jackson.datatype:jackson-datatype-jsr310",
-                "com.fasterxml.jackson.module:jackson-module-parameter-names"
+        compile "org.hibernate.validator:hibernate-validator"
+        compile "org.glassfish:jakarta.el"
+        compile "org.apache.commons:commons-lang3"
+        compile "org.apache.commons:commons-text"
+        compile "org.apache.commons:commons-collections4"
+        compile "commons-io:commons-io"
+        compile "io.github.classgraph:classgraph"
+        compile "com.github.ben-manes.caffeine:caffeine"
+        compile "com.google.guava:guava"
+        compile "ch.qos.logback:logback-classic"
+        compile "ch.qos.logback:logback-access"
+        compile "com.fasterxml.jackson.core:jackson-databind"
+        compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml"
+        compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8"
+        compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
+        compile "com.fasterxml.jackson.module:jackson-module-parameter-names"
 
-        compileOnly "io.vertx:vertx-codegen"
-
-        testCompile "junit:junit",
-                "io.vertx:vertx-unit",
-                "io.vertx:vertx-web-client"
+        testImplementation "io.projectreactor:reactor-tools"
+        testImplementation "org.junit.jupiter:junit-jupiter-api:5.6.0"
+        testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
     }
 
-    jar.manifest {
-        attributes(
-                'Implementation-Title': name,
-                'Implementation-Version': version,
-                'Built-By': System.getProperty('user.name'),
-                'Built-JDK': System.getProperty('java.version'),
-                'Source-Compatibility': sourceCompatibility,
-                'Target-Compatibility': targetCompatibility
-        )
+    test {
+        useJUnitPlatform()
     }
-
-    java {
-        withJavadocJar()
-        withSourcesJar()
-    }
-    artifacts {
-        archives javadocJar, sourcesJar
-    }
-//    [compileJava, compileTestJava].each() {
-////        it.options.compilerArgs += ["-Xlint:all", "-Xlint:-options", "-Xlint:-path"]
-//        it.options.encoding = "UTF-8"
-//        if (rootProject.hasProperty('failOnWarnings') && rootProject.failOnWarnings.toBoolean()) {
-//            it.options.compilerArgs += ["-Werror"]
-//        }
-//    }
-//    compileTestJava {
-//        // serialVersionUID is basically guaranteed to be useless in our tests
-//        options.compilerArgs += ["-Xlint:-serial"]
-//    }
-//    javadoc.options {
-//        encoding = 'UTF-8'
-//        use = true
-//        links 'https://docs.oracle.com/javase/8/docs/api/'
-//    }
-//    task javadocJar(type: Jar) {
-//        classifier = 'javadoc'
-//        from javadoc
-//    }
-//    task sourcesJar(type: Jar) {
-//        classifier = 'sources'
-//        from sourceSets.main.allSource
-//    }
-
 }
+

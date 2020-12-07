@@ -21,7 +21,7 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
-.gradle
+.gradle/
 build/
 out/
 
@@ -38,7 +38,7 @@ gradle-app.setting
 # gradle/wrapper/gradle-wrapper.properties
 
 .idea/
-*.iml
 .vertx/
 docker-command.txt
-lombok.config
+*.iml
+*.config

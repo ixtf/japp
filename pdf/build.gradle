@@ -1,4 +1,0 @@
-dependencies {
-    compile project(':core'),
-            "org.apache.pdfbox:pdfbox:2.0.19"
-}

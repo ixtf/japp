@@ -1,4 +1,4 @@
 dependencies {
-    compile project(':core')
+    compile project(":core")
     compile "com.google.inject:guice"
 }

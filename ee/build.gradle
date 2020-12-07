@@ -1,5 +1,0 @@
-dependencies {
-    compile project(':core')
-    
-    compileOnly "javax:javaee-api"
-}
