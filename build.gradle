@@ -53,10 +53,6 @@ subprojects {
                 "ch.qos.logback:logback-access",
                 "org.hibernate.validator:hibernate-validator",
                 "org.glassfish:jakarta.el",
-                // todo fix jakarta-ee
-                "javax:javaee-api",
-                "org.glassfish:javax.el:3.0.0",
-                // todo fix jakarta-ee
                 "com.fasterxml.jackson.core:jackson-databind",
                 "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml",
                 "com.fasterxml.jackson.datatype:jackson-datatype-jdk8",
