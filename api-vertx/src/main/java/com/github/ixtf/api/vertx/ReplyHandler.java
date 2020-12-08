@@ -13,12 +13,12 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
+import jakarta.validation.ConstraintViolationException;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Function;
@@ -29,7 +29,6 @@ import static com.github.ixtf.guice.GuiceModule.injectMembers;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderValues.TEXT_PLAIN;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Optional.ofNullable;
 
 public class ReplyHandler implements Handler<Message<Object>> {
     private final Object instance;
@@ -108,17 +107,15 @@ public class ReplyHandler implements Handler<Message<Object>> {
     }
 
     private void fail(Message<Object> reply, Throwable e, Optional<Span> spanOpt) {
-//        todo check Exception to log
-//        if (e instanceof InvocationTargetException) {
-//            final var ite = (InvocationTargetException) e;
-//            ofNullable(ite.getTargetException()).ifPresent(it -> fail(reply, it, spanOpt));
-//            return;
-//        }
-        reply.fail(400, e.getMessage());
-        if (!(e instanceof JError)) {
-            log.error(address, e);
+        if (e.getCause() != null) {
+            fail(reply, e.getCause(), spanOpt);
+        } else {
+            reply.fail(400, e.getMessage());
+            spanOpt.ifPresent(span -> span.setTag(Tags.ERROR, true).log(e.getMessage()).finish());
+            if (!(e instanceof JError || e instanceof ConstraintViolationException)) {
+                log.error(address, e);
+            }
         }
-        spanOpt.ifPresent(span -> span.setTag(Tags.ERROR, true).log(e.getMessage()).finish());
     }
 
 }
