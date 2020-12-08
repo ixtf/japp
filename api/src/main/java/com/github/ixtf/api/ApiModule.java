@@ -72,6 +72,7 @@ public class ApiModule extends AbstractModule {
                 ACCESS_CONTROL_ALLOW_ORIGIN.toString(),
                 ACCESS_CONTROL_ALLOW_HEADERS.toString(),
                 AUTHORIZATION.toString(),
+                CACHE_CONTROL.toString(),
                 ACCEPT.toString(),
                 ORIGIN.toString(),
                 CONTENT_TYPE.toString()
