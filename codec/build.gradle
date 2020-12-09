@@ -1,8 +1,7 @@
 dependencies {
-    compile project(':core'),
-            "commons-codec:commons-codec",
-            'com.fasterxml.uuid:java-uuid-generator'
-    
-    testCompile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.61'
+    compile project(":core")
+    compile "commons-codec:commons-codec"
+    compile "com.fasterxml.uuid:java-uuid-generator"
 
+    testImplementation "org.bouncycastle:bcprov-jdk15on:1.61"
 }

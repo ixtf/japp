@@ -1,14 +1,15 @@
-rootProject.name = 'com.github.ixtf.japp'
+rootProject.name = 'com.github.ixtf'
 include 'core'
-include 'poi'
-include 'zxing'
-include 'print'
-include 'image'
-include 'ee'
-include 'pinyin'
 include 'codec'
-//include 'vertx'
-include 'pdf'
-
 include 'guice'
+include 'poi'
+include 'pinyin'
+
+include 'persistence-core'
+include 'persistence-mongo'
+
+include 'api'
+include 'api-core'
+include 'api-vertx'
+include 'persistence-lucene'
 

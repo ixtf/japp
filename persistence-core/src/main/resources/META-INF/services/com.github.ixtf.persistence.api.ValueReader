@@ -1,0 +1,12 @@
+com.github.ixtf.persistence.api.reader.BigDecimalValueReader
+com.github.ixtf.persistence.api.reader.BigIntegerValueReader
+com.github.ixtf.persistence.api.reader.BooleanValueReader
+com.github.ixtf.persistence.api.reader.ByteValueReader
+com.github.ixtf.persistence.api.reader.CharacterValueReader
+com.github.ixtf.persistence.api.reader.DoubleValueReader
+com.github.ixtf.persistence.api.reader.EnumValueReader
+com.github.ixtf.persistence.api.reader.FloatValueReader
+com.github.ixtf.persistence.api.reader.IntegerValueReader
+com.github.ixtf.persistence.api.reader.LongValueReader
+com.github.ixtf.persistence.api.reader.ShortValueReader
+com.github.ixtf.persistence.api.reader.StringValueReader

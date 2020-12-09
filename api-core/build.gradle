@@ -1,0 +1,18 @@
+dependencies {
+    compile project(":guice")
+    compile "jakarta.ws.rs:jakarta.ws.rs-api"
+    compile "io.projectreactor:reactor-core"
+    compile "io.vertx:vertx-web"
+    compile "io.vertx:vertx-hazelcast"
+    compile "io.vertx:vertx-reactive-streams"
+    compile "io.vertx:vertx-health-check"
+    compile "io.vertx:vertx-micrometer-metrics"
+    compile "io.micrometer:micrometer-registry-prometheus"
+    compile "io.jaegertracing:jaeger-client"
+
+    compileOnly project(":persistence-mongo")
+    compileOnly "io.projectreactor.rabbitmq:reactor-rabbitmq"
+
+    testCompile project(":persistence-mongo")
+    testCompile "io.projectreactor.rabbitmq:reactor-rabbitmq"
+}

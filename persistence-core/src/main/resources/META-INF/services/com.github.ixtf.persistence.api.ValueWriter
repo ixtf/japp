@@ -1,0 +1,2 @@
+com.github.ixtf.persistence.api.writer.EnumValueWriter
+com.github.ixtf.persistence.api.writer.DefaultValueWriter
