@@ -16,10 +16,10 @@ import static com.github.ixtf.api.guice.ApiModule.CONFIG;
 import static com.github.ixtf.guice.GuiceModule.getInstance;
 
 public class MongoModule extends AbstractModule {
-    private static volatile String dbName;
+    private final String dbName;
 
     public MongoModule(String dbName) {
-        MongoModule.dbName = dbName;
+        this.dbName = dbName;
     }
 
     @Singleton
@@ -38,7 +38,7 @@ public class MongoModule extends AbstractModule {
         return MongoClients.create(builder.build());
     }
 
-    public static class Options extends JmongoOptions {
+    public class Options extends JmongoOptions {
         @Override
         protected MongoClient client() {
             return getInstance(MongoClient.class);

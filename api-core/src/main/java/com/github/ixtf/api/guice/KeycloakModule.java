@@ -20,6 +20,7 @@ public class KeycloakModule extends AbstractModule {
                 .serverUrl(config.getString("serverUrl"))
                 .username(config.getString("username"))
                 .password(config.getString("password"))
+                .realm(config.getString("realm"))
                 .build();
     }
 
@@ -27,10 +28,11 @@ public class KeycloakModule extends AbstractModule {
     @Data
     public static class KeycloakOptions {
         private final String serverUrl;
-        @Builder.Default
-        private final String realm = "master";
         private final String username;
         private final String password;
+        private final String realm;
+        @Builder.Default
+        private final String master = "master";
         @Builder.Default
         private final String clientId = "admin-cli";
     }

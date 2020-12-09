@@ -36,8 +36,8 @@ public class ReplyHandler implements Handler<Message<Object>> {
     private final String address;
 
     @Getter
-    @Inject(optional = true)
-    private Tracer tracer;
+    @Inject
+    private Optional<Tracer> tracerOpt;
     @Getter
     private final String operationName;
     private final Logger log;

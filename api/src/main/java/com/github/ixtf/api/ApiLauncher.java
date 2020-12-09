@@ -32,10 +32,7 @@ public class ApiLauncher extends Launcher {
         final var prometheusOptions = new VertxPrometheusOptions().setEnabled(true).setPublishQuantiles(true);
         final var metricsOptions = new MicrometerMetricsOptions().setEnabled(true).setPrometheusOptions(prometheusOptions);
         options.setMaxEventLoopExecuteTime(Duration.ofSeconds(30).toNanos()).setMetricsOptions(metricsOptions);
-        ofNullable(System.getProperty("hazelcast.local.publicAddress")).ifPresent(it -> {
-            options.getEventBusOptions().setHost(it);
-            options.getEventBusOptions().setClusterPublicHost(it);
-        });
+        ofNullable(System.getProperty("hazelcast.local.publicAddress")).ifPresent(it -> options.getEventBusOptions().setHost(it).setClusterPublicHost(it));
     }
 
     @Override

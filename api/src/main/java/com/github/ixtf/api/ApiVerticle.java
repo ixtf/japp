@@ -47,8 +47,8 @@ import static java.util.Optional.ofNullable;
 
 @Slf4j
 public class ApiVerticle extends AbstractVerticle {
-    @Inject(optional = true)
-    private Tracer tracer;
+    @Inject
+    private Optional<Tracer> tracerOpt;
     @Inject
     private OAuth2ClientOptions oAuth2ClientOptions;
     @Inject
@@ -120,7 +120,7 @@ public class ApiVerticle extends AbstractVerticle {
     }
 
     private Optional<Span> spanOpt(RoutingContext rc, String address) {
-        return ofNullable(tracer).map(tracer -> {
+        return tracerOpt.map(tracer -> {
             final var map = new HashMap<String, String>();
             rc.request().headers().forEach(entry -> map.put(entry.getKey(), entry.getValue()));
             final var spanBuilder = tracer.buildSpan(address);
@@ -134,11 +134,11 @@ public class ApiVerticle extends AbstractVerticle {
 
     private DeliveryOptions deliveryOptions(RoutingContext rc, Optional<Span> spanOpt) {
         final var deliveryOptions = new DeliveryOptions();
-        spanOpt.ifPresent(span -> {
+        tracerOpt.ifPresent(tracer -> spanOpt.ifPresent(span -> {
             final var map = new HashMap<String, String>();
             tracer.inject(span.context(), TEXT_MAP, new TextMapAdapter(map));
             map.forEach((k, v) -> deliveryOptions.addHeader(k, v));
-        });
+        }));
         ofNullable(rc.queryParam("timeout"))
                 .filter(it -> it.size() > 0)
                 .map(it -> it.get(0))

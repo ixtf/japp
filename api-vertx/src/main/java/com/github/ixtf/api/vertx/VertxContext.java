@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Optional.ofNullable;
 
 public class VertxContext implements ApiContext {
     private final ReplyHandler replyHandler;
@@ -44,7 +43,7 @@ public class VertxContext implements ApiContext {
 
     @Override
     public Optional<Tracer> tracerOpt() {
-        return ofNullable(replyHandler.getTracer());
+        return replyHandler.getTracerOpt();
     }
 
     @Override

@@ -12,4 +12,7 @@ dependencies {
 
     compileOnly project(":persistence-mongo")
     compileOnly "io.projectreactor.rabbitmq:reactor-rabbitmq"
+
+    testCompile project(":persistence-mongo")
+    testCompile "io.projectreactor.rabbitmq:reactor-rabbitmq"
 }

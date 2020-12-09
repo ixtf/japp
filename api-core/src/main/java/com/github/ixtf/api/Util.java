@@ -16,17 +16,11 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.github.ixtf.Constant.MAPPER;
 import static io.opentracing.propagation.Format.Builtin.TEXT_MAP;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
 
 public class Util {
-
-    public static <T> T checkAndGetCommand(Class<T> clazz, JsonNode jsonNode) {
-        final T command = MAPPER.convertValue(jsonNode, clazz);
-        return J.checkAndGetCommand(command);
-    }
 
     public static <T> T checkAndGetCommand(Class<T> clazz, JsonObject jsonObject) {
         return J.checkAndGetCommand(clazz, jsonObject.encode());
