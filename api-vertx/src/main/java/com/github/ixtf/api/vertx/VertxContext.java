@@ -1,7 +1,7 @@
 package com.github.ixtf.api.vertx;
 
 import com.github.ixtf.api.ApiContext;
-import com.google.common.collect.Maps;
+import com.google.common.collect.ImmutableMap;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.vertx.core.buffer.Buffer;
@@ -13,21 +13,25 @@ import java.util.Optional;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class VertxContext implements ApiContext {
-    private final ReplyHandler replyHandler;
+    private final ReplyHandler handler;
     private final Message reply;
+    private final Map<String, String> headers;
     private final Optional<Span> spanOpt;
 
-    public VertxContext(ReplyHandler replyHandler, Message reply) {
-        this.replyHandler = replyHandler;
+    public VertxContext(ReplyHandler handler, Message reply) {
+        this.handler = handler;
         this.reply = reply;
-        spanOpt = spanOpt(replyHandler.getOperationName());
+
+        final var builder = ImmutableMap.<String, String>builder();
+        reply.headers().forEach(entry -> builder.put(entry.getKey(), entry.getValue()));
+        headers = builder.build();
+
+        spanOpt = spanOpt(handler.getOperationName());
     }
 
     @Override
     public Map<String, String> headers() {
-        final var ret = Maps.<String, String>newHashMap();
-        reply.headers().forEach(entry -> ret.put(entry.getKey(), entry.getValue()));
-        return ret;
+        return headers;
     }
 
     @Override
@@ -43,7 +47,7 @@ public class VertxContext implements ApiContext {
 
     @Override
     public Optional<Tracer> tracerOpt() {
-        return replyHandler.getTracerOpt();
+        return handler.getTracerOpt();
     }
 
     @Override
