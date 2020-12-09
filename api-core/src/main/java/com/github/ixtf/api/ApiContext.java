@@ -2,18 +2,17 @@ package com.github.ixtf.api;
 
 import com.github.ixtf.J;
 import com.sun.security.auth.UserPrincipal;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.util.AsciiString;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.TextMapAdapter;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 
 import java.security.Principal;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.github.ixtf.api.Util.checkAndGetCommand;
 import static io.opentracing.propagation.Format.Builtin.TEXT_MAP;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Optional.ofNullable;
@@ -29,7 +28,7 @@ public interface ApiContext {
     Optional<Span> spanOpt();
 
     default String bodyAsString() {
-        return new String(body(), UTF_8);
+        return ofNullable(body()).map(Buffer::buffer).map(it -> it.toString(UTF_8)).orElse(null);
     }
 
     default <T> T command(Class<T> clazz) {
