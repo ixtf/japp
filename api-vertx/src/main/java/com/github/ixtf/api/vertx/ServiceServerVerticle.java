@@ -3,9 +3,13 @@ package com.github.ixtf.api.vertx;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 import static com.github.ixtf.api.guice.ApiModule.ACTIONS;
 import static com.github.ixtf.guice.GuiceModule.injectMembers;
@@ -16,8 +20,14 @@ public class ServiceServerVerticle extends AbstractVerticle {
     private Collection<Method> methods;
 
     @Override
-    public void start() throws Exception {
+    public void start(Promise<Void> startPromise) throws Exception {
         injectMembers(this);
-        methods.forEach(ReplyHandler::consumer);
+        CompositeFuture.all(methods.stream()
+                .map(ReplyHandler::consumer)
+                .map(it -> Future.future(p -> it.completionHandler(p)))
+                .collect(Collectors.toUnmodifiableList()))
+                .<Void>mapEmpty()
+                .onComplete(startPromise);
     }
+
 }
