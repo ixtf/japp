@@ -79,7 +79,7 @@ public class ApiModule extends AbstractModule {
                 ORIGIN.toString(),
                 CONTENT_TYPE.toString()
         );
-        return CorsHandler.create(allowedOriginPattern).allowedHeaders(allowedHeaders);
+        return CorsHandler.create(allowedOriginPattern).allowedHeaders(allowedHeaders).allowCredentials(true);
     }
 
     @Singleton
