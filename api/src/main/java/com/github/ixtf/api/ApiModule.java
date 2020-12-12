@@ -9,14 +9,13 @@ import io.opentracing.Tracer;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.oauth2.OAuth2ClientOptions;
+import io.vertx.ext.auth.oauth2.OAuth2Options;
 import io.vertx.ext.web.handler.CorsHandler;
 
 import java.util.Set;
 import java.util.stream.StreamSupport;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static io.vertx.ext.auth.oauth2.OAuth2FlowType.AUTH_CODE;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 
@@ -50,11 +49,11 @@ public class ApiModule extends AbstractModule {
 
     @Singleton
     @Provides
-    private OAuth2ClientOptions OAuth2ClientOptions(@Named(ROOT_CONFIG) JsonObject rootConfig) {
+    private OAuth2Options OAuth2Options(@Named(ROOT_CONFIG) JsonObject rootConfig) {
         final var config = rootConfig.getJsonObject("keycloak", new JsonObject());
         final var site = config.getString("site", "https://sso.medipath.com.cn/auth/realms/medipath");
         final var clientID = config.getString("clientID", "api");
-        return new OAuth2ClientOptions().setSite(site).setClientID(clientID).setFlow(AUTH_CODE);
+        return new OAuth2Options().setSite(site).setClientID(clientID);
     }
 
     @Provides
