@@ -31,8 +31,19 @@ import static java.util.Optional.ofNullable;
 public abstract class Jmongo {
     public static final String ID_COL = "_id";
     public static final String DELETED_COL = "deleted";
-    private static final LoadingCache<Class<? extends JmongoOptions>, Jmongo> CACHE = Caffeine.newBuilder().build(clazz -> {
-        final var options = clazz.getDeclaredConstructor().newInstance();
+    private static final LoadingCache<Class<? extends JmongoOptions>, Jmongo> CACHE = Caffeine.newBuilder().build(clazz -> Jmongo.by(clazz.getDeclaredConstructor().newInstance()));
+    private final LoadingCache<Pair<Class, Object>, Object> entityCache;
+    private final EntityConverter entityConverter;
+
+    private Jmongo() {
+        entityConverter = DocumentEntityConverter.get(this);
+        entityCache = !entityCacheOptions().isCacheable() ? null : Caffeine.newBuilder()
+                .maximumSize(entityCacheOptions().getMaximumSize())
+                .build(key -> find(key.getLeft(), eq(ID_COL, key.getRight())).block());
+    }
+
+    @SneakyThrows
+    private static <T extends JmongoOptions> Jmongo by(T options) {
         final var client = options.client();
         final var dbName = options.dbName();
         return new Jmongo() {
@@ -51,20 +62,16 @@ public abstract class Jmongo {
                 return options.entityCacheOptions();
             }
         };
-    });
-    private final LoadingCache<Pair<Class, Object>, Object> entityCache;
-    private final EntityConverter entityConverter;
-
-    private Jmongo() {
-        entityConverter = DocumentEntityConverter.get(this);
-        entityCache = !entityCacheOptions().isCacheable() ? null : Caffeine.newBuilder()
-                .maximumSize(entityCacheOptions().getMaximumSize())
-                .build(key -> find(key.getLeft(), eq(ID_COL, key.getRight())).block());
     }
 
     @SneakyThrows
     public static Jmongo of(Class<? extends JmongoOptions> clazz) {
         return CACHE.get(clazz);
+    }
+
+    @SneakyThrows
+    public static <T extends JmongoOptions> Jmongo of(T options) {
+        return CACHE.get(options.getClass(), it -> Jmongo.by(options));
     }
 
     public abstract MongoClient client();

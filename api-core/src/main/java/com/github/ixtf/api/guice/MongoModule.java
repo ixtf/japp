@@ -16,7 +16,7 @@ import static com.github.ixtf.api.guice.ApiModule.CONFIG;
 import static com.github.ixtf.guice.GuiceModule.getInstance;
 
 public class MongoModule extends AbstractModule {
-    private final String dbName;
+    private String dbName;
 
     public MongoModule(String dbName) {
         this.dbName = dbName;
@@ -25,7 +25,7 @@ public class MongoModule extends AbstractModule {
     @Singleton
     @Provides
     private Jmongo Jmongo() {
-        return Jmongo.of(Options.class);
+        return Jmongo.of(new Options());
     }
 
     @Singleton
