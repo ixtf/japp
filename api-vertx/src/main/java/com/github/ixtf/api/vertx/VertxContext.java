@@ -6,6 +6,8 @@ import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 import java.util.Map;
 import java.util.Optional;
@@ -50,6 +52,12 @@ public class VertxContext implements ApiContext {
                             return (Buffer) it;
                         } else if (it instanceof byte[]) {
                             return Buffer.buffer((byte[]) it);
+                        } else if (it instanceof JsonObject) {
+                            final var v = (JsonObject) it;
+                            return Buffer.buffer(v.encode());
+                        } else if (it instanceof JsonArray) {
+                            final var v = (JsonArray) it;
+                            return Buffer.buffer(v.encode());
                         } else {
                             return Buffer.buffer((String) it);
                         }
