@@ -9,11 +9,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.MessageConsumer;
 import jakarta.validation.ConstraintViolationException;
 import lombok.Getter;
 import org.slf4j.Logger;
@@ -58,16 +58,20 @@ public class ReplyHandler implements Handler<Message<Object>> {
         log = LoggerFactory.getLogger(instance.getClass());
     }
 
-    public static MessageConsumer consumer(Method method) {
-        final var handler = new ReplyHandler(method);
-        injectMembers(handler);
-        return getInstance(Vertx.class).eventBus().consumer(handler.address, handler);
+    public static Future<Void> consumer(Method method) {
+        return Future.future(p -> {
+            final var handler = new ReplyHandler(method);
+            injectMembers(handler);
+            getInstance(Vertx.class).eventBus().consumer(handler.address, handler).completionHandler(p);
+        });
     }
 
-    public static MessageConsumer localConsumer(Method method) {
-        final var handler = new ReplyHandler(method);
-        injectMembers(handler);
-        return getInstance(Vertx.class).eventBus().localConsumer(handler.address, handler);
+    public static Future<Void> localConsumer(Method method) {
+        return Future.future(p -> {
+            final var handler = new ReplyHandler(method);
+            injectMembers(handler);
+            getInstance(Vertx.class).eventBus().localConsumer(handler.address, handler).completionHandler(p);
+        });
     }
 
     @Override

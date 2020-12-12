@@ -24,7 +24,6 @@ public class ServiceServerVerticle extends AbstractVerticle {
         injectMembers(this);
         CompositeFuture.all(methods.stream()
                 .map(ReplyHandler::consumer)
-                .map(it -> Future.future(p -> it.completionHandler(p)))
                 .collect(Collectors.toUnmodifiableList()))
                 .<Void>mapEmpty()
                 .onComplete(startPromise);
