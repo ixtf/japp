@@ -70,8 +70,8 @@ public class ApiVerticle extends AbstractVerticle {
         final var sockJSBridgeOptions = new SockJSBridgeOptions().addOutboundPermitted(permitted);
         router.mountSubRouter("/eventbus", SockJSHandler.create(vertx).bridge(sockJSBridgeOptions));
 
-        router.route("/api/services/:service/actions/:action").handler(OAuth2AuthHandler.create(vertx, oAuth2Auth)).handler(this::handleApi);
-        router.route("/dl/services/:service/actions/:action/tokens/:token").handler(this::handleDl);
+        router.route("/api/services/:service/actions/:action").produces(APPLICATION_JSON.toString()).handler(OAuth2AuthHandler.create(vertx, oAuth2Auth)).handler(this::handleApi);
+        router.route("/dl/services/:service/actions/:action/tokens/:token").produces(APPLICATION_OCTET_STREAM.toString()).handler(this::handleDl);
 
         final var httpServerOptions = new HttpServerOptions().setCompressionSupported(true);
         return vertx.createHttpServer(httpServerOptions).requestHandler(router).listen(9998);
