@@ -12,6 +12,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 import static com.github.ixtf.Constant.MAPPER;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -57,6 +58,10 @@ public class ApiResponse {
         if (o instanceof JsonArray) {
             final var v = (JsonArray) o;
             return Mono.just(v.encode().getBytes(UTF_8));
+        }
+        if (o instanceof CompletionStage) {
+            final var v = (CompletionStage) o;
+            return Mono.fromCompletionStage(v).flatMap(ApiResponse::bodyMono).defaultIfEmpty(StringUtils.EMPTY);
         }
         if (o instanceof Mono) {
             final var v = (Mono) o;

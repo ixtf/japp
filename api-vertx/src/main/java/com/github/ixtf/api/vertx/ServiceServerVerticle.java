@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 
 import static com.github.ixtf.api.guice.ApiModule.ACTIONS;
 import static com.github.ixtf.guice.GuiceModule.injectMembers;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class ServiceServerVerticle extends AbstractVerticle {
     @Named(ACTIONS)
@@ -24,7 +25,7 @@ public class ServiceServerVerticle extends AbstractVerticle {
         injectMembers(this);
         CompositeFuture.all(methods.stream()
                 .map(ReplyHandler::consumer)
-                .collect(Collectors.toUnmodifiableList()))
+                .collect(toUnmodifiableList()))
                 .<Void>mapEmpty()
                 .onComplete(startPromise);
     }
