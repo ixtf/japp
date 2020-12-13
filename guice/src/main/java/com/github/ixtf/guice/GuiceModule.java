@@ -2,9 +2,12 @@ package com.github.ixtf.guice;
 
 import com.google.inject.Module;
 import com.google.inject.*;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 import java.lang.annotation.Annotation;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class GuiceModule extends AbstractModule {
     private static Injector INJECTOR;
 
@@ -26,4 +29,5 @@ public class GuiceModule extends AbstractModule {
         INJECTOR.injectMembers(o);
         return o;
     }
+
 }

@@ -7,7 +7,6 @@ import io.vertx.core.Launcher;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.tracing.TracingOptions;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import lombok.SneakyThrows;
@@ -30,7 +29,6 @@ public class ApiLauncher extends Launcher {
 
     @Override
     public void beforeStartingVertx(VertxOptions options) {
-//        options.setTracingOptions(new TracingOptions());
         final var prometheusOptions = new VertxPrometheusOptions().setEnabled(true).setPublishQuantiles(true);
         final var metricsOptions = new MicrometerMetricsOptions().setEnabled(true).setPrometheusOptions(prometheusOptions);
         options.setMaxEventLoopExecuteTime(Duration.ofSeconds(30).toNanos()).setMetricsOptions(metricsOptions);

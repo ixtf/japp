@@ -4,9 +4,12 @@ import com.github.ixtf.api.ApiAction;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.github.classgraph.ClassGraph;
+import io.jaegertracing.Configuration;
+import io.opentracing.Tracer;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 
@@ -16,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public abstract class ApiModule extends AbstractModule {
@@ -37,6 +41,7 @@ public abstract class ApiModule extends AbstractModule {
         bind(Vertx.class).toInstance(vertx);
         bind(String.class).annotatedWith(Names.named(SERVICE)).toInstance(service);
         bind(JsonObject.class).annotatedWith(Names.named(CONFIG)).toInstance(config);
+        OptionalBinder.newOptionalBinder(binder(), Tracer.class);
     }
 
     @Named(ACTIONS)
@@ -64,5 +69,18 @@ public abstract class ApiModule extends AbstractModule {
 
     protected Collection<String> ActionClasses() {
         return List.of();
+    }
+
+    @Singleton
+    @Provides
+    private Tracer Tracer() {
+        return ofNullable(config.getJsonObject("tracer")).map(it -> {
+            final var serviceName = it.getString("serviceName", service);
+            final var agentHost = it.getString("agentHost", "dev.medipath.com.cn");
+            final var samplerConfig = Configuration.SamplerConfiguration.fromEnv().withType("const").withParam(1);
+            final var senderConfiguration = new Configuration.SenderConfiguration().withAgentHost(agentHost);
+            final var reporterConfig = Configuration.ReporterConfiguration.fromEnv().withSender(senderConfiguration).withLogSpans(true);
+            return new Configuration(serviceName).withSampler(samplerConfig).withReporter(reporterConfig).getTracer();
+        }).orElse(null);
     }
 }
