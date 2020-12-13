@@ -4,37 +4,56 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.mongodb.Function;
 import io.vertx.core.json.JsonObject;
-import lombok.Builder;
-import lombok.Data;
+import lombok.Cleanup;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
+
+import java.util.function.Consumer;
 
 import static com.github.ixtf.api.guice.ApiModule.CONFIG;
+import static com.github.ixtf.guice.GuiceModule.getInstance;
 
 public class KeycloakModule extends AbstractModule {
 
-    @Singleton
     @Provides
-    private KeycloakOptions KeycloakOptions(@Named(CONFIG) JsonObject rootConfig) {
+    private Keycloak Keycloak(@Named(CONFIG) JsonObject rootConfig) {
         final var config = rootConfig.getJsonObject("keycloak-admin");
-        return KeycloakOptions.builder()
-                .serverUrl(config.getString("serverUrl"))
-                .username(config.getString("username"))
-                .password(config.getString("password"))
-                .realm(config.getString("realm"))
-                .build();
+        return Keycloak.getInstance(
+                config.getString("serverUrl"),
+                config.getString("master", "master"),
+                config.getString("username"),
+                config.getString("password"),
+                config.getString("clientId", "admin-cli")
+        );
     }
 
-    @Builder
-    @Data
-    public static class KeycloakOptions {
-        private final String serverUrl;
-        private final String username;
-        private final String password;
+    @Singleton
+    @Provides
+    private KeycloakCall KeycloakCall(@Named(CONFIG) JsonObject rootConfig) {
+        final var config = rootConfig.getJsonObject("keycloak-admin");
+        return new KeycloakCall(config.getString("realm"));
+    }
+
+    public static class KeycloakCall {
         private final String realm;
-        @Builder.Default
-        private final String master = "master";
-        @Builder.Default
-        private final String clientId = "admin-cli";
+
+        private KeycloakCall(String realm) {
+            this.realm = realm;
+        }
+
+        public void run(Consumer<RealmResource> consumer) {
+            @Cleanup final var keycloak = getInstance(Keycloak.class);
+            final var realmResource = keycloak.realm(realm);
+            consumer.accept(realmResource);
+        }
+
+        public <T> T call(Function<RealmResource, T> function) {
+            @Cleanup final var keycloak = getInstance(Keycloak.class);
+            final var realmResource = keycloak.realm(realm);
+            return function.apply(realmResource);
+        }
     }
 
 }
