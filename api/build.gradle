@@ -14,7 +14,10 @@ dependencies {
     implementation "io.vertx:vertx-health-check"
     implementation "io.vertx:vertx-micrometer-metrics"
     implementation "io.micrometer:micrometer-registry-prometheus"
+    implementation "io.cloudevents:cloudevents-http-vertx:2.0.0.RC2"
     implementation "io.jaegertracing:jaeger-client"
+
+
 }
 
 mainClassName = "com.github.ixtf.api.ApiLauncher"

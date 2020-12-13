@@ -1,6 +1,9 @@
 package com.github.ixtf.api;
 
 import com.google.inject.Inject;
+import io.cloudevents.CloudEvent;
+import io.cloudevents.core.builder.CloudEventBuilder;
+import io.cloudevents.http.vertx.VertxMessageFactory;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
@@ -30,6 +33,7 @@ import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 import io.vertx.micrometer.PrometheusScrapingHandler;
 import lombok.extern.slf4j.Slf4j;
 
+import java.net.URI;
 import java.security.Principal;
 import java.time.Duration;
 import java.util.HashMap;
@@ -88,6 +92,17 @@ public class ApiVerticle extends AbstractVerticle {
         final var deliveryOptions = deliveryOptions(rc, spanOpt);
         final var principal = rc.user().attributes().getString("sub");
         deliveryOptions.addHeader(Principal.class.getName(), principal);
+
+        final var cloudEvent = CloudEventBuilder.v1()
+                .withId(address)
+                .withType("EB")
+                .withData(rc.getBody().getBytes())
+                .withSubject(principal)
+                .withSource(URI.create(rc.request().uri()))
+                .withExtension("","")
+                .build();
+        System.out.println(cloudEvent);
+
         rc.response().putHeader(CONTENT_TYPE, APPLICATION_JSON);
         vertx.eventBus().request(address, rc.getBody(), deliveryOptions)
                 .onSuccess(it -> this.onSuccess(rc, it, spanOpt))
@@ -107,17 +122,22 @@ public class ApiVerticle extends AbstractVerticle {
         final var statusCode = response.getStatusCode();
         if (statusCode >= 300 && statusCode < 400) {
             response.end();
+            spanOpt.ifPresent(Span::finish);
         } else {
             final var body = message.body();
             if (body == null) {
                 response.end();
+                spanOpt.ifPresent(Span::finish);
             } else if (body instanceof Buffer) {
                 response.end((Buffer) body);
+                spanOpt.ifPresent(Span::finish);
             } else if (body instanceof byte[]) {
                 final var bytes = (byte[]) body;
                 response.end(Buffer.buffer(bytes));
+                spanOpt.ifPresent(Span::finish);
             } else if (body instanceof String) {
                 response.end((String) body);
+                spanOpt.ifPresent(Span::finish);
             } else {
                 onFailure(rc, new RuntimeException("body must be (null | Buffer | byte[] | String)"), spanOpt);
             }
@@ -127,7 +147,7 @@ public class ApiVerticle extends AbstractVerticle {
     private void onFailure(RoutingContext rc, Throwable e, Optional<Span> spanOpt) {
         rc.fail(e);
         log.error(apiAddress(rc), e);
-        spanOpt.ifPresent(it -> it.setTag(Tags.ERROR, true).log(e.getMessage()));
+        spanOpt.ifPresent(it -> it.setTag(Tags.ERROR, true).log(e.getMessage()).finish());
     }
 
     private void handleDl(RoutingContext rc) {
