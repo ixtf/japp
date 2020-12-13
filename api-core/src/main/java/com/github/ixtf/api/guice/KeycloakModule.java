@@ -7,6 +7,7 @@ import com.google.inject.name.Named;
 import com.mongodb.Function;
 import io.vertx.core.json.JsonObject;
 import lombok.Cleanup;
+import lombok.Getter;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 
@@ -37,6 +38,7 @@ public class KeycloakModule extends AbstractModule {
     }
 
     public static class KeycloakCall {
+        @Getter
         private final String realm;
 
         private KeycloakCall(String realm) {
