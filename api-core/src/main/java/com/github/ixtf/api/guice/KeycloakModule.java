@@ -37,7 +37,7 @@ public class KeycloakModule extends AbstractModule {
         return new KeycloakRealm(config.getString("realm"));
     }
 
-    public static class KeycloakRealm {
+    public class KeycloakRealm {
         @Getter
         private final String realm;
 
