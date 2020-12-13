@@ -32,16 +32,16 @@ public class KeycloakModule extends AbstractModule {
 
     @Singleton
     @Provides
-    private KeycloakCall KeycloakCall(@Named(CONFIG) JsonObject rootConfig) {
+    private KeycloakRealm KeycloakRealm(@Named(CONFIG) JsonObject rootConfig) {
         final var config = rootConfig.getJsonObject("keycloak-admin");
-        return new KeycloakCall(config.getString("realm"));
+        return new KeycloakRealm(config.getString("realm"));
     }
 
-    public static class KeycloakCall {
+    public static class KeycloakRealm {
         @Getter
         private final String realm;
 
-        private KeycloakCall(String realm) {
+        private KeycloakRealm(String realm) {
             this.realm = realm;
         }
 
