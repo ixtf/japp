@@ -2,8 +2,6 @@ package com.github.ixtf.api;
 
 import com.google.inject.*;
 import com.google.inject.multibindings.OptionalBinder;
-import com.google.inject.name.Named;
-import com.google.inject.name.Names;
 import io.jaegertracing.Configuration;
 import io.opentracing.Tracer;
 import io.vertx.core.Vertx;
@@ -20,7 +18,6 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 
 public class ApiModule extends AbstractModule {
-    private static final String ROOT_CONFIG = "ROOT_CONFIG";
     private static volatile Injector INJECTOR;
     private final Vertx vertx;
     private final JsonObject config;
@@ -43,22 +40,21 @@ public class ApiModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(Vertx.class).toInstance(vertx);
-        bind(JsonObject.class).annotatedWith(Names.named(ROOT_CONFIG)).toInstance(config);
         OptionalBinder.newOptionalBinder(binder(), Tracer.class);
     }
 
     @Singleton
     @Provides
-    private OAuth2Options OAuth2Options(@Named(ROOT_CONFIG) JsonObject rootConfig) {
-        final var config = rootConfig.getJsonObject("keycloak", new JsonObject());
+    private OAuth2Options OAuth2Options() {
+        final var config = this.config.getJsonObject("keycloak", new JsonObject());
         final var site = config.getString("site", "https://sso.medipath.com.cn/auth/realms/medipath");
         final var clientID = config.getString("clientID", "api");
         return new OAuth2Options().setSite(site).setClientID(clientID);
     }
 
     @Provides
-    private CorsHandler CorsHandler(@Named(ROOT_CONFIG) JsonObject rootConfig) {
-        final var config = rootConfig.getJsonObject("cors", new JsonObject());
+    private CorsHandler CorsHandler() {
+        final var config = this.config.getJsonObject("cors", new JsonObject());
         final var allowedOriginPattern = ofNullable(config.getJsonArray("webOrigins"))
                 .map(JsonArray::spliterator)
                 .map(spliterator -> StreamSupport.stream(spliterator, true)
@@ -84,12 +80,14 @@ public class ApiModule extends AbstractModule {
 
     @Singleton
     @Provides
-    private Tracer Tracer(@Named(ROOT_CONFIG) JsonObject rootConfig) {
-        final var config = rootConfig.getJsonObject("tracer", new JsonObject());
-        final var agentHost = config.getString("agentHost", "dev.medipath.com.cn");
-        final var samplerConfig = Configuration.SamplerConfiguration.fromEnv().withType("const").withParam(1);
-        final var senderConfiguration = new Configuration.SenderConfiguration().withAgentHost(agentHost);
-        final var reporterConfig = Configuration.ReporterConfiguration.fromEnv().withSender(senderConfiguration).withLogSpans(true);
-        return new Configuration("api").withSampler(samplerConfig).withReporter(reporterConfig).getTracer();
+    private Tracer Tracer() {
+        return ofNullable(config.getJsonObject("tracer")).map(it -> {
+            final var serviceName = it.getString("serviceName", "api");
+            final var agentHost = it.getString("agentHost", "dev.medipath.com.cn");
+            final var samplerConfig = Configuration.SamplerConfiguration.fromEnv().withType("const").withParam(1);
+            final var senderConfiguration = new Configuration.SenderConfiguration().withAgentHost(agentHost);
+            final var reporterConfig = Configuration.ReporterConfiguration.fromEnv().withSender(senderConfiguration).withLogSpans(true);
+            return new Configuration(serviceName).withSampler(samplerConfig).withReporter(reporterConfig).getTracer();
+        }).orElse(null);
     }
 }
