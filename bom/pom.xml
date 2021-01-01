@@ -29,7 +29,7 @@
         <poiVersion>4.1.2</poiVersion>
         <mammothVersion>1.4.0</mammothVersion>
         <zxingVersion>3.4.1</zxingVersion>
-        <droolsVersion>7.41.0.Final</droolsVersion>
+        <droolsVersion>7.47.0.Final</droolsVersion>
         <micrometerVersion>1.6.1</micrometerVersion>
         <grpcVersion>1.28.1</grpcVersion>
         <protobufVersion>3.11.4</protobufVersion>
