@@ -56,6 +56,9 @@ public class ApiVerticle extends AbstractVerticle {
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
         injectMembers(this);
+
+        vertx.eventBus().consumer("__com.github.ixtf.api:KeycloakAdmin__", ApiModule::handleKeycloakAdmin);
+
         discover(vertx, oAuth2Options).flatMap(this::createHttpServer).<Void>mapEmpty().onComplete(startPromise);
     }
 

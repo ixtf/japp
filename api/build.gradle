@@ -15,8 +15,6 @@ dependencies {
     implementation "io.vertx:vertx-micrometer-metrics"
     implementation "io.micrometer:micrometer-registry-prometheus"
     implementation "io.jaegertracing:jaeger-client"
-
-    compileOnly "org.keycloak:keycloak-admin-client"
 }
 
 mainClassName = "com.github.ixtf.api.ApiLauncher"

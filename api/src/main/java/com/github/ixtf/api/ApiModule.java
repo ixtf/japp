@@ -7,6 +7,7 @@ import com.google.inject.name.Names;
 import io.jaegertracing.Configuration;
 import io.opentracing.Tracer;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.oauth2.OAuth2Options;
@@ -24,7 +25,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 
 public class ApiModule extends AbstractModule {
-    public static final String CONFIG = "__:ApiModule:CONFIG:__";
+    public static final String CONFIG = "__:ApiModule:CONFIG__";
     private static volatile Injector INJECTOR;
     private final Vertx vertx;
     private final JsonObject config;
@@ -53,6 +54,10 @@ public class ApiModule extends AbstractModule {
 
     public static void injectMembers(Object o) {
         INJECTOR.injectMembers(o);
+    }
+
+    public static void handleKeycloakAdmin(Message reply) {
+        reply.reply(getInstance(JsonObject.class, Names.named(CONFIG)).getJsonObject("keycloak-admin", new JsonObject()));
     }
 
     @Override
@@ -109,4 +114,5 @@ public class ApiModule extends AbstractModule {
             return new Configuration(serviceName).withSampler(samplerConfig).withReporter(reporterConfig).getTracer();
         }).orElse(null);
     }
+
 }
