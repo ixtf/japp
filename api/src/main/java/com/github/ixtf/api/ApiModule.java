@@ -1,5 +1,6 @@
 package com.github.ixtf.api;
 
+import com.google.inject.Module;
 import com.google.inject.*;
 import com.google.inject.multibindings.OptionalBinder;
 import io.jaegertracing.Configuration;
@@ -10,7 +11,10 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.oauth2.OAuth2Options;
 import io.vertx.ext.web.handler.CorsHandler;
 
+import java.util.Arrays;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
@@ -27,9 +31,12 @@ public class ApiModule extends AbstractModule {
         this.config = config;
     }
 
-    synchronized public static void init(Vertx vertx, JsonObject config) {
+    synchronized public static void init(Vertx vertx, JsonObject config, Module... modules) {
         if (INJECTOR == null) {
-            INJECTOR = Guice.createInjector(new ApiModule(vertx, config));
+            INJECTOR = Guice.createInjector(Stream.concat(
+                    Stream.of(new ApiModule(vertx, config)),
+                    ofNullable(modules).map(Arrays::stream).stream().flatMap(Function.identity())
+            ).toArray(Module[]::new));
         }
     }
 
