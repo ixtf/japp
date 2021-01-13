@@ -3,7 +3,7 @@ package com.github.ixtf.api;
 import com.google.inject.Module;
 import com.google.inject.*;
 import com.google.inject.multibindings.OptionalBinder;
-import com.google.inject.name.Names;
+import com.google.inject.name.Named;
 import io.jaegertracing.Configuration;
 import io.opentracing.Tracer;
 import io.vertx.core.Vertx;
@@ -20,12 +20,13 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.google.inject.name.Names.named;
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 
 public class ApiModule extends AbstractModule {
-    public static final String CONFIG = "__:ApiModule:CONFIG__";
+    public static final Named CONFIG = named("__:ApiModule:CONFIG__");
     private static volatile Injector INJECTOR;
     private final Vertx vertx;
     private final JsonObject config;
@@ -57,13 +58,13 @@ public class ApiModule extends AbstractModule {
     }
 
     public static void handleKeycloakAdmin(Message reply) {
-        reply.reply(getInstance(JsonObject.class, Names.named(CONFIG)).getJsonObject("keycloak-admin", new JsonObject()));
+        reply.reply(getInstance(JsonObject.class, CONFIG).getJsonObject("keycloak-admin", new JsonObject()));
     }
 
     @Override
     protected void configure() {
         bind(Vertx.class).toInstance(vertx);
-        bind(JsonObject.class).annotatedWith(Names.named(CONFIG)).toInstance(config);
+        bind(JsonObject.class).annotatedWith(CONFIG).toInstance(config);
         OptionalBinder.newOptionalBinder(binder(), Tracer.class);
     }
 
