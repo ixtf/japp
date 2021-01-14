@@ -4,6 +4,7 @@ import com.github.ixtf.api.ApiContext;
 import com.google.common.collect.ImmutableMap;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
+import io.opentracing.propagation.TextMapAdapter;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.opentracing.propagation.Format.Builtin.TEXT_MAP;
 import static java.util.Optional.ofNullable;
 
 public class VertxContext implements ApiContext {
@@ -25,7 +27,11 @@ public class VertxContext implements ApiContext {
     public VertxContext(ReplyHandler handler, Message reply) {
         this.handler = handler;
         this.reply = reply;
-        spanOpt = spanOpt(handler.getOperationName());
+        spanOpt = handler.getTracerOpt().map(tracer -> {
+            final var spanBuilder = tracer.buildSpan(handler.getOperationName());
+            ofNullable(headers()).map(TextMapAdapter::new).map(it -> tracer.extract(TEXT_MAP, it)).ifPresent(spanBuilder::asChildOf);
+            return spanBuilder.start();
+        });
     }
 
     @Override
