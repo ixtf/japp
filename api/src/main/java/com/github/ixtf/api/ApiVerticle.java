@@ -46,6 +46,7 @@ import static java.util.Optional.ofNullable;
 
 @Slf4j
 public class ApiVerticle extends AbstractVerticle {
+    private static final String KeycloakAdmin = "__com.github.ixtf.api:KeycloakAdmin__";
     @Inject
     private Optional<Tracer> tracerOpt;
     @Inject
@@ -57,7 +58,7 @@ public class ApiVerticle extends AbstractVerticle {
     public void start(Promise<Void> startPromise) throws Exception {
         injectMembers(this);
 
-        vertx.eventBus().consumer("__com.github.ixtf.api:KeycloakAdmin__", ApiModule::handleKeycloakAdmin);
+        vertx.eventBus().consumer(KeycloakAdmin, ApiModule::handleKeycloakAdmin);
 
         discover(vertx, oAuth2Options).flatMap(this::createHttpServer).<Void>mapEmpty().onComplete(startPromise);
     }

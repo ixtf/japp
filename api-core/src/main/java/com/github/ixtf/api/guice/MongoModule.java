@@ -16,7 +16,7 @@ import static com.github.ixtf.api.guice.ApiModule.CONFIG;
 import static com.github.ixtf.guice.GuiceModule.getInstance;
 
 public class MongoModule extends AbstractModule {
-    private String dbName;
+    private final String dbName;
 
     public MongoModule(String dbName) {
         this.dbName = dbName;

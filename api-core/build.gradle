@@ -13,5 +13,4 @@ dependencies {
     compileOnly project(":persistence-mongo")
     compileOnly "io.projectreactor.rabbitmq:reactor-rabbitmq"
     compileOnly "org.keycloak:keycloak-admin-client"
-    testCompile "org.keycloak:keycloak-admin-client"
 }

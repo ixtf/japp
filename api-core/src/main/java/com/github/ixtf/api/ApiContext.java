@@ -53,38 +53,26 @@ public interface ApiContext {
         return principalOpt().get();
     }
 
-    default Optional<Span> spanOpt(final String operationName) {
-        return tracerOpt().map(tracer -> {
-            final var spanBuilder = tracer.buildSpan(operationName);
-            ofNullable(headers()).map(TextMapAdapter::new).map(it -> tracer.extract(TEXT_MAP, it)).ifPresent(spanBuilder::asChildOf);
-            return spanBuilder.start();
-        });
-    }
-
-    default DeliveryOptions injectDeliveryOptions(Optional<Span> spanOpt) {
-        final var deliveryOptions = new DeliveryOptions();
-        tracerOpt().ifPresent(tracer -> spanOpt.map(Span::context).ifPresent(spanContext -> {
-            final var map = J.<String, String>newHashMap();
-            tracer.inject(spanContext, TEXT_MAP, new TextMapAdapter(map));
-            map.forEach((k, v) -> deliveryOptions.addHeader(k, v));
-        }));
-        principalOpt().map(Principal::getName).ifPresent(it -> deliveryOptions.addHeader(Principal.class.getName(), it));
-        return deliveryOptions;
-    }
-
-    default DeliveryOptions injectDeliveryOptions() {
-        return injectDeliveryOptions(spanOpt());
-    }
-
-    default Map injectMap(Optional<Span> spanOpt) {
+    default Map injectMap() {
         final Map map = J.newHashMap();
-        tracerOpt().ifPresent(tracer -> spanOpt.map(Span::context).ifPresent(spanContext -> tracer.inject(spanContext, TEXT_MAP, new TextMapAdapter(map))));
+        tracerOpt().ifPresent(tracer -> spanOpt().map(Span::context).ifPresent(it -> tracer.inject(it, TEXT_MAP, new TextMapAdapter(map))));
         principalOpt().map(Principal::getName).ifPresent(it -> map.put(Principal.class.getName(), it));
         return map;
     }
 
-    default Map injectMap() {
-        return injectMap(spanOpt());
+    default DeliveryOptions injectDeliveryOptions() {
+        final var deliveryOptions = new DeliveryOptions();
+        final Map<String, String> map = injectMap();
+        map.forEach((k, v) -> deliveryOptions.addHeader(k, v));
+        return deliveryOptions;
+    }
+
+    default Optional<Span> spanOpt(final String operationName) {
+        return tracerOpt().map(tracer -> {
+            final var spanBuilder = tracer.buildSpan(operationName);
+            spanOpt().ifPresent(spanBuilder::asChildOf);
+            return spanBuilder.start();
+        });
     }
 
 }

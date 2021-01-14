@@ -35,7 +35,7 @@ public class RabbitModule extends AbstractModule {
     }
 
     @Provides
-    private ConnectionFactory ConnectionFactory(@Named(CONFIG) JsonObject rootConfig, @Named(SERVICE) String group) {
+    private ConnectionFactory ConnectionFactory(@Named(CONFIG) JsonObject rootConfig) {
         final var config = rootConfig.getJsonObject("rabbit");
 
         final var connectionFactory = new ConnectionFactory();

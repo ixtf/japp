@@ -3,24 +3,38 @@ package com.github.ixtf.api.guice;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.mongodb.Function;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import lombok.Cleanup;
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import reactor.core.publisher.Mono;
 
 import java.util.function.Consumer;
 
-import static com.github.ixtf.api.guice.ApiModule.CONFIG;
-import static com.github.ixtf.guice.GuiceModule.getInstance;
-
 public class KeycloakModule extends AbstractModule {
+    private static final String ADDRESS = "__com.github.ixtf.api:KeycloakAdmin__";
+    @Getter
+    private final String realm;
 
+    public KeycloakModule(String realm) {
+        this.realm = realm;
+    }
+
+    @Singleton
     @Provides
-    private Keycloak Keycloak(@Named(CONFIG) JsonObject rootConfig) {
-        final var config = rootConfig.getJsonObject("keycloak-admin");
+    private KeycloakRealm KeycloakRealm(Vertx vertx) {
+        final var keycloakRealm = new KeycloakRealm(vertx);
+        return keycloakRealm;
+    }
+
+    @NotNull
+    private Keycloak keycloak(JsonObject config) {
         return Keycloak.getInstance(
                 config.getString("serverUrl"),
                 config.getString("master", "master"),
@@ -30,32 +44,34 @@ public class KeycloakModule extends AbstractModule {
         );
     }
 
-    @Singleton
-    @Provides
-    private KeycloakRealm KeycloakRealm(@Named(CONFIG) JsonObject rootConfig) {
-        final var config = rootConfig.getJsonObject("keycloak-admin");
-        return new KeycloakRealm(config.getString("realm"));
-    }
-
     public class KeycloakRealm {
-        @Getter
-        private final String realm;
+        private final Vertx vertx;
+        private final Mono<JsonObject> config$;
 
-        private KeycloakRealm(String realm) {
-            this.realm = realm;
+        private KeycloakRealm(Vertx vertx) {
+            this.vertx = vertx;
+            this.config$ = Mono.just(vertx.eventBus().<JsonObject>request(ADDRESS, null))
+                    .map(Future::toCompletionStage)
+                    .flatMap(Mono::fromCompletionStage)
+                    .map(Message::body)
+                    .cache();
         }
 
-        public void run(Consumer<RealmResource> consumer) {
-            @Cleanup final var keycloak = getInstance(Keycloak.class);
-            final var realmResource = keycloak.realm(realm);
-            consumer.accept(realmResource);
+        public Mono<Void> run(Consumer<RealmResource> consumer) {
+            return config$.doOnSuccess(config -> {
+                @Cleanup final var keycloak = keycloak(config);
+                final var realmResource = keycloak.realm(realm);
+                consumer.accept(realmResource);
+            }).then();
         }
 
-        public <T> T call(Function<RealmResource, T> function) {
-            @Cleanup final var keycloak = getInstance(Keycloak.class);
-            final var realmResource = keycloak.realm(realm);
-            return function.apply(realmResource);
+        public <T> Mono<T> call(Function<RealmResource, T> function) {
+            return config$.map(config -> {
+                @Cleanup final var keycloak = keycloak(config);
+                final var realmResource = keycloak.realm(realm);
+                return function.apply(realmResource);
+            });
         }
     }
-
 }
+

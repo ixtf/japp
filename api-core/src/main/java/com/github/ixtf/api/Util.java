@@ -43,12 +43,11 @@ public class Util {
                 .orElseGet(JsonObject::new);
     }
 
-    public static Optional<Span> spanOpt(final Optional<Tracer> tracerOpt, final String operationName, final Map map) {
-        return tracerOpt.map(tracer -> {
-            final var spanBuilder = tracer.buildSpan(operationName);
-            ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(map))).ifPresent(spanBuilder::asChildOf);
-            return spanBuilder.start();
-        });
+    public static Optional<Principal> principalOpt(final Message message) {
+        return ofNullable(message.headers())
+                .map(it -> it.get(Principal.class.getName()))
+                .filter(J::nonBlank)
+                .map(UserPrincipal::new);
     }
 
     public static Optional<Span> spanOpt(final Optional<Tracer> tracerOpt, final String operationName, final Message message) {
@@ -61,27 +60,28 @@ public class Util {
         });
     }
 
-    public static Optional<Principal> principalOpt(final Message message) {
-        return ofNullable(message.headers())
-                .map(it -> it.get(Principal.class.getName()))
-                .filter(J::nonBlank)
-                .map(UserPrincipal::new);
-    }
-
-    public static Optional<Span> spanOpt(final Optional<Tracer> tracerOpt, final String operationName, final com.rabbitmq.client.Delivery delivery) {
-        return tracerOpt.map(tracer -> {
-            final var spanBuilder = tracer.buildSpan(operationName);
-            final var map = Optional.ofNullable(delivery)
-                    .map(com.rabbitmq.client.Delivery::getProperties)
-                    .map(com.rabbitmq.client.AMQP.BasicProperties::getHeaders)
-                    .map(Map::entrySet)
-                    .stream().parallel()
-                    .flatMap(Collection::parallelStream)
-                    .filter(it -> it.getValue() instanceof String)
-                    .collect(toMap(Map.Entry::getKey, it -> it.getValue().toString()));
-            ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(map))).ifPresent(spanBuilder::asChildOf);
-            return spanBuilder.start();
-        });
-    }
+//    public static Optional<Span> spanOpt(final Optional<Tracer> tracerOpt, final String operationName, final Map map) {
+//        return tracerOpt.map(tracer -> {
+//            final var spanBuilder = tracer.buildSpan(operationName);
+//            ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(map))).ifPresent(spanBuilder::asChildOf);
+//            return spanBuilder.start();
+//        });
+//    }
+//
+//    public static Optional<Span> spanOpt(final Optional<Tracer> tracerOpt, final String operationName, final com.rabbitmq.client.Delivery delivery) {
+//        return tracerOpt.map(tracer -> {
+//            final var spanBuilder = tracer.buildSpan(operationName);
+//            final var map = Optional.ofNullable(delivery)
+//                    .map(com.rabbitmq.client.Delivery::getProperties)
+//                    .map(com.rabbitmq.client.AMQP.BasicProperties::getHeaders)
+//                    .map(Map::entrySet)
+//                    .stream().parallel()
+//                    .flatMap(Collection::parallelStream)
+//                    .filter(it -> it.getValue() instanceof String)
+//                    .collect(toMap(Map.Entry::getKey, it -> it.getValue().toString()));
+//            ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(map))).ifPresent(spanBuilder::asChildOf);
+//            return spanBuilder.start();
+//        });
+//    }
 
 }

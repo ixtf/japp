@@ -1,3 +1,4 @@
 dependencies {
     compile project(":api-core")
+    compileOnly "io.vertx:vertx-rabbitmq-client"
 }
