@@ -29,8 +29,11 @@ public class KeycloakModule extends AbstractModule {
     @Singleton
     @Provides
     private KeycloakRealm KeycloakRealm(Vertx vertx) {
-        final var keycloakRealm = new KeycloakRealm(vertx);
-        return keycloakRealm;
+        return new KeycloakRealm(Mono.just(vertx.eventBus().<JsonObject>request(ADDRESS, null))
+                .map(Future::toCompletionStage)
+                .flatMap(Mono::fromCompletionStage)
+                .map(Message::body)
+                .cache());
     }
 
     @NotNull
@@ -45,16 +48,10 @@ public class KeycloakModule extends AbstractModule {
     }
 
     public class KeycloakRealm {
-        private final Vertx vertx;
         private final Mono<JsonObject> config$;
 
-        private KeycloakRealm(Vertx vertx) {
-            this.vertx = vertx;
-            this.config$ = Mono.just(vertx.eventBus().<JsonObject>request(ADDRESS, null))
-                    .map(Future::toCompletionStage)
-                    .flatMap(Mono::fromCompletionStage)
-                    .map(Message::body)
-                    .cache();
+        private KeycloakRealm(Mono<JsonObject> config$) {
+            this.config$ = config$;
         }
 
         public Mono<Void> run(Consumer<RealmResource> consumer) {
