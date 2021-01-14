@@ -8,29 +8,20 @@ import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import lombok.Cleanup;
-import lombok.Getter;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import reactor.core.publisher.Mono;
 
 import java.util.function.Consumer;
 
-import static java.util.Optional.ofNullable;
-
 public class KeycloakModule extends AbstractModule {
     private static final String ADDRESS = "__com.github.ixtf.api:KeycloakAdmin__";
-    @Getter
-    private final String realm;
-
-    public KeycloakModule(String realm) {
-        this.realm = realm;
-    }
 
     @Singleton
     @Provides
     private KeycloakRealm KeycloakRealm(Vertx vertx) {
         return new KeycloakRealm(Mono.defer(() -> {
-            final var config = vertx.eventBus().<JsonObject>request(ADDRESS, realm).map(Message::body);
+            final var config = vertx.eventBus().<JsonObject>request(ADDRESS, null).map(Message::body);
             return Mono.fromCompletionStage(config.toCompletionStage());
         }));
     }
@@ -46,7 +37,7 @@ public class KeycloakModule extends AbstractModule {
     }
 
     private RealmResource realmResource(Keycloak keycloak, JsonObject config) {
-        return keycloak.realm(ofNullable(realm).orElse(config.getString("realm")));
+        return keycloak.realm(config.getString("realm"));
     }
 
     public class KeycloakRealm {
