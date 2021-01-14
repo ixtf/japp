@@ -4,7 +4,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.mongodb.Function;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
@@ -29,11 +28,10 @@ public class KeycloakModule extends AbstractModule {
     @Singleton
     @Provides
     private KeycloakRealm KeycloakRealm(Vertx vertx) {
-        return new KeycloakRealm(Mono.just(vertx.eventBus().<JsonObject>request(ADDRESS, realm))
-                .map(Future::toCompletionStage)
-                .flatMap(Mono::fromCompletionStage)
-                .map(Message::body)
-                .cache());
+        return new KeycloakRealm(Mono.defer(() -> {
+            final var config = vertx.eventBus().<JsonObject>request(ADDRESS, realm).map(Message::body);
+            return Mono.fromCompletionStage(config.toCompletionStage());
+        }));
     }
 
     @NotNull
@@ -51,7 +49,7 @@ public class KeycloakModule extends AbstractModule {
         private final Mono<JsonObject> config$;
 
         private KeycloakRealm(Mono<JsonObject> config$) {
-            this.config$ = config$;
+            this.config$ = config$.cache();
         }
 
         public Mono<Void> run(Consumer<RealmResource> consumer) {
