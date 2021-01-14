@@ -27,7 +27,7 @@ public class VertxContext implements ApiContext {
     public VertxContext(ReplyHandler handler, Message reply) {
         this.handler = handler;
         this.reply = reply;
-        spanOpt = handler.getTracerOpt().map(tracer -> {
+        spanOpt = tracerOpt().map(tracer -> {
             final var spanBuilder = tracer.buildSpan(handler.getOperationName());
             ofNullable(headers()).map(TextMapAdapter::new).map(it -> tracer.extract(TEXT_MAP, it)).ifPresent(spanBuilder::asChildOf);
             return spanBuilder.start();

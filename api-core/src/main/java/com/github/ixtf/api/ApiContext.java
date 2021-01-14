@@ -67,12 +67,4 @@ public interface ApiContext {
         return deliveryOptions;
     }
 
-    default Optional<Span> spanOpt(final String operationName) {
-        return tracerOpt().map(tracer -> {
-            final var spanBuilder = tracer.buildSpan(operationName);
-            spanOpt().ifPresent(spanBuilder::asChildOf);
-            return spanBuilder.start();
-        });
-    }
-
 }
