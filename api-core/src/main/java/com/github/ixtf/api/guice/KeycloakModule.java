@@ -29,7 +29,7 @@ public class KeycloakModule extends AbstractModule {
     @Singleton
     @Provides
     private KeycloakRealm KeycloakRealm(Vertx vertx) {
-        return new KeycloakRealm(Mono.just(vertx.eventBus().<JsonObject>request(ADDRESS, null))
+        return new KeycloakRealm(Mono.just(vertx.eventBus().<JsonObject>request(ADDRESS, realm))
                 .map(Future::toCompletionStage)
                 .flatMap(Mono::fromCompletionStage)
                 .map(Message::body)
