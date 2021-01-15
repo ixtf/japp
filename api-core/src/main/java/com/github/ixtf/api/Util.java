@@ -6,6 +6,7 @@ import com.sun.security.auth.UserPrincipal;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.TextMapAdapter;
+import io.opentracing.tag.Tags;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -72,6 +73,11 @@ public class Util {
             ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(map))).ifPresent(spanBuilder::asChildOf);
             return spanBuilder.start();
         });
+    }
+
+    public static Optional<Span> logError(final Optional<Span> spanOpt, final Throwable e) {
+        spanOpt.ifPresent(span -> span.setTag(Tags.ERROR, true).log(e.getMessage()));
+        return spanOpt;
     }
 
 }
