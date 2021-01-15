@@ -2,6 +2,7 @@ package com.github.ixtf.persistence.reflection;
 
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
+
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;

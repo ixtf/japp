@@ -35,13 +35,12 @@ public class ReplyHandler implements Handler<Message<Object>> {
     private final Object instance;
     private final Method method;
     private final String address;
-
-    @Getter
-    @Inject
-    private Optional<Tracer> tracerOpt;
     @Getter
     private final String operationName;
     private final Logger log;
+    @Getter
+    @Inject
+    private Optional<Tracer> tracerOpt;
 
     private ReplyHandler(Method method) {
         this.method = method;

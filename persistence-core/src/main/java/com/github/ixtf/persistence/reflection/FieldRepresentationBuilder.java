@@ -1,6 +1,7 @@
 package com.github.ixtf.persistence.reflection;
 
 import jakarta.persistence.AttributeConverter;
+
 import java.lang.reflect.Field;
 
 class FieldRepresentationBuilder {

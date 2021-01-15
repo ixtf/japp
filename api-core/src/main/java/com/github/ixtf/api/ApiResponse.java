@@ -30,23 +30,6 @@ public class ApiResponse {
     @Setter
     private Object body;
 
-    public ApiResponse putHeaders(final String key, final String value) {
-        headers.put(key, value);
-        return this;
-    }
-
-    public ApiResponse putHeaders(final AsciiString key, final AsciiString value) {
-        return putHeaders(key.toString(), value.toString());
-    }
-
-    public ApiResponse putHeaders(final AsciiString key, final String value) {
-        return putHeaders(key.toString(), value);
-    }
-
-    public Mono<?> bodyMono() {
-        return bodyMono(body);
-    }
-
     public static Mono<?> bodyMono(Object o) {
         if (o == null) {
             return Mono.just(StringUtils.EMPTY);
@@ -87,5 +70,22 @@ public class ApiResponse {
             return v.stream().map(ApiResponse::convertInnerValue).collect(toUnmodifiableList());
         }
         return o;
+    }
+
+    public ApiResponse putHeaders(final String key, final String value) {
+        headers.put(key, value);
+        return this;
+    }
+
+    public ApiResponse putHeaders(final AsciiString key, final AsciiString value) {
+        return putHeaders(key.toString(), value.toString());
+    }
+
+    public ApiResponse putHeaders(final AsciiString key, final String value) {
+        return putHeaders(key.toString(), value);
+    }
+
+    public Mono<?> bodyMono() {
+        return bodyMono(body);
     }
 }

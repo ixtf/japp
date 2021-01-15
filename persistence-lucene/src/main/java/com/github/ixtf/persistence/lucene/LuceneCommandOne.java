@@ -1,9 +1,8 @@
 package com.github.ixtf.persistence.lucene;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import jakarta.validation.constraints.NotBlank;
 
 /**
  * @author jzb 2019-11-12

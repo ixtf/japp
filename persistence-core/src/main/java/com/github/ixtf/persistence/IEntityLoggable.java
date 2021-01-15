@@ -8,20 +8,6 @@ import java.util.Date;
  */
 public interface IEntityLoggable<T extends IEntityLoggable.IOperator> extends IEntity {
 
-    /**
-     * @author jzb 2019-02-28
-     */
-    interface IOperator extends Serializable {
-
-        String getId();
-
-        void setId(String id);
-
-        String getName();
-
-        void setName(String name);
-    }
-
     T getCreator();
 
     void setCreator(T operator);
@@ -53,5 +39,19 @@ public interface IEntityLoggable<T extends IEntityLoggable.IOperator> extends IE
         } else {
             setModifyDateTime(date);
         }
+    }
+
+    /**
+     * @author jzb 2019-02-28
+     */
+    interface IOperator extends Serializable {
+
+        String getId();
+
+        void setId(String id);
+
+        String getName();
+
+        void setName(String name);
     }
 }

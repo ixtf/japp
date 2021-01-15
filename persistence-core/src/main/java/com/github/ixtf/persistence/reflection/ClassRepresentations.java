@@ -3,10 +3,10 @@ package com.github.ixtf.persistence.reflection;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.ixtf.J;
-import org.apache.commons.lang3.reflect.FieldUtils;
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import org.apache.commons.lang3.reflect.FieldUtils;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;

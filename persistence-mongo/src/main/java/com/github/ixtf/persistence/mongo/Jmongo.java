@@ -216,7 +216,7 @@ public abstract class Jmongo {
     }
 
     @SneakyThrows({IllegalAccessException.class, NoSuchMethodException.class, InvocationTargetException.class})
-    public Mono<Boolean> exists(Object entity)  {
+    public Mono<Boolean> exists(Object entity) {
         final var classRepresentation = ClassRepresentations.create(entity);
         final var idFieldName = classRepresentation.getId().map(FieldRepresentation::getFieldName).get();
         final var id = PropertyUtils.getProperty(entity, idFieldName);

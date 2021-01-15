@@ -18,7 +18,6 @@ import org.bson.types.ObjectId;
 import reactor.core.publisher.Flux;
 
 import java.util.function.Function;
-import java.util.stream.Collector;
 import java.util.stream.StreamSupport;
 
 import static com.github.ixtf.persistence.mongo.Jmongo.ID_COL;

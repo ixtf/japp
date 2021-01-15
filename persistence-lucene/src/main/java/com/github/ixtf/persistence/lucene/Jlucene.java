@@ -5,6 +5,8 @@ import com.github.ixtf.persistence.IEntity;
 import com.github.ixtf.persistence.IEntityLoggable;
 import com.github.ixtf.persistence.IEntityLoggable.IOperator;
 import io.github.classgraph.ClassGraph;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Cleanup;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.ArrayUtils;
@@ -19,8 +21,6 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.*;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;

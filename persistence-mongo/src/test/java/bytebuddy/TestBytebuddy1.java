@@ -4,7 +4,6 @@ import lombok.SneakyThrows;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.implementation.FixedValue;
 import net.bytebuddy.matcher.ElementMatchers;
-import test.domain.Operator;
 
 public class TestBytebuddy1 {
     @SneakyThrows

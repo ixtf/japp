@@ -1,10 +1,10 @@
 package com.github.ixtf.persistence.reflection;
 
-import lombok.Getter;
-
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
+import lombok.Getter;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

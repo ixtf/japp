@@ -1,7 +1,6 @@
 package com.github.ixtf.persistence.api.reader;
 
 import com.github.ixtf.persistence.api.ValueReader;
-import org.apache.commons.lang3.math.NumberUtils;
 
 /**
  * @author jzb 2019-02-15

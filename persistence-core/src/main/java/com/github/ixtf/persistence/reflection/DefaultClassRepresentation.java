@@ -1,9 +1,9 @@
 package com.github.ixtf.persistence.reflection;
 
+import jakarta.persistence.Cacheable;
 import lombok.Getter;
 import lombok.ToString;
 
-import jakarta.persistence.Cacheable;
 import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.Optional;

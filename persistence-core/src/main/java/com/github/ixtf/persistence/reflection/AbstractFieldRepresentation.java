@@ -26,10 +26,10 @@ abstract class AbstractFieldRepresentation implements FieldRepresentation {
     protected final String colName;
     @Getter
     protected final String fieldName;
-    @Getter
-    private final Class<?> fieldType;
     @ToString.Include
     protected final Class<? extends AttributeConverter> converter;
+    @Getter
+    private final Class<?> fieldType;
 
     AbstractFieldRepresentation(FieldType type, String colName, Field nativeField, Class<? extends AttributeConverter> converter) {
         this.type = type;

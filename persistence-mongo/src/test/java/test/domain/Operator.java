@@ -2,9 +2,11 @@ package test.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.ixtf.persistence.IEntity;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.*;
 
-import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Collection;
 

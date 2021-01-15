@@ -1,6 +1,5 @@
 package com.github.ixtf;
 
-import com.github.ixtf.J;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;

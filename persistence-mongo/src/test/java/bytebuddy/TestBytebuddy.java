@@ -1,5 +1,6 @@
 package bytebuddy;
 
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import net.bytebuddy.ByteBuddy;
@@ -9,7 +10,6 @@ import org.bson.Document;
 import reactor.core.publisher.Mono;
 import test.domain.Operator;
 
-import jakarta.persistence.Transient;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Map;

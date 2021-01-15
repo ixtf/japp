@@ -2,6 +2,7 @@ package com.github.ixtf.persistence.reflection;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Column;
+
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.Optional;
@@ -41,7 +42,6 @@ public interface FieldRepresentation extends Serializable {
     boolean isId();
 
     /**
-     *
      * @param <T> 类型
      * @return 自定义转换
      */

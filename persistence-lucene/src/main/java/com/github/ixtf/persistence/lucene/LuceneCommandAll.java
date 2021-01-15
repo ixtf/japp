@@ -1,10 +1,10 @@
 package com.github.ixtf.persistence.lucene;
 
 import com.github.ixtf.persistence.IEntity;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.SneakyThrows;
 
-import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 /**

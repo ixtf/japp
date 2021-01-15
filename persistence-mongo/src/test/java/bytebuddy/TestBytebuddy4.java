@@ -37,19 +37,6 @@ public class TestBytebuddy4 {
         userType.doSomething();
     }
 
-    public static class HelloWorldInterceptor implements Interceptor {
-        @Override
-        public String doSomethingElse() {
-            return "Hello World!";
-        }
-    }
-
-    public static class UserType {
-        public String doSomething() {
-            return null;
-        }
-    }
-
     public interface Interceptor {
         String doSomethingElse();
     }
@@ -62,5 +49,18 @@ public class TestBytebuddy4 {
 
     public interface InstanceCreator {
         Object makeInstance();
+    }
+
+    public static class HelloWorldInterceptor implements Interceptor {
+        @Override
+        public String doSomethingElse() {
+            return "Hello World!";
+        }
+    }
+
+    public static class UserType {
+        public String doSomething() {
+            return null;
+        }
     }
 }
