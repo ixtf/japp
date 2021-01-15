@@ -3,7 +3,6 @@ package com.github.ixtf.api.guice;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import com.mongodb.Function;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
@@ -13,6 +12,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import reactor.core.publisher.Mono;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class KeycloakModule extends AbstractModule {
     private static final String ADDRESS = "__com.github.ixtf.api:KeycloakAdmin__";

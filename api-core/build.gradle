@@ -11,6 +11,5 @@ dependencies {
     compile "io.jaegertracing:jaeger-client"
 
     compileOnly "org.keycloak:keycloak-admin-client"
-    compileOnly project(":persistence-mongo")
     compileOnly "io.projectreactor.rabbitmq:reactor-rabbitmq"
 }
