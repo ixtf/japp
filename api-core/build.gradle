@@ -10,9 +10,6 @@ dependencies {
     compile "io.micrometer:micrometer-registry-prometheus"
     compile "io.jaegertracing:jaeger-client"
 
-    compileOnly project(":persistence-mongo")
-    compileOnly "io.projectreactor.rabbitmq:reactor-rabbitmq"
-
-    testCompile project(":persistence-mongo")
+    compileOnly "org.keycloak:keycloak-admin-client"
     testCompile "io.projectreactor.rabbitmq:reactor-rabbitmq"
 }

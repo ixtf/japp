@@ -12,13 +12,11 @@ import io.vertx.core.json.JsonObject;
 
 import java.io.File;
 import java.security.Principal;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
 import static io.opentracing.propagation.Format.Builtin.TEXT_MAP;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toMap;
 
 public class Util {
 
@@ -43,6 +41,21 @@ public class Util {
                 .orElseGet(JsonObject::new);
     }
 
+    public static Optional<Principal> principalOpt(final Map map) {
+        return ofNullable(map)
+                .map(it -> it.get(Principal.class.getName()))
+                .map(Object::toString)
+                .filter(J::nonBlank)
+                .map(UserPrincipal::new);
+    }
+
+    public static Optional<Principal> principalOpt(final Message message) {
+        return ofNullable(message.headers())
+                .map(it -> it.get(Principal.class.getName()))
+                .filter(J::nonBlank)
+                .map(UserPrincipal::new);
+    }
+
     public static Optional<Span> spanOpt(final Optional<Tracer> tracerOpt, final String operationName, final Map map) {
         return tracerOpt.map(tracer -> {
             final var spanBuilder = tracer.buildSpan(operationName);
@@ -56,29 +69,6 @@ public class Util {
             final var spanBuilder = tracer.buildSpan(operationName);
             final var map = J.<String, String>newHashMap();
             message.headers().forEach(entry -> map.put(entry.getKey(), entry.getValue()));
-            ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(map))).ifPresent(spanBuilder::asChildOf);
-            return spanBuilder.start();
-        });
-    }
-
-    public static Optional<Principal> principalOpt(final Message message) {
-        return ofNullable(message.headers())
-                .map(it -> it.get(Principal.class.getName()))
-                .filter(J::nonBlank)
-                .map(UserPrincipal::new);
-    }
-
-    public static Optional<Span> spanOpt(final Optional<Tracer> tracerOpt, final String operationName, final com.rabbitmq.client.Delivery delivery) {
-        return tracerOpt.map(tracer -> {
-            final var spanBuilder = tracer.buildSpan(operationName);
-            final var map = Optional.ofNullable(delivery)
-                    .map(com.rabbitmq.client.Delivery::getProperties)
-                    .map(com.rabbitmq.client.AMQP.BasicProperties::getHeaders)
-                    .map(Map::entrySet)
-                    .stream().parallel()
-                    .flatMap(Collection::parallelStream)
-                    .filter(it -> it.getValue() instanceof String)
-                    .collect(toMap(Map.Entry::getKey, it -> it.getValue().toString()));
             ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(map))).ifPresent(spanBuilder::asChildOf);
             return spanBuilder.start();
         });

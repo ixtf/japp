@@ -23,9 +23,10 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public abstract class ApiModule extends AbstractModule {
-    public static final String SERVICE = "__:ApiModule:SERVICE:__";
-    public static final String CONFIG = "__:ApiModule:CONFIG:__";
-    public static final String ACTIONS = "__:ApiModule:ACTIONS:__";
+    public static final String SERVICE = "__:ApiModule:SERVICE__";
+    public static final String CONFIG = "__:ApiModule:CONFIG__";
+    public static final String ACTIONS = "__:ApiModule:ACTIONS__";
+
     private final Vertx vertx;
     private final String service;
     private final JsonObject config;

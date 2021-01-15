@@ -1,23 +1,32 @@
 package com.github.ixtf.api;
 
+import com.google.inject.Module;
 import com.google.inject.*;
 import com.google.inject.multibindings.OptionalBinder;
+import com.google.inject.name.Named;
 import io.jaegertracing.Configuration;
 import io.opentracing.Tracer;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.oauth2.OAuth2Options;
 import io.vertx.ext.web.handler.CorsHandler;
 
+import java.lang.annotation.Annotation;
+import java.util.Arrays;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.google.inject.name.Names.named;
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 
 public class ApiModule extends AbstractModule {
+    public static final Named CONFIG = named("__:ApiModule:CONFIG__");
     private static volatile Injector INJECTOR;
     private final Vertx vertx;
     private final JsonObject config;
@@ -27,19 +36,35 @@ public class ApiModule extends AbstractModule {
         this.config = config;
     }
 
-    synchronized public static void init(Vertx vertx, JsonObject config) {
+    synchronized public static void init(Vertx vertx, JsonObject config, Module... modules) {
         if (INJECTOR == null) {
-            INJECTOR = Guice.createInjector(new ApiModule(vertx, config));
+            INJECTOR = Guice.createInjector(Stream.concat(
+                    Stream.of(new ApiModule(vertx, config)),
+                    ofNullable(modules).map(Arrays::stream).stream().flatMap(Function.identity())
+            ).toArray(Module[]::new));
         }
+    }
+
+    public static <T> T getInstance(Class<T> type) {
+        return INJECTOR.getInstance(type);
+    }
+
+    public static <T> T getInstance(Class<T> type, Annotation annotation) {
+        return INJECTOR.getInstance(Key.get(type, annotation));
     }
 
     public static void injectMembers(Object o) {
         INJECTOR.injectMembers(o);
     }
 
+    public static void handleKeycloakAdmin(Message reply) {
+        reply.reply(getInstance(JsonObject.class, CONFIG).getJsonObject("keycloak-admin", new JsonObject()));
+    }
+
     @Override
     protected void configure() {
         bind(Vertx.class).toInstance(vertx);
+        bind(JsonObject.class).annotatedWith(CONFIG).toInstance(config);
         OptionalBinder.newOptionalBinder(binder(), Tracer.class);
     }
 
@@ -90,4 +115,5 @@ public class ApiModule extends AbstractModule {
             return new Configuration(serviceName).withSampler(samplerConfig).withReporter(reporterConfig).getTracer();
         }).orElse(null);
     }
+
 }

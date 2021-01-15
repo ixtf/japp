@@ -18,6 +18,7 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.lang.reflect.InvocationTargetException;
 import java.security.Principal;
 import java.util.Optional;
 
@@ -42,7 +43,6 @@ public abstract class Jmongo {
                 .build(key -> find(key.getLeft(), eq(ID_COL, key.getRight())).block());
     }
 
-    @SneakyThrows
     private static <T extends JmongoOptions> Jmongo by(T options) {
         final var client = options.client();
         final var dbName = options.dbName();
@@ -64,12 +64,10 @@ public abstract class Jmongo {
         };
     }
 
-    @SneakyThrows
     public static Jmongo of(Class<? extends JmongoOptions> clazz) {
         return CACHE.get(clazz);
     }
 
-    @SneakyThrows
     public static <T extends JmongoOptions> Jmongo of(T options) {
         return CACHE.get(options.getClass(), it -> Jmongo.by(options));
     }
@@ -217,8 +215,8 @@ public abstract class Jmongo {
         return Mono.from(collection(entityClass).countDocuments(condition)).map(it -> it > 0);
     }
 
-    @SneakyThrows
-    public Mono<Boolean> exists(Object entity) {
+    @SneakyThrows({IllegalAccessException.class, NoSuchMethodException.class, InvocationTargetException.class})
+    public Mono<Boolean> exists(Object entity)  {
         final var classRepresentation = ClassRepresentations.create(entity);
         final var idFieldName = classRepresentation.getId().map(FieldRepresentation::getFieldName).get();
         final var id = PropertyUtils.getProperty(entity, idFieldName);

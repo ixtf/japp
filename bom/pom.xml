@@ -14,9 +14,9 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <jappVersion>1.0.0</jappVersion>
-        <validatorVersion>7.0.0.Alpha6</validatorVersion>
+        <validatorVersion>7.0.0.Final</validatorVersion>
         <vertxVersion>4.0.0</vertxVersion>
-        <reactorVersion>2020.0.1</reactorVersion>
+        <reactorVersion>2020.0.3</reactorVersion>
         <guiceVersion>4.2.3</guiceVersion>
         <classgraphVersion>4.8.93</classgraphVersion>
         <caffeineVersion>2.8.6</caffeineVersion>
@@ -29,7 +29,7 @@
         <poiVersion>4.1.2</poiVersion>
         <mammothVersion>1.4.0</mammothVersion>
         <zxingVersion>3.4.1</zxingVersion>
-        <droolsVersion>7.41.0.Final</droolsVersion>
+        <droolsVersion>7.47.0.Final</droolsVersion>
         <micrometerVersion>1.6.1</micrometerVersion>
         <grpcVersion>1.28.1</grpcVersion>
         <protobufVersion>3.11.4</protobufVersion>

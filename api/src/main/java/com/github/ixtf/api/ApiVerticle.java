@@ -14,6 +14,7 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.oauth2.OAuth2Auth;
 import io.vertx.ext.auth.oauth2.OAuth2Options;
 import io.vertx.ext.bridge.PermittedOptions;
@@ -45,6 +46,7 @@ import static java.util.Optional.ofNullable;
 
 @Slf4j
 public class ApiVerticle extends AbstractVerticle {
+    private static final String KeycloakAdmin = "__com.github.ixtf.api:KeycloakAdmin__";
     @Inject
     private Optional<Tracer> tracerOpt;
     @Inject
@@ -55,6 +57,9 @@ public class ApiVerticle extends AbstractVerticle {
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
         injectMembers(this);
+
+        vertx.eventBus().consumer(KeycloakAdmin, ApiModule::handleKeycloakAdmin);
+
         discover(vertx, oAuth2Options).flatMap(this::createHttpServer).<Void>mapEmpty().onComplete(startPromise);
     }
 
@@ -65,13 +70,17 @@ public class ApiVerticle extends AbstractVerticle {
         router.route("/metrics").handler(PrometheusScrapingHandler.create());
         router.route("/health*").handler(HealthCheckHandler.create(vertx));
         router.route("/ping*").handler(HealthCheckHandler.createWithHealthChecks(HealthChecks.create(vertx)));
+        router.route().failureHandler(rc -> {
+            final var errMsg = new JsonObject().put("errMsg", rc.failure().getMessage());
+            rc.response().setStatusCode(400).putHeader(CONTENT_TYPE, APPLICATION_JSON).end(errMsg.encode());
+        });
 
         final var permitted = new PermittedOptions().setAddressRegex("medipath://ws/.+");
         final var sockJSBridgeOptions = new SockJSBridgeOptions().addOutboundPermitted(permitted);
         router.mountSubRouter("/eventbus", SockJSHandler.create(vertx).bridge(sockJSBridgeOptions));
 
-        router.route("/api/services/:service/actions/:action").produces(APPLICATION_JSON.toString()).handler(OAuth2AuthHandler.create(vertx, oAuth2Auth)).handler(this::handleApi);
-        router.route("/dl/services/:service/actions/:action/tokens/:token").produces(APPLICATION_OCTET_STREAM.toString()).handler(this::handleDl);
+        router.route("/api/services/:service/actions/:action").handler(OAuth2AuthHandler.create(vertx, oAuth2Auth)).handler(this::handleApi);
+        router.route("/dl/services/:service/actions/:action/tokens/:token").handler(this::handleDl);
 
         final var httpServerOptions = new HttpServerOptions().setCompressionSupported(true);
         return vertx.createHttpServer(httpServerOptions).requestHandler(router).listen(9998);
