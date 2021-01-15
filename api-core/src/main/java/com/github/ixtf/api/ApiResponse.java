@@ -12,10 +12,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CompletionStage;
 
 import static com.github.ixtf.Constant.MAPPER;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 
 @Accessors(chain = true)
 public class ApiResponse {
@@ -69,9 +72,19 @@ public class ApiResponse {
         }
         if (o instanceof Flux) {
             final var v = (Flux) o;
-            // todo 集合类里面包含 JsonObject｜JsonArray
-            return v.collectList().flatMap(ApiResponse::bodyMono);
+            return v.map(ApiResponse::convertInnerValue).collectList().flatMap(ApiResponse::bodyMono);
         }
         return Mono.fromCallable(() -> MAPPER.writeValueAsBytes(o));
+    }
+
+    private static Object convertInnerValue(Object o) {
+        if (o instanceof JsonObject) {
+            final var v = (JsonObject) o;
+            return v.stream().parallel().collect(toUnmodifiableMap(Entry::getKey, it -> convertInnerValue(it.getValue())));
+        } else if (o instanceof JsonArray) {
+            final var v = (JsonArray) o;
+            return v.stream().map(ApiResponse::convertInnerValue).collect(toUnmodifiableList());
+        }
+        return o;
     }
 }
