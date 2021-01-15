@@ -75,6 +75,20 @@ public class Util {
         });
     }
 
+    public static Map injectMap(final Optional<Tracer> tracerOpt, final Message message) {
+        final var ret = tracerOpt.flatMap(tracer -> {
+            final var tmp = J.<String, String>newHashMap();
+            message.headers().forEach(entry -> tmp.put(entry.getKey(), entry.getValue()));
+            return ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(tmp))).map(it -> {
+                final var map = J.<String, String>newHashMap();
+                tracer.inject(it, TEXT_MAP, new TextMapAdapter(map));
+                return map;
+            });
+        }).orElseGet(J::newHashMap);
+        principalOpt(message).map(Principal::getName).ifPresent(it -> ret.put(Principal.class.getName(), it));
+        return ret;
+    }
+
     public static Optional<Span> logError(final Optional<Span> spanOpt, final Throwable e) {
         spanOpt.ifPresent(span -> span.setTag(Tags.ERROR, true).log(e.getMessage()));
         return spanOpt;
