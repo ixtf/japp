@@ -60,7 +60,7 @@ public class Util {
     public static Optional<Span> spanOpt(final Optional<Tracer> tracerOpt, final String operationName, final Map inMap) {
         return tracerOpt.map(tracer -> {
             final var map = J.<String, String>newHashMap();
-            inMap.forEach((k, v) -> map.put(k.toString(), v.toString()));
+            J.emptyIfNull(inMap).forEach((k, v) -> map.put(k.toString(), v.toString()));
             final var spanBuilder = tracer.buildSpan(operationName);
             ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(map))).ifPresent(spanBuilder::asChildOf);
             return spanBuilder.start();
