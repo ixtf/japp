@@ -16,7 +16,7 @@
         <jappVersion>1.0.0</jappVersion>
         <validatorVersion>7.0.0.Final</validatorVersion>
         <vertxVersion>4.0.0</vertxVersion>
-        <reactorVersion>2020.0.1</reactorVersion>
+        <reactorVersion>2020.0.3</reactorVersion>
         <guiceVersion>4.2.3</guiceVersion>
         <classgraphVersion>4.8.93</classgraphVersion>
         <caffeineVersion>2.8.6</caffeineVersion>
