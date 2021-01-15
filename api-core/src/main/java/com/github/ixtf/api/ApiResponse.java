@@ -81,7 +81,8 @@ public class ApiResponse {
         if (o instanceof JsonObject) {
             final var v = (JsonObject) o;
             return v.stream().parallel().collect(toUnmodifiableMap(Entry::getKey, it -> convertInnerValue(it.getValue())));
-        } else if (o instanceof JsonArray) {
+        }
+        if (o instanceof JsonArray) {
             final var v = (JsonArray) o;
             return v.stream().map(ApiResponse::convertInnerValue).collect(toUnmodifiableList());
         }
