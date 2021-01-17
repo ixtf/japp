@@ -18,18 +18,21 @@ import java.util.Optional;
 import static java.util.Optional.ofNullable;
 
 public class VertxContext implements ApiContext {
-    private final ReplyHandler handler;
     private final Message reply;
+    private final Optional<Tracer> tracerOpt;
+    private final String operationName;
+
     @Getter(lazy = true, value = AccessLevel.PRIVATE)
     private final Map<String, String> headers = _headers();
     @Getter(lazy = true, value = AccessLevel.PRIVATE)
     private final byte[] body = _body();
     @Getter(lazy = true, value = AccessLevel.PRIVATE)
-    private final Optional<Span> spanOpt = Util.spanOpt(tracerOpt(), handler.getOperationName(), headers());
+    private final Optional<Span> spanOpt = Util.spanOpt(tracerOpt(), operationName, headers());
 
-    public VertxContext(ReplyHandler handler, Message reply) {
-        this.handler = handler;
+    public VertxContext(Message reply, Optional<Tracer> tracerOpt, String operationName) {
         this.reply = reply;
+        this.tracerOpt = tracerOpt;
+        this.operationName = operationName;
     }
 
     private Map<String, String> _headers() {
@@ -68,11 +71,12 @@ public class VertxContext implements ApiContext {
 
     @Override
     public Optional<Tracer> tracerOpt() {
-        return handler.getTracerOpt();
+        return tracerOpt;
     }
 
     @Override
     public Optional<Span> spanOpt() {
         return getSpanOpt();
     }
+
 }

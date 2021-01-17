@@ -1,7 +1,6 @@
 package com.github.ixtf.api;
 
 import com.github.ixtf.J;
-import com.sun.security.auth.UserPrincipal;
 import io.netty.util.AsciiString;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
@@ -45,9 +44,7 @@ public interface ApiContext {
     }
 
     default Optional<Principal> principalOpt() {
-        return ofNullable(header(Principal.class.getName()))
-                .filter(J::nonBlank)
-                .map(UserPrincipal::new);
+        return Util.principalOpt(headers());
     }
 
     default Principal principal() {
