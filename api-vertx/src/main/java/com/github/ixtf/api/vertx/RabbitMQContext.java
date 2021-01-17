@@ -9,10 +9,12 @@ import com.rabbitmq.client.Envelope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
+import io.vertx.core.Future;
 import io.vertx.rabbitmq.RabbitMQClient;
 import io.vertx.rabbitmq.RabbitMQMessage;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collection;
 import java.util.Map;
@@ -22,6 +24,7 @@ import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
 
+@Slf4j
 public class RabbitMQContext implements ApiContext {
     private final RabbitMQClient client;
     private final RabbitMQMessage message;
@@ -39,6 +42,28 @@ public class RabbitMQContext implements ApiContext {
         this.message = message;
         this.tracerOpt = tracerOpt;
         this.operationName = operationName;
+    }
+
+    public Future<Void> basicAck() {
+        final var envelope = message.envelope();
+        final var deliveryTag = envelope.getDeliveryTag();
+        return client.basicAck(deliveryTag, false).onFailure(e -> {
+            final var exchange = envelope.getExchange();
+            final var routingKey = envelope.getRoutingKey();
+            log.error("exchange[{}], routingKey[{}], basicAck failure ", exchange, routingKey, e);
+            spanOpt().ifPresent(span -> span.setTag(Tags.ERROR, true).log(e.getMessage()));
+        });
+    }
+
+    public Future<Void> basicNack() {
+        final var envelope = message.envelope();
+        final var deliveryTag = envelope.getDeliveryTag();
+        final var exchange = envelope.getExchange();
+        final var routingKey = envelope.getRoutingKey();
+        return client.basicNack(deliveryTag, false, false).onFailure(e -> {
+            log.error("exchange[{}], routingKey[{}], basicNack failure ", exchange, routingKey, e);
+            spanOpt().ifPresent(span -> span.setTag(Tags.ERROR, true).log(e.getMessage()));
+        });
     }
 
     private Map<String, String> _headers() {
