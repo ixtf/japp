@@ -35,6 +35,10 @@ public class VertxContext implements ApiContext {
         this.operationName = operationName;
     }
 
+    public VertxContext(Message reply, Optional<Tracer> tracerOpt) {
+        this(reply, tracerOpt, reply.address());
+    }
+
     private Map<String, String> _headers() {
         final var builder = ImmutableMap.<String, String>builder();
         reply.headers().forEach(entry -> builder.put(entry.getKey(), entry.getValue()));
