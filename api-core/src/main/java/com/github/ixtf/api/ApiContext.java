@@ -13,6 +13,7 @@ import java.security.Principal;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.github.ixtf.J.checkAndGetCommand;
 import static io.opentracing.propagation.Format.Builtin.TEXT_MAP;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Optional.ofNullable;
@@ -32,7 +33,7 @@ public interface ApiContext {
     }
 
     default <T> T command(Class<T> clazz) {
-        return J.checkAndGetCommand(clazz, body());
+        return checkAndGetCommand(clazz, body());
     }
 
     default String header(String key) {
