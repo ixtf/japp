@@ -27,7 +27,7 @@ public class VertxContext implements ApiContext {
     @Getter(lazy = true, value = AccessLevel.PRIVATE)
     private final byte[] body = _body();
     @Getter(lazy = true, value = AccessLevel.PRIVATE)
-    private final Optional<Span> spanOpt = Util.spanOpt(tracerOpt(), operationName, headers());
+    private final Optional<Span> spanOpt = Util.spanOpt(tracerOpt, operationName, getHeaders());
 
     public VertxContext(Message reply, Optional<Tracer> tracerOpt, String operationName) {
         this.reply = reply;
