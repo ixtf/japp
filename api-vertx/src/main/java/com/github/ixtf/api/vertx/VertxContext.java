@@ -24,15 +24,22 @@ public class VertxContext implements ApiContext {
 
     @Getter(lazy = true, value = AccessLevel.PRIVATE)
     private final Map<String, String> headers = _headers();
+    @Getter(lazy = true, value = AccessLevel.PRIVATE)
+    private final byte[] body = _body();
+    @Getter(lazy = true, value = AccessLevel.PRIVATE)
+    private final Optional<Span> spanOpt = Util.spanOpt(tracerOpt, operationName, getHeaders());
+
+    public VertxContext(Message reply, Optional<Tracer> tracerOpt, String operationName) {
+        this.reply = reply;
+        this.tracerOpt = tracerOpt;
+        this.operationName = operationName;
+    }
 
     private Map<String, String> _headers() {
         final var builder = ImmutableMap.<String, String>builder();
         reply.headers().forEach(entry -> builder.put(entry.getKey(), entry.getValue()));
         return builder.build();
     }
-
-    @Getter(lazy = true, value = AccessLevel.PRIVATE)
-    private final byte[] body = _body();
 
     private byte[] _body() {
         return ofNullable(reply.body()).map(it -> {
@@ -50,15 +57,6 @@ public class VertxContext implements ApiContext {
                 return Buffer.buffer((String) it);
             }
         }).orElseGet(Buffer::buffer).getBytes();
-    }
-
-    @Getter(lazy = true, value = AccessLevel.PRIVATE)
-    private final Optional<Span> spanOpt = Util.spanOpt(tracerOpt, operationName, getHeaders());
-
-    public VertxContext(Message reply, Optional<Tracer> tracerOpt, String operationName) {
-        this.reply = reply;
-        this.tracerOpt = tracerOpt;
-        this.operationName = operationName;
     }
 
     @Override
