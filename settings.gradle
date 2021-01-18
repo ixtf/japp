@@ -7,9 +7,10 @@ include 'pinyin'
 
 include 'persistence-core'
 include 'persistence-mongo'
+include 'persistence-lucene'
 
 include 'api'
 include 'api-core'
 include 'api-vertx'
-include 'persistence-lucene'
+include 'rabbitmq'
 

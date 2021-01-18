@@ -1,4 +1,4 @@
-package test;
+package com.github.ixtf.rabbitmq.guice;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -16,7 +16,7 @@ import static com.github.ixtf.api.guice.ApiModule.CONFIG;
 import static com.github.ixtf.api.guice.ApiModule.SERVICE;
 import static reactor.rabbitmq.Utils.singleConnectionMono;
 
-public class RabbitModule extends AbstractModule {
+public class RabbitMQModule extends AbstractModule {
 
     @Override
     protected void configure() {
