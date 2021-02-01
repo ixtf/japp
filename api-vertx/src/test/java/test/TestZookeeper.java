@@ -1,9 +1,15 @@
 package test;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.time.Duration;
 
 public class TestZookeeper {
     public static void main(String[] args) {
@@ -19,14 +25,12 @@ public class TestZookeeper {
     }
 
     private static void testVertx(Vertx vertx) {
-        vertx.eventBus().request("test", null).onComplete(ar -> {
-            if (ar.succeeded()) {
-                final var result = ar.result();
-                System.out.println(result);
-            } else {
-                ar.cause().printStackTrace();
-            }
-        });
+        Flux.interval(Duration.ofSeconds(5))
+                .map(it -> vertx.eventBus().request("test", null))
+                .map(Future::toCompletionStage)
+                .flatMap(Mono::fromCompletionStage)
+                .map(Message::body)
+                .subscribe(System.out::println, Throwable::printStackTrace);
     }
 
 }
