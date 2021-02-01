@@ -3,7 +3,4 @@ dependencies {
     compileOnly "io.vertx:vertx-rabbitmq-client"
 
     testImplementation "io.vertx:vertx-zookeeper"
-    testImplementation "org.apache.curator:curator-framework:5.1.0"
-    testImplementation "org.apache.curator:curator-recipes:5.1.0"
-    testImplementation "org.apache.zookeeper:zookeeper:3.6.2"
 }
