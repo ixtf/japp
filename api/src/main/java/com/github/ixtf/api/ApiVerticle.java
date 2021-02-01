@@ -63,6 +63,29 @@ public class ApiVerticle extends AbstractVerticle {
         discover(vertx, oAuth2Options).flatMap(this::createHttpServer).<Void>mapEmpty().onComplete(startPromise);
     }
 
+    private static String apiAddress(RoutingContext rc) {
+        final var service = rc.pathParam("service");
+        final var action = rc.pathParam("action");
+        return String.join(":", service, action);
+    }
+
+    private static String graphqlAddress(RoutingContext rc) {
+        final var service = rc.pathParam("service");
+        return String.join(":", service, "graphql");
+    }
+
+    private void handleApi(RoutingContext rc) {
+        final var address = apiAddress(rc);
+        final var spanOpt = spanOpt(rc, address);
+        final var deliveryOptions = deliveryOptions(rc, spanOpt);
+        final var principal = rc.user().attributes().getString("sub");
+        deliveryOptions.addHeader(Principal.class.getName(), principal);
+        rc.response().putHeader(CONTENT_TYPE, APPLICATION_JSON);
+        vertx.eventBus().request(address, rc.getBody(), deliveryOptions)
+                .onSuccess(it -> this.onSuccess(rc, it, spanOpt))
+                .onFailure(e -> this.onFailure(rc, e, spanOpt));
+    }
+
     private Future<HttpServer> createHttpServer(final OAuth2Auth oAuth2Auth) {
         final var router = Router.router(vertx);
         router.route().handler(corsHandler);
@@ -79,23 +102,12 @@ public class ApiVerticle extends AbstractVerticle {
         final var sockJSBridgeOptions = new SockJSBridgeOptions().addOutboundPermitted(permitted);
         router.mountSubRouter("/eventbus", SockJSHandler.create(vertx).bridge(sockJSBridgeOptions));
 
+        router.route("/graphql/services/:service").handler(OAuth2AuthHandler.create(vertx, oAuth2Auth)).handler(this::handleGraphql);
         router.route("/api/services/:service/actions/:action").handler(OAuth2AuthHandler.create(vertx, oAuth2Auth)).handler(this::handleApi);
         router.route("/dl/services/:service/actions/:action/tokens/:token").handler(this::handleDl);
 
         final var httpServerOptions = new HttpServerOptions().setCompressionSupported(true);
         return vertx.createHttpServer(httpServerOptions).requestHandler(router).listen(9998);
-    }
-
-    private void handleApi(RoutingContext rc) {
-        final var address = apiAddress(rc);
-        final var spanOpt = spanOpt(rc, address);
-        final var deliveryOptions = deliveryOptions(rc, spanOpt);
-        final var principal = rc.user().attributes().getString("sub");
-        deliveryOptions.addHeader(Principal.class.getName(), principal);
-        rc.response().putHeader(CONTENT_TYPE, APPLICATION_JSON);
-        vertx.eventBus().request(address, rc.getBody(), deliveryOptions)
-                .onSuccess(it -> this.onSuccess(rc, it, spanOpt))
-                .onFailure(e -> this.onFailure(rc, e, spanOpt));
     }
 
     private void onSuccess(RoutingContext rc, Message<Object> message, Optional<Span> spanOpt) {
@@ -134,6 +146,18 @@ public class ApiVerticle extends AbstractVerticle {
         spanOpt.ifPresent(it -> it.setTag(Tags.ERROR, true).log(e.getMessage()));
     }
 
+    private void handleGraphql(RoutingContext rc) {
+        final var address = graphqlAddress(rc);
+        final var spanOpt = spanOpt(rc, address);
+        final var deliveryOptions = deliveryOptions(rc, spanOpt);
+        final var principal = rc.user().attributes().getString("sub");
+        deliveryOptions.addHeader(Principal.class.getName(), principal);
+        rc.response().putHeader(CONTENT_TYPE, APPLICATION_JSON);
+        vertx.eventBus().request(address, rc.getBody(), deliveryOptions)
+                .onSuccess(it -> this.onSuccess(rc, it, spanOpt))
+                .onFailure(e -> this.onFailure(rc, e, spanOpt));
+    }
+
     private void handleDl(RoutingContext rc) {
         final var address = apiAddress(rc);
         final var spanOpt = spanOpt(rc, address);
@@ -146,12 +170,6 @@ public class ApiVerticle extends AbstractVerticle {
         vertx.eventBus().request(address, token, deliveryOptions)
                 .onSuccess(it -> this.onSuccess(rc, it, spanOpt))
                 .onFailure(e -> this.onFailure(rc, e, spanOpt));
-    }
-
-    private String apiAddress(RoutingContext rc) {
-        final var service = rc.pathParam("service");
-        final var action = rc.pathParam("action");
-        return String.join(":", service, action);
     }
 
     private Optional<Span> spanOpt(RoutingContext rc, String address) {
