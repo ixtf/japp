@@ -1,11 +1,13 @@
 package test;
 
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
 
-public class TestZookeeper {
+public class ZookeeperVerticle extends AbstractVerticle {
     public static void main(String[] args) {
         final var zkConfig = new JsonObject()
                 .put("zookeeperHosts", "eq.medipath.com.cn")
@@ -15,18 +17,23 @@ public class TestZookeeper {
                 );
         final var mgr = new ZookeeperClusterManager(zkConfig);
         final var options = new VertxOptions().setClusterManager(mgr);
-        Vertx.clusteredVertx(options).onSuccess(TestZookeeper::testVertx);
-    }
-
-    private static void testVertx(Vertx vertx) {
-        vertx.eventBus().request("test", null).onComplete(ar -> {
+        Vertx.clusteredVertx(options).flatMap(vertx -> {
+            final var deploymentOptions = new DeploymentOptions();
+            return vertx.deployVerticle(ZookeeperVerticle.class, deploymentOptions);
+        }).onComplete(ar -> {
             if (ar.succeeded()) {
-                final var result = ar.result();
-                System.out.println(result);
+                System.out.println("success");
             } else {
                 ar.cause().printStackTrace();
             }
         });
     }
 
+    @Override
+    public void start() throws Exception {
+        vertx.eventBus().consumer("test", reply -> {
+            final var ret = new JsonObject().put("test", "test");
+            reply.reply(ret);
+        });
+    }
 }
