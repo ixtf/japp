@@ -177,10 +177,7 @@ public class ApiVerticle extends AbstractVerticle {
             final var map = new HashMap<String, String>();
             rc.request().headers().forEach(entry -> map.put(entry.getKey(), entry.getValue()));
             final var spanBuilder = tracer.buildSpan(address);
-            final var spanContext = tracer.extract(TEXT_MAP, new TextMapAdapter(map));
-            if (spanContext != null) {
-                spanBuilder.asChildOf(spanContext);
-            }
+            ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(map))).ifPresent(spanBuilder::asChildOf);
             return spanBuilder.start();
         });
     }
@@ -198,10 +195,10 @@ public class ApiVerticle extends AbstractVerticle {
                 .map(Long::parseLong)
                 .filter(it -> it > DeliveryOptions.DEFAULT_TIMEOUT)
                 .ifPresent(deliveryOptions::setSendTimeout);
+        final var authorization = AUTHORIZATION.toString(0);
         rc.request().headers().forEach(it -> {
-            final var key = it.getKey().toLowerCase();
-            if (!AUTHORIZATION.toString(0).equals(key)) {
-                deliveryOptions.addHeader(key, it.getValue());
+            if (!authorization.equalsIgnoreCase(it.getKey())) {
+                deliveryOptions.addHeader(authorization, it.getValue());
             }
         });
         return deliveryOptions;
