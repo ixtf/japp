@@ -6,11 +6,13 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 
+@Slf4j
 public class TestZookeeper {
     public static void main(String[] args) {
         final var zkConfig = new JsonObject()
@@ -30,7 +32,8 @@ public class TestZookeeper {
                 .map(Future::toCompletionStage)
                 .flatMap(Mono::fromCompletionStage)
                 .map(Message::body)
-                .subscribe(System.out::println, Throwable::printStackTrace);
+                .onErrorContinue((e, o) -> log.error("{}", o, e))
+                .subscribe(System.out::println);
     }
 
 }

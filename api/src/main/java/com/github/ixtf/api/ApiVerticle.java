@@ -28,6 +28,7 @@ import io.vertx.ext.web.handler.OAuth2AuthHandler;
 import io.vertx.ext.web.handler.sockjs.SockJSBridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 import io.vertx.micrometer.PrometheusScrapingHandler;
+import io.vertx.spi.cluster.hazelcast.ClusterHealthCheck;
 import lombok.extern.slf4j.Slf4j;
 
 import java.security.Principal;
@@ -93,6 +94,10 @@ public class ApiVerticle extends AbstractVerticle {
         router.route("/metrics").handler(PrometheusScrapingHandler.create());
         router.route("/health*").handler(HealthCheckHandler.create(vertx));
         router.route("/ping*").handler(HealthCheckHandler.createWithHealthChecks(HealthChecks.create(vertx)));
+        final var procedure = ClusterHealthCheck.createProcedure(vertx);
+        final var checks = HealthChecks.create(vertx).register("cluster-health", procedure);
+        router.get("/readiness").handler(HealthCheckHandler.createWithHealthChecks(checks));
+
         router.route().failureHandler(rc -> {
             final var errMsg = new JsonObject().put("errMsg", rc.failure().getMessage());
             rc.response().setStatusCode(400).putHeader(CONTENT_TYPE, APPLICATION_JSON).end(errMsg.encode());
