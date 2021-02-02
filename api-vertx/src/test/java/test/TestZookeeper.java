@@ -28,11 +28,11 @@ public class TestZookeeper {
 
     private static void testVertx(Vertx vertx) {
         Flux.interval(Duration.ofSeconds(5))
-                .map(it -> vertx.eventBus().request("test", null))
+                .map(__ -> vertx.eventBus().request("test", null))
                 .map(Future::toCompletionStage)
                 .flatMap(Mono::fromCompletionStage)
                 .map(Message::body)
-                .onErrorContinue((e, o) -> log.error("{}", o, e))
+                .onErrorContinue((e, o) -> e.printStackTrace())
                 .subscribe(System.out::println);
     }
 
