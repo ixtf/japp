@@ -203,7 +203,7 @@ public class ApiVerticle extends AbstractVerticle {
         final var authorization = AUTHORIZATION.toString(0);
         rc.request().headers().forEach(it -> {
             if (!authorization.equalsIgnoreCase(it.getKey())) {
-                deliveryOptions.addHeader(authorization, it.getValue());
+                deliveryOptions.addHeader(it.getKey(), it.getValue());
             }
         });
         return deliveryOptions;
