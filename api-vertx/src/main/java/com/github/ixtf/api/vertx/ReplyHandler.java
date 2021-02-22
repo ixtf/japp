@@ -75,7 +75,7 @@ public class ReplyHandler implements Handler<Message<Object>> {
 
     @Override
     public void handle(Message<Object> reply) {
-        final var ctx = new VertxContext(this, reply);
+        final var ctx = new VertxContext(reply, tracerOpt, operationName);
         final var spanOpt = ctx.spanOpt();
         Mono.fromCallable(() -> bodyMono(method.invoke(instance, ctx)))
                 .flatMap(Function.identity())

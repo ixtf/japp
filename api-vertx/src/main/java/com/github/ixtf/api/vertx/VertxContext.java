@@ -18,29 +18,31 @@ import java.util.Optional;
 import static java.util.Optional.ofNullable;
 
 public class VertxContext implements ApiContext {
-    private final ReplyHandler handler;
     private final Message reply;
+    private final Optional<Tracer> tracerOpt;
+    private final String operationName;
+
     @Getter(lazy = true, value = AccessLevel.PRIVATE)
     private final Map<String, String> headers = _headers();
     @Getter(lazy = true, value = AccessLevel.PRIVATE)
     private final byte[] body = _body();
     @Getter(lazy = true, value = AccessLevel.PRIVATE)
-    private final Optional<Span> spanOpt = Util.spanOpt(tracerOpt(), handler.getOperationName(), headers());
+    private final Optional<Span> spanOpt = Util.spanOpt(tracerOpt, operationName, getHeaders());
 
-    public VertxContext(ReplyHandler handler, Message reply) {
-        this.handler = handler;
+    public VertxContext(Message reply, Optional<Tracer> tracerOpt, String operationName) {
         this.reply = reply;
+        this.tracerOpt = tracerOpt;
+        this.operationName = operationName;
+    }
+
+    public VertxContext(Message reply, Optional<Tracer> tracerOpt) {
+        this(reply, tracerOpt, reply.address());
     }
 
     private Map<String, String> _headers() {
         final var builder = ImmutableMap.<String, String>builder();
         reply.headers().forEach(entry -> builder.put(entry.getKey(), entry.getValue()));
         return builder.build();
-    }
-
-    @Override
-    public Map<String, String> headers() {
-        return getHeaders();
     }
 
     private byte[] _body() {
@@ -62,17 +64,23 @@ public class VertxContext implements ApiContext {
     }
 
     @Override
+    public Map<String, String> headers() {
+        return getHeaders();
+    }
+
+    @Override
     public byte[] body() {
         return getBody();
     }
 
     @Override
     public Optional<Tracer> tracerOpt() {
-        return handler.getTracerOpt();
+        return tracerOpt;
     }
 
     @Override
     public Optional<Span> spanOpt() {
         return getSpanOpt();
     }
+
 }

@@ -39,7 +39,7 @@ public class ApiLauncher extends Launcher {
     public void afterStartingVertx(Vertx vertx) {
         final var config = ofNullable(getenv("API_ROOT_PATH"))
                 .filter(it -> !it.isBlank())
-                .or(() -> Optional.of("/data/api/config.yml"))
+                .or(() -> Optional.of("/home/data/api/config.yml"))
                 .map(File::new)
                 .filter(File::exists)
                 .filter(File::canRead)

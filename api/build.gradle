@@ -7,7 +7,7 @@ plugins {
 dependencies {
     implementation "ch.qos.logback:logback-classic"
     implementation "com.google.inject:guice"
-    implementation "io.vertx:vertx-web"
+    implementation "io.vertx:vertx-web-graphql"
     implementation "io.vertx:vertx-hazelcast"
     implementation "io.vertx:vertx-auth-oauth2"
     implementation "io.vertx:vertx-config-yaml"

@@ -28,6 +28,7 @@ import io.vertx.ext.web.handler.OAuth2AuthHandler;
 import io.vertx.ext.web.handler.sockjs.SockJSBridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 import io.vertx.micrometer.PrometheusScrapingHandler;
+import io.vertx.spi.cluster.hazelcast.ClusterHealthCheck;
 import lombok.extern.slf4j.Slf4j;
 
 import java.security.Principal;
@@ -63,27 +64,15 @@ public class ApiVerticle extends AbstractVerticle {
         discover(vertx, oAuth2Options).flatMap(this::createHttpServer).<Void>mapEmpty().onComplete(startPromise);
     }
 
-    private Future<HttpServer> createHttpServer(final OAuth2Auth oAuth2Auth) {
-        final var router = Router.router(vertx);
-        router.route().handler(corsHandler);
-        router.route().handler(BodyHandler.create());
-        router.route("/metrics").handler(PrometheusScrapingHandler.create());
-        router.route("/health*").handler(HealthCheckHandler.create(vertx));
-        router.route("/ping*").handler(HealthCheckHandler.createWithHealthChecks(HealthChecks.create(vertx)));
-        router.route().failureHandler(rc -> {
-            final var errMsg = new JsonObject().put("errMsg", rc.failure().getMessage());
-            rc.response().setStatusCode(400).putHeader(CONTENT_TYPE, APPLICATION_JSON).end(errMsg.encode());
-        });
+    private static String apiAddress(RoutingContext rc) {
+        final var service = rc.pathParam("service");
+        final var action = rc.pathParam("action");
+        return String.join(":", service, action);
+    }
 
-        final var permitted = new PermittedOptions().setAddressRegex("medipath://ws/.+");
-        final var sockJSBridgeOptions = new SockJSBridgeOptions().addOutboundPermitted(permitted);
-        router.mountSubRouter("/eventbus", SockJSHandler.create(vertx).bridge(sockJSBridgeOptions));
-
-        router.route("/api/services/:service/actions/:action").handler(OAuth2AuthHandler.create(vertx, oAuth2Auth)).handler(this::handleApi);
-        router.route("/dl/services/:service/actions/:action/tokens/:token").handler(this::handleDl);
-
-        final var httpServerOptions = new HttpServerOptions().setCompressionSupported(true);
-        return vertx.createHttpServer(httpServerOptions).requestHandler(router).listen(9998);
+    private static String graphqlAddress(RoutingContext rc) {
+        final var service = rc.pathParam("service");
+        return String.join(":", service, "graphql");
     }
 
     private void handleApi(RoutingContext rc) {
@@ -96,6 +85,34 @@ public class ApiVerticle extends AbstractVerticle {
         vertx.eventBus().request(address, rc.getBody(), deliveryOptions)
                 .onSuccess(it -> this.onSuccess(rc, it, spanOpt))
                 .onFailure(e -> this.onFailure(rc, e, spanOpt));
+    }
+
+    private Future<HttpServer> createHttpServer(final OAuth2Auth oAuth2Auth) {
+        final var router = Router.router(vertx);
+        router.route().handler(corsHandler);
+        router.route().handler(BodyHandler.create());
+        router.route("/metrics").handler(PrometheusScrapingHandler.create());
+        router.route("/health*").handler(HealthCheckHandler.create(vertx));
+        router.route("/ping*").handler(HealthCheckHandler.createWithHealthChecks(HealthChecks.create(vertx)));
+        final var procedure = ClusterHealthCheck.createProcedure(vertx);
+        final var checks = HealthChecks.create(vertx).register("cluster-health", procedure);
+        router.get("/readiness").handler(HealthCheckHandler.createWithHealthChecks(checks));
+
+        router.route().failureHandler(rc -> {
+            final var errMsg = new JsonObject().put("errMsg", rc.failure().getMessage());
+            rc.response().setStatusCode(400).putHeader(CONTENT_TYPE, APPLICATION_JSON).end(errMsg.encode());
+        });
+
+        final var permitted = new PermittedOptions().setAddressRegex("medipath://ws/.+");
+        final var sockJSBridgeOptions = new SockJSBridgeOptions().addOutboundPermitted(permitted);
+        router.mountSubRouter("/eventbus", SockJSHandler.create(vertx).bridge(sockJSBridgeOptions));
+
+        router.route("/graphql/services/:service").handler(OAuth2AuthHandler.create(vertx, oAuth2Auth)).handler(this::handleGraphql);
+        router.route("/api/services/:service/actions/:action").handler(OAuth2AuthHandler.create(vertx, oAuth2Auth)).handler(this::handleApi);
+        router.route("/dl/services/:service/actions/:action/tokens/:token").handler(this::handleDl);
+
+        final var httpServerOptions = new HttpServerOptions().setCompressionSupported(true);
+        return vertx.createHttpServer(httpServerOptions).requestHandler(router).listen(9998);
     }
 
     private void onSuccess(RoutingContext rc, Message<Object> message, Optional<Span> spanOpt) {
@@ -134,6 +151,18 @@ public class ApiVerticle extends AbstractVerticle {
         spanOpt.ifPresent(it -> it.setTag(Tags.ERROR, true).log(e.getMessage()));
     }
 
+    private void handleGraphql(RoutingContext rc) {
+        final var address = graphqlAddress(rc);
+        final var spanOpt = spanOpt(rc, address);
+        final var deliveryOptions = deliveryOptions(rc, spanOpt);
+        final var principal = rc.user().attributes().getString("sub");
+        deliveryOptions.addHeader(Principal.class.getName(), principal);
+        rc.response().putHeader(CONTENT_TYPE, APPLICATION_JSON);
+        vertx.eventBus().request(address, rc.getBody(), deliveryOptions)
+                .onSuccess(it -> this.onSuccess(rc, it, spanOpt))
+                .onFailure(e -> this.onFailure(rc, e, spanOpt));
+    }
+
     private void handleDl(RoutingContext rc) {
         final var address = apiAddress(rc);
         final var spanOpt = spanOpt(rc, address);
@@ -148,21 +177,12 @@ public class ApiVerticle extends AbstractVerticle {
                 .onFailure(e -> this.onFailure(rc, e, spanOpt));
     }
 
-    private String apiAddress(RoutingContext rc) {
-        final var service = rc.pathParam("service");
-        final var action = rc.pathParam("action");
-        return String.join(":", service, action);
-    }
-
     private Optional<Span> spanOpt(RoutingContext rc, String address) {
         return tracerOpt.map(tracer -> {
             final var map = new HashMap<String, String>();
             rc.request().headers().forEach(entry -> map.put(entry.getKey(), entry.getValue()));
             final var spanBuilder = tracer.buildSpan(address);
-            final var spanContext = tracer.extract(TEXT_MAP, new TextMapAdapter(map));
-            if (spanContext != null) {
-                spanBuilder.asChildOf(spanContext);
-            }
+            ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(map))).ifPresent(spanBuilder::asChildOf);
             return spanBuilder.start();
         });
     }
@@ -180,9 +200,10 @@ public class ApiVerticle extends AbstractVerticle {
                 .map(Long::parseLong)
                 .filter(it -> it > DeliveryOptions.DEFAULT_TIMEOUT)
                 .ifPresent(deliveryOptions::setSendTimeout);
+        final var authorization = AUTHORIZATION.toString(0);
         rc.request().headers().forEach(it -> {
             final var key = it.getKey().toLowerCase();
-            if (!AUTHORIZATION.toString(0).equals(key)) {
+            if (!authorization.equalsIgnoreCase(it.getKey())) {
                 deliveryOptions.addHeader(key, it.getValue());
             }
         });

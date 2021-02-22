@@ -6,7 +6,6 @@ import com.sun.security.auth.UserPrincipal;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.TextMapAdapter;
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -49,26 +48,9 @@ public class Util {
                 .map(UserPrincipal::new);
     }
 
-    public static Optional<Principal> principalOpt(final Message message) {
-        return ofNullable(message.headers())
-                .map(it -> it.get(Principal.class.getName()))
-                .filter(J::nonBlank)
-                .map(UserPrincipal::new);
-    }
-
     public static Optional<Span> spanOpt(final Optional<Tracer> tracerOpt, final String operationName, final Map map) {
         return tracerOpt.map(tracer -> {
             final var spanBuilder = tracer.buildSpan(operationName);
-            ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(map))).ifPresent(spanBuilder::asChildOf);
-            return spanBuilder.start();
-        });
-    }
-
-    public static Optional<Span> spanOpt(final Optional<Tracer> tracerOpt, final String operationName, final Message message) {
-        return tracerOpt.map(tracer -> {
-            final var spanBuilder = tracer.buildSpan(operationName);
-            final var map = J.<String, String>newHashMap();
-            message.headers().forEach(entry -> map.put(entry.getKey(), entry.getValue()));
             ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(map))).ifPresent(spanBuilder::asChildOf);
             return spanBuilder.start();
         });
