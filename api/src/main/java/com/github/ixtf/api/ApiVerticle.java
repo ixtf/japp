@@ -202,8 +202,9 @@ public class ApiVerticle extends AbstractVerticle {
                 .ifPresent(deliveryOptions::setSendTimeout);
         final var authorization = AUTHORIZATION.toString(0);
         rc.request().headers().forEach(it -> {
+            final var key = it.getKey().toLowerCase();
             if (!authorization.equalsIgnoreCase(it.getKey())) {
-                deliveryOptions.addHeader(authorization, it.getValue());
+                deliveryOptions.addHeader(key, it.getValue());
             }
         });
         return deliveryOptions;
