@@ -4,6 +4,6 @@ dependencies {
     // todo 考虑使用 byte-buddy
 //    compile "net.bytebuddy:byte-buddy"
     compile "cglib:cglib"
-    compile "commons-beanutils:commons-beanutils"
+    compile "commons-beanutils:commons-beanutils:1.9.4"
     // todo 考虑使用 byte-buddy
 }

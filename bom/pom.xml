@@ -14,23 +14,17 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <jappVersion>1.0.0</jappVersion>
-        <validatorVersion>7.0.1.Final</validatorVersion>
         <vertxVersion>4.0.3</vertxVersion>
         <reactorVersion>2020.0.5</reactorVersion>
-        <guiceVersion>5.0.1</guiceVersion>
-        <classgraphVersion>4.8.102</classgraphVersion>
-        <caffeineVersion>3.0.0</caffeineVersion>
         <jacksonVersion>2.12.2</jacksonVersion>
+        <guiceVersion>5.0.1</guiceVersion>
         <jaegerVersion>1.5.0</jaegerVersion>
+        <slf4jVersion>1.7.30</slf4jVersion>
         <logbackVersion>1.2.3</logbackVersion>
         <keycloakVersion>11.0.3</keycloakVersion>
-        <luceneVersion>8.8.1</luceneVersion>
-        <guavaVersion>30.1-jre</guavaVersion>
-        <poiVersion>5.0.0</poiVersion>
-        <mammothVersion>1.4.0</mammothVersion>
-        <zxingVersion>3.4.1</zxingVersion>
         <droolsVersion>7.51.0.Final</droolsVersion>
         <micrometerVersion>1.6.5</micrometerVersion>
+        <zxingVersion>3.4.1</zxingVersion>
         <grpcVersion>1.28.1</grpcVersion>
         <protobufVersion>3.11.4</protobufVersion>
         <netifiVersion>1.6.10</netifiVersion>
@@ -38,77 +32,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>com.graphql-java</groupId>
-                <artifactId>graphql-java</artifactId>
-                <version>16.1</version>
-            </dependency>
-            <dependency>
-                <groupId>com.graphql-java</groupId>
-                <artifactId>graphql-java-extended-scalars</artifactId>
-                <version>15.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>net.bytebuddy</groupId>
-                <artifactId>byte-buddy</artifactId>
-                <version>1.10.22</version>
-            </dependency>
-            <dependency>
-                <groupId>io.github.classgraph</groupId>
-                <artifactId>classgraph</artifactId>
-                <version>${classgraphVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.ben-manes.caffeine</groupId>
-                <artifactId>caffeine</artifactId>
-                <version>${caffeineVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>3.11</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-text</artifactId>
-                <version>1.9</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-collections4</artifactId>
-                <version>4.4</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>2.8.0</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-codec</groupId>
-                <artifactId>commons-codec</artifactId>
-                <version>1.15</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.uuid</groupId>
-                <artifactId>java-uuid-generator</artifactId>
-                <version>4.0.1</version>
-            </dependency>
-            <dependency>
-                <groupId>com.belerweb</groupId>
-                <artifactId>pinyin4j</artifactId>
-                <version>2.5.1</version>
-            </dependency>
-            <dependency>
-                <groupId>cglib</groupId>
-                <artifactId>cglib</artifactId>
-                <version>3.3.0</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-beanutils</groupId>
-                <artifactId>commons-beanutils</artifactId>
-                <version>1.9.4</version>
-            </dependency>
-
             <dependency>
                 <groupId>com.github.ixtf.japp</groupId>
                 <artifactId>core</artifactId>
@@ -131,17 +54,17 @@
             </dependency>
             <dependency>
                 <groupId>com.github.ixtf.japp</groupId>
+                <artifactId>persistence-mongo</artifactId>
+                <version>${jappVersion}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ixtf.japp</groupId>
                 <artifactId>rabbitmq</artifactId>
                 <version>${jappVersion}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.ixtf.japp</groupId>
                 <artifactId>persistence-lucene</artifactId>
-                <version>${jappVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.ixtf.japp</groupId>
-                <artifactId>persistence-mongo</artifactId>
                 <version>${jappVersion}</version>
             </dependency>
             <dependency>
@@ -154,26 +77,26 @@
                 <artifactId>poi</artifactId>
                 <version>${jappVersion}</version>
             </dependency>
-            <dependency>
-                <groupId>com.github.ixtf.japp</groupId>
-                <artifactId>image</artifactId>
-                <version>${jappVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.ixtf.japp</groupId>
-                <artifactId>zxing</artifactId>
-                <version>${jappVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.ixtf.japp</groupId>
-                <artifactId>print</artifactId>
-                <version>${jappVersion}</version>
-            </dependency>
+            <!--            <dependency>-->
+            <!--                <groupId>com.github.ixtf.japp</groupId>-->
+            <!--                <artifactId>image</artifactId>-->
+            <!--                <version>${jappVersion}</version>-->
+            <!--            </dependency>-->
+            <!--            <dependency>-->
+            <!--                <groupId>com.github.ixtf.japp</groupId>-->
+            <!--                <artifactId>zxing</artifactId>-->
+            <!--                <version>${jappVersion}</version>-->
+            <!--            </dependency>-->
+            <!--            <dependency>-->
+            <!--                <groupId>com.github.ixtf.japp</groupId>-->
+            <!--                <artifactId>print</artifactId>-->
+            <!--                <version>${jappVersion}</version>-->
+            <!--            </dependency>-->
 
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.30</version>
+                <version>${slf4jVersion}</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
@@ -184,80 +107,6 @@
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
                 <version>${logbackVersion}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-demo</artifactId>
-                <version>${luceneVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-analyzers-smartcn</artifactId>
-                <version>${luceneVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-expressions</artifactId>
-                <version>${luceneVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-facet</artifactId>
-                <version>${luceneVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-queries</artifactId>
-                <version>${luceneVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-queryparser</artifactId>
-                <version>${luceneVersion}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi</artifactId>
-                <version>${poiVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-scratchpad</artifactId>
-                <version>${poiVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-ooxml</artifactId>
-                <version>${poiVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-ooxml-schemas</artifactId>
-                <!--                <version>${poiVersion}</version>-->
-                <version>4.1.2</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>ooxml-schemas</artifactId>
-                <version>1.4</version>
-            </dependency>
-            <dependency>
-                <groupId>org.zwobble.mammoth</groupId>
-                <artifactId>mammoth</artifactId>
-                <version>${mammothVersion}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>${guavaVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.zxing</groupId>
-                <artifactId>javase</artifactId>
-                <version>${zxingVersion}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.inject</groupId>
@@ -276,26 +125,35 @@
             </dependency>
 
             <dependency>
-                <groupId>org.hibernate.validator</groupId>
-                <artifactId>hibernate-validator</artifactId>
-                <version>${validatorVersion}</version>
+                <groupId>com.graphql-java</groupId>
+                <artifactId>graphql-java</artifactId>
+                <version>16.1</version>
             </dependency>
             <dependency>
-                <groupId>org.glassfish</groupId>
-                <artifactId>jakarta.el</artifactId>
-                <version>4.0.1</version>
+                <groupId>com.graphql-java</groupId>
+                <artifactId>graphql-java-extended-scalars</artifactId>
+                <version>15.0.0</version>
             </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.10.22</version>
+            </dependency>
+            <dependency>
+                <groupId>cglib</groupId>
+                <artifactId>cglib</artifactId>
+                <version>3.3.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.zxing</groupId>
+                <artifactId>javase</artifactId>
+                <version>${zxingVersion}</version>
+            </dependency>
+
             <dependency>
                 <groupId>jakarta.platform</groupId>
                 <artifactId>jakarta.jakartaee-bom</artifactId>
                 <version>9.0.0</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.rsocket</groupId>
-                <artifactId>rsocket-bom</artifactId>
-                <version>1.1.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -317,6 +175,13 @@
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-stack-depchain</artifactId>
                 <version>${vertxVersion}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.rsocket</groupId>
+                <artifactId>rsocket-bom</artifactId>
+                <version>1.1.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
