@@ -15,16 +15,15 @@
         <maven.compiler.target>11</maven.compiler.target>
         <jappVersion>1.0.0</jappVersion>
         <vertxVersion>4.0.3</vertxVersion>
-        <reactorVersion>2020.0.5</reactorVersion>
-        <jacksonVersion>2.12.2</jacksonVersion>
-        <guiceVersion>5.0.1</guiceVersion>
-        <jaegerVersion>1.5.0</jaegerVersion>
+        <micrometerVersion>1.6.5</micrometerVersion>
         <slf4jVersion>1.7.30</slf4jVersion>
         <logbackVersion>1.2.3</logbackVersion>
+        <jacksonVersion>2.12.2</jacksonVersion>
+        <reactorVersion>2020.0.5</reactorVersion>
+        <guiceVersion>5.0.1</guiceVersion>
+        <jaegerVersion>1.5.0</jaegerVersion>
         <keycloakVersion>11.0.3</keycloakVersion>
         <droolsVersion>7.51.0.Final</droolsVersion>
-        <micrometerVersion>1.6.5</micrometerVersion>
-        <zxingVersion>3.4.1</zxingVersion>
         <grpcVersion>1.28.1</grpcVersion>
         <protobufVersion>3.11.4</protobufVersion>
         <netifiVersion>1.6.10</netifiVersion>
@@ -147,7 +146,7 @@
             <dependency>
                 <groupId>com.google.zxing</groupId>
                 <artifactId>javase</artifactId>
-                <version>${zxingVersion}</version>
+                <version>3.4.1</version>
             </dependency>
 
             <dependency>
