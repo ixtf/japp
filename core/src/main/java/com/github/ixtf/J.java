@@ -148,13 +148,34 @@ public class J {
         FileUtils.moveFile(srcFile, destFile);
     }
 
+    /**
+     * 文件扩展名 yml yaml 可以使用
+     *
+     * @param file
+     * @return
+     */
     @SneakyThrows(IOException.class)
     public static JsonNode readJson(File file) {
         final var ext = FilenameUtils.getExtension(file.getName());
         if ("yml".equalsIgnoreCase(ext) || "yaml".equalsIgnoreCase(ext)) {
-            return readYaml(file);
+            return YAML_MAPPER.readTree(file);
         }
         return MAPPER.readTree(file);
+    }
+
+    @SneakyThrows(IOException.class)
+    public static void writeJson(File file, Object o) {
+        FileUtils.forceMkdirParent(file);
+        final var ext = FilenameUtils.getExtension(file.getName());
+        if ("yml".equalsIgnoreCase(ext) || "yaml".equalsIgnoreCase(ext)) {
+            YAML_MAPPER.writerWithDefaultPrettyPrinter().writeValue(file, o);
+        } else {
+            MAPPER.writerWithDefaultPrettyPrinter().writeValue(file, o);
+        }
+    }
+
+    public static void writeJson(String file, Object o) {
+        writeJson(J.getFile(file), o);
     }
 
     @SneakyThrows(IOException.class)
@@ -165,41 +186,6 @@ public class J {
     @SneakyThrows(IOException.class)
     public static JsonNode readJson(byte[] bytes) {
         return MAPPER.readTree(bytes);
-    }
-
-    @SneakyThrows(IOException.class)
-    public static void writeJson(File file, Object o) {
-        FileUtils.forceMkdirParent(file);
-        MAPPER.writerWithDefaultPrettyPrinter().writeValue(file, o);
-    }
-
-    public static void writeJson(String file, Object o) {
-        writeJson(J.getFile(file), o);
-    }
-
-    @SneakyThrows(IOException.class)
-    public static JsonNode readYaml(File file) {
-        return YAML_MAPPER.readTree(file);
-    }
-
-    @SneakyThrows(IOException.class)
-    public static JsonNode readYaml(String yaml) {
-        return YAML_MAPPER.readTree(yaml);
-    }
-
-    @SneakyThrows(IOException.class)
-    public static JsonNode readYaml(byte[] bytes) {
-        return YAML_MAPPER.readTree(bytes);
-    }
-
-    @SneakyThrows(IOException.class)
-    public static void writeYaml(File file, Object o) {
-        FileUtils.forceMkdirParent(file);
-        YAML_MAPPER.writerWithDefaultPrettyPrinter().writeValue(file, o);
-    }
-
-    public static void writeYaml(String file, Object o) {
-        writeYaml(J.getFile(file), o);
     }
 
     @SneakyThrows(IOException.class)
