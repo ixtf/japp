@@ -14,23 +14,23 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <jappVersion>1.0.0</jappVersion>
-        <validatorVersion>7.0.0.Final</validatorVersion>
-        <vertxVersion>4.0.2</vertxVersion>
-        <reactorVersion>2020.0.3</reactorVersion>
-        <guiceVersion>4.2.3</guiceVersion>
-        <classgraphVersion>4.8.93</classgraphVersion>
-        <caffeineVersion>2.8.6</caffeineVersion>
-        <jacksonVersion>2.12.0</jacksonVersion>
+        <validatorVersion>7.0.1.Final</validatorVersion>
+        <vertxVersion>4.0.3</vertxVersion>
+        <reactorVersion>2020.0.5</reactorVersion>
+        <guiceVersion>5.0.1</guiceVersion>
+        <classgraphVersion>4.8.102</classgraphVersion>
+        <caffeineVersion>3.0.0</caffeineVersion>
+        <jacksonVersion>2.12.2</jacksonVersion>
         <jaegerVersion>1.5.0</jaegerVersion>
         <logbackVersion>1.2.3</logbackVersion>
         <keycloakVersion>11.0.3</keycloakVersion>
         <luceneVersion>8.7.0</luceneVersion>
         <guavaVersion>30.0-jre</guavaVersion>
-        <poiVersion>4.1.2</poiVersion>
+        <poiVersion>5.0.0</poiVersion>
         <mammothVersion>1.4.0</mammothVersion>
         <zxingVersion>3.4.1</zxingVersion>
-        <droolsVersion>7.47.0.Final</droolsVersion>
-        <micrometerVersion>1.6.1</micrometerVersion>
+        <droolsVersion>7.51.0.Final</droolsVersion>
+        <micrometerVersion>1.6.5</micrometerVersion>
         <grpcVersion>1.28.1</grpcVersion>
         <protobufVersion>3.11.4</protobufVersion>
         <netifiVersion>1.6.10</netifiVersion>

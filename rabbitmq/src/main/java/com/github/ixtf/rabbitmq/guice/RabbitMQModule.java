@@ -66,7 +66,7 @@ public class RabbitMQModule extends AbstractModule {
     @Singleton
     @Provides
     private Receiver Receiver(ConnectionFactory connectionFactory, @Named(SERVICE) String group) {
-        final ReceiverOptions receiverOptions = new ReceiverOptions()
+        final var receiverOptions = new ReceiverOptions()
                 .connectionFactory(connectionFactory)
                 .connectionSupplier(cf -> {
                     final Address address = new Address(connectionFactory.getHost());
