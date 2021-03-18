@@ -24,7 +24,7 @@
         <jaegerVersion>1.5.0</jaegerVersion>
         <logbackVersion>1.2.3</logbackVersion>
         <keycloakVersion>11.0.3</keycloakVersion>
-        <luceneVersion>8.7.0</luceneVersion>
+        <luceneVersion>8.8.1</luceneVersion>
         <guavaVersion>30.1-jre</guavaVersion>
         <poiVersion>5.0.0</poiVersion>
         <mammothVersion>1.4.0</mammothVersion>
