@@ -149,7 +149,7 @@ public abstract class Jmongo {
      * @return 实体类
      */
     public <T> Mono<T> find(Class<T> entityClass, Bson filter) {
-        return Flux.from(collection(entityClass).find(filter).limit(2))
+        return Flux.from(collection(entityClass).find(filter).limit(2).batchSize(2))
                 .map(it -> entityConverter.toEntity(entityClass, it))
                 .collectList()
                 .flatMap(list -> {
@@ -166,25 +166,25 @@ public abstract class Jmongo {
     // 查询所有
     public <T> Flux<T> query(Class<T> entityClass) {
         final var condition = eq(DELETED_COL, false);
-        return Flux.from(collection(entityClass).find(condition)).map(it -> entityConverter.toEntity(entityClass, it));
+        return Flux.from(collection(entityClass).find(condition).batchSize(1000)).map(it -> entityConverter.toEntity(entityClass, it));
     }
 
     public <T> Flux<T> query(Class<T> entityClass, int skip, int limit) {
         final var condition = eq(DELETED_COL, false);
-        return Flux.from(collection(entityClass).find(condition).skip(skip).limit(limit)).map(it -> entityConverter.toEntity(entityClass, it));
+        return Flux.from(collection(entityClass).find(condition).skip(skip).limit(limit).batchSize(limit)).map(it -> entityConverter.toEntity(entityClass, it));
     }
 
     // 按条件查询
     public <T> Flux<T> query(Class<T> entityClass, Bson filter) {
         final var deletedFilter = eq(DELETED_COL, false);
         final var condition = and(filter, deletedFilter);
-        return Flux.from(collection(entityClass).find(condition)).map(it -> entityConverter.toEntity(entityClass, it));
+        return Flux.from(collection(entityClass).find(condition).batchSize(1000)).map(it -> entityConverter.toEntity(entityClass, it));
     }
 
     public <T> Flux<T> query(Class<T> entityClass, Bson filter, int skip, int limit) {
         final var deletedFilter = eq(DELETED_COL, false);
         final var condition = and(filter, deletedFilter);
-        return Flux.from(collection(entityClass).find(condition).skip(skip).limit(limit)).map(it -> entityConverter.toEntity(entityClass, it));
+        return Flux.from(collection(entityClass).find(condition).skip(skip).limit(limit).batchSize(limit)).map(it -> entityConverter.toEntity(entityClass, it));
     }
 
     public <T> Flux<T> query(Class<T> entityClass, Optional<Bson> filterOpt) {
