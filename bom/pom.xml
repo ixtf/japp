@@ -25,7 +25,7 @@
         <logbackVersion>1.2.3</logbackVersion>
         <keycloakVersion>11.0.3</keycloakVersion>
         <luceneVersion>8.7.0</luceneVersion>
-        <guavaVersion>30.0-jre</guavaVersion>
+        <guavaVersion>30.1-jre</guavaVersion>
         <poiVersion>5.0.0</poiVersion>
         <mammothVersion>1.4.0</mammothVersion>
         <zxingVersion>3.4.1</zxingVersion>
