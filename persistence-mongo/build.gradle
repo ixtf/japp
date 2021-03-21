@@ -1,7 +1,7 @@
 dependencies {
-    api project(":persistence-core")
-    api "org.mongodb:mongodb-driver-reactivestreams:4.2.2"
-    api "io.projectreactor:reactor-core"
+    api project(":persistence-core"),
+            "io.projectreactor:reactor-core",
+            "org.mongodb:mongodb-driver-reactivestreams:4.2.2"
 
     compileOnly project(":api-core")
 
