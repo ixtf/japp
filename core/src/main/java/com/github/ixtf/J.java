@@ -150,7 +150,7 @@ public class J {
 
     /**
      * @param file 文件扩展名 json 或 yml 或 yaml 可以使用
-     * @return
+     * @return {@link JsonNode}
      */
     @SneakyThrows(IOException.class)
     public static JsonNode readJson(File file) {
