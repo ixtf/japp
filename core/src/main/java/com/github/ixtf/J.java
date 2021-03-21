@@ -149,9 +149,7 @@ public class J {
     }
 
     /**
-     * 文件扩展名 yml yaml 可以使用
-     *
-     * @param file
+     * @param file 文件扩展名 json 或 yml 或 yaml 可以使用
      * @return
      */
     @SneakyThrows(IOException.class)
