@@ -28,7 +28,7 @@ subprojects {
         mavenCentral()
         maven { url "https://plugins.gradle.org/m2" }
         maven { url "https://jitpack.io" }
-        maven { url "http://maven.geo-solutions.it" }
+        maven { url "https://maven.geo-solutions.it" }
     }
 
     dependencyManagement {
