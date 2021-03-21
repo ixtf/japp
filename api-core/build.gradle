@@ -12,5 +12,5 @@ dependencies {
     compile "io.jaegertracing:jaeger-client"
 
     compileOnly "org.keycloak:keycloak-admin-client"
-    testCompile "io.projectreactor.rabbitmq:reactor-rabbitmq"
+    testImplementation "io.projectreactor.rabbitmq:reactor-rabbitmq"
 }

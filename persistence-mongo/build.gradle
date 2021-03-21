@@ -5,5 +5,5 @@ dependencies {
 
     compileOnly project(":api-core")
 
-    testCompile "net.bytebuddy:byte-buddy"
+    testImplementation "net.bytebuddy:byte-buddy"
 }
