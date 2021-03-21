@@ -53,6 +53,7 @@ subprojects {
     javadoc {
         options.addBooleanOption('html5', true)
     }
+    // ref https://docs.gradle.org/current/userguide/publishing_maven.html
     publishing {
         publications {
             maven(MavenPublication) {

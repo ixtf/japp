@@ -32,7 +32,9 @@ jar.manifest {
 
 shadowJar {
     mergeServiceFiles()
-    archiveName "fat.jar"
+    archiveBaseName.set("fat")
+    archiveClassifier.set("")
+    archiveVersion.set("")
 }
 docker {
     dependsOn shadowJar
