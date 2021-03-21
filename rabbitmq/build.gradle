@@ -1,5 +1,5 @@
 dependencies {
-    compile "io.projectreactor.rabbitmq:reactor-rabbitmq"
+    implementation "io.projectreactor.rabbitmq:reactor-rabbitmq"
 
     compileOnly project(":api-core")
 }

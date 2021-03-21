@@ -1,5 +1,5 @@
 dependencies {
-    compile project(":api-core")
+    implementation project(":api-core")
     compileOnly "io.vertx:vertx-rabbitmq-client"
 
     testImplementation "io.vertx:vertx-zookeeper"
