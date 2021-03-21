@@ -34,7 +34,7 @@ public class Util {
                 .map(J::getFile)
                 .filter(File::exists)
                 .filter(File::canRead)
-                .map(J::readYaml)
+                .map(J::readJson)
                 .map(JsonNode::toString)
                 .map(JsonObject::new)
                 .orElseGet(JsonObject::new);

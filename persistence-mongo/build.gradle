@@ -1,7 +1,9 @@
 dependencies {
-    compile project(":persistence-core")
-    compile "org.mongodb:mongodb-driver-reactivestreams:4.1.1"
-    compile "io.projectreactor:reactor-core"
+    api project(":persistence-core"),
+            "io.projectreactor:reactor-core",
+            "org.mongodb:mongodb-driver-reactivestreams:4.2.2"
 
-    testCompile "net.bytebuddy:byte-buddy"
+    compileOnly project(":api-core")
+
+    testImplementation "net.bytebuddy:byte-buddy"
 }

@@ -36,7 +36,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Optional;
 
-import static com.github.ixtf.api.ApiModule.injectMembers;
+import static com.github.ixtf.api.ApiModule.*;
 import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_JSON;
@@ -59,7 +59,7 @@ public class ApiVerticle extends AbstractVerticle {
     public void start(Promise<Void> startPromise) throws Exception {
         injectMembers(this);
 
-        vertx.eventBus().consumer(KeycloakAdmin, ApiModule::handleKeycloakAdmin);
+        vertx.eventBus().consumer(KeycloakAdmin, reply -> reply.reply(getInstance(JsonObject.class, CONFIG).getJsonObject("keycloak-admin", new JsonObject())));
 
         discover(vertx, oAuth2Options).flatMap(this::createHttpServer).<Void>mapEmpty().onComplete(startPromise);
     }
@@ -102,7 +102,7 @@ public class ApiVerticle extends AbstractVerticle {
             final var errMsg = new JsonObject().put("errMsg", rc.failure().getMessage());
             rc.response().setStatusCode(400).putHeader(CONTENT_TYPE, APPLICATION_JSON).end(errMsg.encode());
         });
-
+        // todo add auth fix sockJSAddressRegex in config
         final var permitted = new PermittedOptions().setAddressRegex("medipath://ws/.+");
         final var sockJSBridgeOptions = new SockJSBridgeOptions().addOutboundPermitted(permitted);
         router.mountSubRouter("/eventbus", SockJSHandler.create(vertx).bridge(sockJSBridgeOptions));

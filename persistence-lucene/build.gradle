@@ -1,8 +1,10 @@
 dependencies {
-    compile project(":persistence-core")
-    compile "org.apache.lucene:lucene-analyzers-smartcn"
-    compile "org.apache.lucene:lucene-expressions"
-    compile "org.apache.lucene:lucene-facet"
-    compile "org.apache.lucene:lucene-queries"
-    compile "org.apache.lucene:lucene-queryparser"
+    api project(":persistence-core"),
+            "org.apache.lucene:lucene-analyzers-smartcn:8.8.1",
+            "org.apache.lucene:lucene-expressions:8.8.1",
+            "org.apache.lucene:lucene-facet:8.8.1",
+            "org.apache.lucene:lucene-queries:8.8.1",
+            "org.apache.lucene:lucene-queryparser:8.8.1"
+
+    compileOnly "org.apache.lucene:lucene-demo:8.8.1"
 }
