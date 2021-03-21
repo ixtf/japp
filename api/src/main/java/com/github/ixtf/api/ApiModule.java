@@ -7,7 +7,6 @@ import com.google.inject.name.Named;
 import io.jaegertracing.Configuration;
 import io.opentracing.Tracer;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.oauth2.OAuth2Options;
@@ -57,10 +56,6 @@ public class ApiModule extends AbstractModule {
         INJECTOR.injectMembers(o);
     }
 
-    public static void handleKeycloakAdmin(Message reply) {
-        reply.reply(getInstance(JsonObject.class, CONFIG).getJsonObject("keycloak-admin", new JsonObject()));
-    }
-
     @Override
     protected void configure() {
         bind(Vertx.class).toInstance(vertx);
@@ -72,7 +67,7 @@ public class ApiModule extends AbstractModule {
     @Provides
     private OAuth2Options OAuth2Options() {
         final var config = this.config.getJsonObject("keycloak", new JsonObject());
-        final var site = config.getString("site", "https://sso.medipath.com.cn/auth/realms/medipath");
+        final var site = config.getString("site");
         final var clientID = config.getString("clientID", "api");
         return new OAuth2Options().setSite(site).setClientID(clientID);
     }
@@ -108,7 +103,7 @@ public class ApiModule extends AbstractModule {
     private Tracer Tracer() {
         return ofNullable(config.getJsonObject("tracer")).map(it -> {
             final var serviceName = it.getString("serviceName", "api");
-            final var agentHost = it.getString("agentHost", "dev.medipath.com.cn");
+            final var agentHost = it.getString("agentHost");
             final var samplerConfig = Configuration.SamplerConfiguration.fromEnv().withType("const").withParam(1);
             final var senderConfiguration = new Configuration.SenderConfiguration().withAgentHost(agentHost);
             final var reporterConfig = Configuration.ReporterConfiguration.fromEnv().withSender(senderConfiguration).withLogSpans(true);

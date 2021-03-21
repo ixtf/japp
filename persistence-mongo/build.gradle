@@ -3,5 +3,7 @@ dependencies {
     compile "org.mongodb:mongodb-driver-reactivestreams:4.2.2"
     compile "io.projectreactor:reactor-core"
 
+    compileOnly project(":api-core")
+
     testCompile "net.bytebuddy:byte-buddy"
 }

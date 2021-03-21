@@ -23,9 +23,9 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public abstract class ApiModule extends AbstractModule {
-    public static final String SERVICE = "__:ApiModule:SERVICE__";
-    public static final String CONFIG = "__:ApiModule:CONFIG__";
-    public static final String ACTIONS = "__:ApiModule:ACTIONS__";
+    public static final String SERVICE = "com.github.ixtf.api.guice:__SERVICE__";
+    public static final String CONFIG = "com.github.ixtf.api.guice:__CONFIG__";
+    public static final String ACTIONS = "com.github.ixtf.api.guice:__ACTIONS__";
 
     private final Vertx vertx;
     private final String service;
@@ -64,9 +64,7 @@ public abstract class ApiModule extends AbstractModule {
                 .collect(toUnmodifiableSet());
     }
 
-    protected Collection<String> ActionPackages() {
-        return List.of(this.getClass().getPackageName());
-    }
+    protected abstract Collection<String> ActionPackages();
 
     protected Collection<String> ActionClasses() {
         return List.of();
@@ -77,7 +75,7 @@ public abstract class ApiModule extends AbstractModule {
     private Tracer Tracer() {
         return ofNullable(config.getJsonObject("tracer")).map(it -> {
             final var serviceName = it.getString("serviceName", service);
-            final var agentHost = it.getString("agentHost", "dev.medipath.com.cn");
+            final var agentHost = it.getString("agentHost");
             final var samplerConfig = Configuration.SamplerConfiguration.fromEnv().withType("const").withParam(1);
             final var senderConfiguration = new Configuration.SenderConfiguration().withAgentHost(agentHost);
             final var reporterConfig = Configuration.ReporterConfiguration.fromEnv().withSender(senderConfiguration).withLogSpans(true);
