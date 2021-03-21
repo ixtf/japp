@@ -1,4 +1,4 @@
 dependencies {
-    implementation project(":core")
-    implementation "com.belerweb:pinyin4j:2.5.1"
+    implementation project(":core"),
+            "com.belerweb:pinyin4j:2.5.1"
 }
