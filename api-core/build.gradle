@@ -1,15 +1,15 @@
 dependencies {
-    implementation project(":guice")
-    implementation "jakarta.ws.rs:jakarta.ws.rs-api"
-    implementation "io.projectreactor:reactor-core"
-    implementation "io.vertx:vertx-web-graphql"
-    implementation "com.graphql-java:graphql-java-extended-scalars"
-    implementation "io.vertx:vertx-hazelcast"
-    implementation "io.vertx:vertx-reactive-streams"
-    implementation "io.vertx:vertx-health-check"
-    implementation "io.vertx:vertx-micrometer-metrics"
-    implementation "io.micrometer:micrometer-registry-prometheus"
-    implementation "io.jaegertracing:jaeger-client"
+    api project(":guice")
+    api "jakarta.ws.rs:jakarta.ws.rs-api"
+    api "io.projectreactor:reactor-core"
+    api "io.vertx:vertx-web-graphql"
+    api "com.graphql-java:graphql-java-extended-scalars"
+    api "io.vertx:vertx-hazelcast"
+    api "io.vertx:vertx-reactive-streams"
+    api "io.vertx:vertx-health-check"
+    api "io.vertx:vertx-micrometer-metrics"
+    api "io.micrometer:micrometer-registry-prometheus"
+    api "io.jaegertracing:jaeger-client"
 
     compileOnly "org.keycloak:keycloak-admin-client"
     testImplementation "io.projectreactor.rabbitmq:reactor-rabbitmq"

@@ -1,9 +1,9 @@
 dependencies {
-    implementation project(":core")
-    implementation "jakarta.persistence:jakarta.persistence-api"
+    api project(":core")
+    api "jakarta.persistence:jakarta.persistence-api"
     // todo 考虑使用 byte-buddy
 //    implementation "net.bytebuddy:byte-buddy"
-    implementation "cglib:cglib"
-    implementation "commons-beanutils:commons-beanutils:1.9.4"
+    api "cglib:cglib"
+    api "commons-beanutils:commons-beanutils:1.9.4"
     // todo 考虑使用 byte-buddy
 }

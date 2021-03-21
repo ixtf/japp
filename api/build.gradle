@@ -5,16 +5,16 @@ plugins {
 }
 
 dependencies {
-    implementation "ch.qos.logback:logback-classic"
-    implementation "com.google.inject:guice"
-    implementation "io.vertx:vertx-web-graphql"
-    implementation "io.vertx:vertx-hazelcast"
-    implementation "io.vertx:vertx-auth-oauth2"
-    implementation "io.vertx:vertx-config-yaml"
-    implementation "io.vertx:vertx-health-check"
-    implementation "io.vertx:vertx-micrometer-metrics"
-    implementation "io.micrometer:micrometer-registry-prometheus"
-    implementation "io.jaegertracing:jaeger-client"
+    api "ch.qos.logback:logback-classic"
+    api "com.google.inject:guice"
+    api "io.vertx:vertx-web-graphql"
+    api "io.vertx:vertx-hazelcast"
+    api "io.vertx:vertx-auth-oauth2"
+    api "io.vertx:vertx-config-yaml"
+    api "io.vertx:vertx-health-check"
+    api "io.vertx:vertx-micrometer-metrics"
+    api "io.micrometer:micrometer-registry-prometheus"
+    api "io.jaegertracing:jaeger-client"
 }
 
 mainClassName = "com.github.ixtf.api.ApiLauncher"
