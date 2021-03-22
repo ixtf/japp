@@ -1,4 +1,4 @@
-package com.github.ixtf.persistence.mongo.guice;
+package com.github.ixtf.api.guice;
 
 import com.github.ixtf.persistence.mongo.Jmongo;
 import com.github.ixtf.persistence.mongo.JmongoOptions;
@@ -16,8 +16,6 @@ import static com.github.ixtf.api.guice.ApiModule.CONFIG;
 import static com.github.ixtf.persistence.mongo.Jmongo.of;
 
 public class MongoModule extends AbstractModule {
-    public static final String CONNECTION_STRING = "com.github.ixtf.persistence.mongo.guice.MongoModule:__CONNECTION_STRING__";
-    public static final String DB_NAME = "com.github.ixtf.persistence.mongo.guice.MongoModule:__DB_NAME__";
 
     @Singleton
     @Provides

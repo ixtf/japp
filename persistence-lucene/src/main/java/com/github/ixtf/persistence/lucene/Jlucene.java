@@ -18,7 +18,6 @@ import org.apache.lucene.facet.FacetResult;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.*;
 
 import java.io.IOException;
@@ -50,11 +49,11 @@ public class Jlucene {
     }
 
     public static Pair<Integer, Collection<String>> ids(IndexSearcher searcher, TotalHitCountCollector totalHitCountCollector, TopDocs topDocs, int first) {
-        final int totalHits = totalHitCountCollector.getTotalHits();
+        final var totalHits = totalHitCountCollector.getTotalHits();
         if (totalHits < 1) {
             return Pair.of(totalHits, EMPTY_LIST);
         }
-        final List<String> ids = Arrays.stream(topDocs.scoreDocs)
+        final var ids = Arrays.stream(topDocs.scoreDocs)
                 .skip(first)
                 .map(scoreDoc -> id(searcher, scoreDoc))
                 .collect(toUnmodifiableList());
@@ -62,7 +61,7 @@ public class Jlucene {
     }
 
     public static Pair<Long, Collection<String>> ids(FacetResult facetResult) {
-        final List<String> ids = ofNullable(facetResult)
+        final var ids = ofNullable(facetResult)
                 .map(it -> it.labelValues).stream()
                 .flatMap(Arrays::stream)
                 .map(it -> it.label)
@@ -77,10 +76,10 @@ public class Jlucene {
     }
 
     public static <T extends IEntity> Document doc(@NotNull T entity) {
-        final Document doc = new Document();
+        final var doc = new Document();
         addId(doc, entity.getId());
         if (entity instanceof IEntityLoggable) {
-            final IEntityLoggable loggable = (IEntityLoggable) entity;
+            final var loggable = (IEntityLoggable) entity;
             addLoggable(doc, loggable);
         }
         return doc;
@@ -174,7 +173,7 @@ public class Jlucene {
     @SneakyThrows(ParseException.class)
     public static void add(BooleanQuery.Builder builder, Analyzer analyzer, String q, String... fields) {
         if (J.nonBlank(q)) {
-            final QueryParser parser = new MultiFieldQueryParser(fields, analyzer);
+            final var parser = new MultiFieldQueryParser(fields, analyzer);
             builder.add(parser.parse(q), BooleanClause.Occur.MUST);
         }
     }

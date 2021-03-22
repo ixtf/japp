@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public abstract class ApiModule extends AbstractModule {
@@ -49,7 +50,7 @@ public abstract class ApiModule extends AbstractModule {
     @Singleton
     @Provides
     private Collection<Method> ACTIONS() {
-        return new ClassGraph()
+        final var ret = new ClassGraph()
                 .enableAllInfo()
                 .acceptPackages(ActionPackages().toArray(String[]::new))
                 .acceptClasses(ActionClasses().toArray(String[]::new))
@@ -62,6 +63,17 @@ public abstract class ApiModule extends AbstractModule {
                 .parallel()
                 .filter(it -> Objects.nonNull(it.getAnnotation(ApiAction.class)))
                 .collect(toUnmodifiableSet());
+        ret.parallelStream().collect(groupingBy(it -> {
+            final var annotation = it.getAnnotation(ApiAction.class);
+            final var service = annotation.service();
+            final var action = annotation.action();
+            return String.join(":", service, action);
+        })).forEach((k, v) -> {
+            if (v.size() > 1) {
+                throw new RuntimeException("api地址重复 [" + k + "]");
+            }
+        });
+        return ret;
     }
 
     protected abstract Collection<String> ActionPackages();

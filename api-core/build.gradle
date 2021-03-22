@@ -11,6 +11,10 @@ dependencies {
             "io.micrometer:micrometer-registry-prometheus",
             "io.jaegertracing:jaeger-client"
 
-    compileOnly "org.keycloak:keycloak-admin-client"
+    compileOnly project(":persistence-mongo"),
+            project(":persistence-lucene"),
+            "org.keycloak:keycloak-admin-client",
+            "io.projectreactor.rabbitmq:reactor-rabbitmq"
+    
     testImplementation "io.projectreactor.rabbitmq:reactor-rabbitmq"
 }

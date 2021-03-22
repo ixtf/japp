@@ -5,7 +5,6 @@ import com.github.ixtf.api.ApiContext;
 import com.github.ixtf.api.Util;
 import com.google.common.collect.ImmutableMap;
 import com.rabbitmq.client.BasicProperties;
-import com.rabbitmq.client.Envelope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
@@ -16,13 +15,12 @@ import reactor.rabbitmq.AcknowledgableDelivery;
 import reactor.rabbitmq.SendOptions;
 import reactor.rabbitmq.Sender;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.joining;
 
 @Slf4j
 public class RabbitMQContext implements ApiContext {
@@ -32,11 +30,25 @@ public class RabbitMQContext implements ApiContext {
     private final Optional<Tracer> tracerOpt;
     private final String operationName;
     @Getter(lazy = true, value = AccessLevel.PRIVATE)
-    private final Map<String, String> headers = _headers();
+    private final Map<String, String> headers = ofNullable(delivery.getProperties())
+            .map(BasicProperties::getHeaders)
+            .map(Map::entrySet)
+            .filter(J::nonEmpty)
+            .map(it -> {
+                final var builder = ImmutableMap.<String, String>builder();
+                it.forEach(entry -> builder.put(entry.getKey(), entry.getValue().toString()));
+                return builder.build();
+            })
+            .orElseGet(ImmutableMap::of);
     @Getter(lazy = true, value = AccessLevel.PRIVATE)
-    private final byte[] body = _body();
+    private final byte[] body = delivery.getBody();
     @Getter(lazy = true, value = AccessLevel.PRIVATE)
-    private final Optional<Span> spanOpt = _spanOpt();
+    private final Optional<Span> spanOpt = ofNullable(tracerOpt)
+            .flatMap(it -> Util.spanOpt(it, operationName, headers()))
+            .map(span -> {
+                final var dest = Stream.of(exchange(), routingKey()).filter(J::nonBlank).collect(joining(":"));
+                return span.setTag(Tags.MESSAGE_BUS_DESTINATION, dest);
+            });
 
     public RabbitMQContext(Sender sender, SendOptions sendOptions, AcknowledgableDelivery delivery, Optional<Tracer> tracerOpt, String operationName) {
         this.sender = sender;
@@ -54,24 +66,17 @@ public class RabbitMQContext implements ApiContext {
         delivery.nack(false);
     }
 
-    private Map<String, String> _headers() {
-        final var builder = ImmutableMap.<String, String>builder();
-        ofNullable(delivery.getProperties())
-                .map(BasicProperties::getHeaders)
-                .map(Map::entrySet)
-                .stream()
-                .flatMap(Collection::stream)
-                .forEach(entry -> builder.put(entry.getKey(), entry.getValue().toString()));
-        return builder.build();
+    public String exchange() {
+        return delivery.getEnvelope().getExchange();
+    }
+
+    public String routingKey() {
+        return delivery.getEnvelope().getRoutingKey();
     }
 
     @Override
     public Map<String, String> headers() {
         return getHeaders();
-    }
-
-    private byte[] _body() {
-        return delivery.getBody();
     }
 
     @Override
@@ -82,16 +87,6 @@ public class RabbitMQContext implements ApiContext {
     @Override
     public Optional<Tracer> tracerOpt() {
         return tracerOpt;
-    }
-
-    private Optional<Span> _spanOpt() {
-        return Util.spanOpt(tracerOpt(), operationName, headers()).map(span -> {
-            final var dest = Stream.of(
-                    ofNullable(delivery.getEnvelope()).map(Envelope::getExchange),
-                    ofNullable(delivery.getEnvelope()).map(Envelope::getRoutingKey)
-            ).flatMap(Optional::stream).filter(J::nonBlank).collect(Collectors.joining(":"));
-            return span.setTag(Tags.MESSAGE_BUS_DESTINATION, dest);
-        });
     }
 
     @Override

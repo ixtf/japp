@@ -11,8 +11,6 @@ import lombok.SneakyThrows;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.facet.FacetResult;
-import org.apache.lucene.facet.Facets;
 import org.apache.lucene.facet.FacetsCollector;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.taxonomy.FastTaxonomyFacetCounts;
@@ -37,21 +35,12 @@ public abstract class BaseLucene<T extends IEntity> {
     protected final FacetsConfig facetsConfig;
 
     @SneakyThrows(IOException.class)
-    protected BaseLucene(Path indexPath, Path taxoPath) {
-        final ParameterizedType parameterizedType = (ParameterizedType) this.getClass().getGenericSuperclass();
-        entityClass = (Class<T>) parameterizedType.getActualTypeArguments()[0];
-        indexWriter = new IndexWriter(FSDirectory.open(indexPath), new IndexWriterConfig(new SmartChineseAnalyzer()));
-        taxoWriter = new DirectoryTaxonomyWriter(FSDirectory.open(taxoPath));
-        facetsConfig = facetsConfig();
-    }
-
-    @SneakyThrows(IOException.class)
     protected BaseLucene(Path rootPath) {
-        final ParameterizedType parameterizedType = (ParameterizedType) this.getClass().getGenericSuperclass();
+        final var parameterizedType = (ParameterizedType) this.getClass().getGenericSuperclass();
         entityClass = (Class<T>) parameterizedType.getActualTypeArguments()[0];
-        final Path indexPath = rootPath.resolve(entityClass.getSimpleName());
+        final var indexPath = rootPath.resolve(entityClass.getSimpleName());
         indexWriter = new IndexWriter(FSDirectory.open(indexPath), new IndexWriterConfig(new SmartChineseAnalyzer()));
-        final Path taxoPath = rootPath.resolve(entityClass.getSimpleName() + "_Taxonomy");
+        final var taxoPath = rootPath.resolve(entityClass.getSimpleName() + "_Taxonomy");
         taxoWriter = new DirectoryTaxonomyWriter(FSDirectory.open(taxoPath));
         facetsConfig = facetsConfig();
     }
@@ -102,49 +91,49 @@ public abstract class BaseLucene<T extends IEntity> {
 
     @SneakyThrows(IOException.class)
     public Collection<String> query(Query query) {
-        @Cleanup final IndexReader indexReader = indexReader();
-        final IndexSearcher searcher = new IndexSearcher(indexReader);
-        final TopDocs topDocs = searcher.search(query, Integer.MAX_VALUE);
+        @Cleanup final var indexReader = indexReader();
+        final var searcher = new IndexSearcher(indexReader);
+        final var topDocs = searcher.search(query, Integer.MAX_VALUE);
         return Jlucene.ids(searcher, topDocs);
     }
 
     @SneakyThrows(IOException.class)
     public Pair<Integer, Collection<String>> query(Query query, int first, int pageSize) {
-        @Cleanup final IndexReader indexReader = indexReader();
-        final IndexSearcher searcher = new IndexSearcher(indexReader);
-        final TotalHitCountCollector totalHitCountCollector = new TotalHitCountCollector();
+        @Cleanup final var indexReader = indexReader();
+        final var searcher = new IndexSearcher(indexReader);
+        final var totalHitCountCollector = new TotalHitCountCollector();
         searcher.search(query, totalHitCountCollector);
-        final TopDocs topDocs = searcher.search(query, first + pageSize);
+        final var topDocs = searcher.search(query, first + pageSize);
         return Jlucene.ids(searcher, totalHitCountCollector, topDocs, first);
     }
 
     @SneakyThrows(IOException.class)
     public Collection<String> query(Query query, Sort sort) {
-        @Cleanup final IndexReader indexReader = indexReader();
-        final IndexSearcher searcher = new IndexSearcher(indexReader);
-        final TopDocs topDocs = searcher.search(query, Integer.MAX_VALUE, sort);
+        @Cleanup final var indexReader = indexReader();
+        final var searcher = new IndexSearcher(indexReader);
+        final var topDocs = searcher.search(query, Integer.MAX_VALUE, sort);
         return Jlucene.ids(searcher, topDocs);
     }
 
     @SneakyThrows(IOException.class)
     public Pair<Integer, Collection<String>> query(Query query, Sort sort, int first, int pageSize) {
-        @Cleanup final IndexReader indexReader = indexReader();
-        final IndexSearcher searcher = new IndexSearcher(indexReader);
-        final TotalHitCountCollector totalHitCountCollector = new TotalHitCountCollector();
+        @Cleanup final var indexReader = indexReader();
+        final var searcher = new IndexSearcher(indexReader);
+        final var totalHitCountCollector = new TotalHitCountCollector();
         searcher.search(query, totalHitCountCollector);
-        final TopDocs topDocs = searcher.search(query, first + pageSize, sort);
+        final var topDocs = searcher.search(query, first + pageSize, sort);
         return Jlucene.ids(searcher, totalHitCountCollector, topDocs, first);
     }
 
     @SneakyThrows(IOException.class)
     public Pair<Long, Collection<String>> queryFacet(BooleanQuery query, String indexFieldName) {
-        @Cleanup final IndexReader indexReader = indexReader();
-        @Cleanup final DirectoryTaxonomyReader taxoReader = taxoReader();
-        final FacetsCollector fc = new FacetsCollector();
-        final IndexSearcher searcher = new IndexSearcher(indexReader);
+        @Cleanup final var indexReader = indexReader();
+        @Cleanup final var taxoReader = taxoReader();
+        final var fc = new FacetsCollector();
+        final var searcher = new IndexSearcher(indexReader);
         searcher.search(query, fc);
-        final Facets facets = new FastTaxonomyFacetCounts(indexFieldName, taxoReader, facetsConfig(), fc);
-        final FacetResult facetResult = facets.getTopChildren(Integer.MAX_VALUE, indexFieldName);
+        final var facets = new FastTaxonomyFacetCounts(indexFieldName, taxoReader, facetsConfig(), fc);
+        final var facetResult = facets.getTopChildren(Integer.MAX_VALUE, indexFieldName);
         return Jlucene.ids(facetResult);
     }
 
