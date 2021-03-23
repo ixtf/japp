@@ -46,6 +46,10 @@ public abstract class ApiModule extends AbstractModule {
         OptionalBinder.newOptionalBinder(binder(), Tracer.class);
     }
 
+    protected void bindConfig(String annotatedWith, String key) {
+        bind(JsonObject.class).annotatedWith(Names.named(annotatedWith)).toInstance(config.getJsonObject(key, new JsonObject()));
+    }
+
     @Named(ACTIONS)
     @Singleton
     @Provides
