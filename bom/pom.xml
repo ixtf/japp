@@ -58,11 +58,6 @@
             </dependency>
             <dependency>
                 <groupId>com.github.ixtf.japp</groupId>
-                <artifactId>rabbitmq</artifactId>
-                <version>${jappVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.ixtf.japp</groupId>
                 <artifactId>persistence-lucene</artifactId>
                 <version>${jappVersion}</version>
             </dependency>
