@@ -28,9 +28,9 @@ public abstract class ApiModule extends AbstractModule {
     public static final String CONFIG = "com.github.ixtf.api.guice:__CONFIG__";
     public static final String ACTIONS = "com.github.ixtf.api.guice:__ACTIONS__";
 
-    private final Vertx vertx;
-    private final String service;
-    private final JsonObject config;
+    protected final Vertx vertx;
+    protected final String service;
+    protected final JsonObject config;
 
     protected ApiModule(Vertx vertx, String service, JsonObject config) {
         this.vertx = vertx;
