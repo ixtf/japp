@@ -1,5 +1,0 @@
-dependencies {
-    api "io.projectreactor.rabbitmq:reactor-rabbitmq"
-
-    compileOnly project(":api-core")
-}

@@ -1,22 +1,111 @@
-package com.github.ixtf.rabbitmq.guice;
+package com.github.ixtf.api.guice;
 
+import com.github.ixtf.J;
+import com.github.ixtf.api.ApiContext;
+import com.github.ixtf.api.Util;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.BasicProperties;
 import com.rabbitmq.client.ConnectionFactory;
+import io.opentracing.Span;
+import io.opentracing.Tracer;
+import io.opentracing.tag.Tags;
 import io.vertx.core.json.JsonObject;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.scheduler.Schedulers;
 import reactor.rabbitmq.*;
 
 import java.time.Duration;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import static com.github.ixtf.api.guice.ApiModule.CONFIG;
 import static com.github.ixtf.api.guice.ApiModule.SERVICE;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.joining;
 import static reactor.rabbitmq.Utils.singleConnectionMono;
 
 public class RabbitMQModule extends AbstractModule {
+
+    @Slf4j
+    public static class RabbitMQContext implements ApiContext {
+        private final Sender sender;
+        private final SendOptions sendOptions;
+        private final AcknowledgableDelivery delivery;
+        private final Optional<Tracer> tracerOpt;
+        private final String operationName;
+        @Getter(lazy = true, value = AccessLevel.PRIVATE)
+        private final Map<String, String> headers = ofNullable(delivery.getProperties())
+                .map(BasicProperties::getHeaders)
+                .map(Map::entrySet)
+                .filter(J::nonEmpty)
+                .map(it -> {
+                    final var builder = ImmutableMap.<String, String>builder();
+                    it.forEach(entry -> builder.put(entry.getKey(), entry.getValue().toString()));
+                    return builder.build();
+                })
+                .orElseGet(ImmutableMap::of);
+        @Getter(lazy = true, value = AccessLevel.PRIVATE)
+        private final byte[] body = delivery.getBody();
+        @Getter(lazy = true, value = AccessLevel.PRIVATE)
+        private final Optional<Span> spanOpt = ofNullable(tracerOpt)
+                .flatMap(it -> Util.spanOpt(it, operationName, headers()))
+                .map(span -> {
+                    final var dest = Stream.of(exchange(), routingKey()).filter(J::nonBlank).collect(joining(":"));
+                    return span.setTag(Tags.MESSAGE_BUS_DESTINATION, dest);
+                });
+
+        public RabbitMQContext(Sender sender, SendOptions sendOptions, AcknowledgableDelivery delivery, Optional<Tracer> tracerOpt, String operationName) {
+            this.sender = sender;
+            this.sendOptions = sendOptions;
+            this.delivery = delivery;
+            this.tracerOpt = tracerOpt;
+            this.operationName = operationName;
+        }
+
+        public void ack() {
+            delivery.ack();
+        }
+
+        public void nack() {
+            delivery.nack(false);
+        }
+
+        public String exchange() {
+            return delivery.getEnvelope().getExchange();
+        }
+
+        public String routingKey() {
+            return delivery.getEnvelope().getRoutingKey();
+        }
+
+        @Override
+        public Map<String, String> headers() {
+            return getHeaders();
+        }
+
+        @Override
+        public byte[] body() {
+            return getBody();
+        }
+
+        @Override
+        public Optional<Tracer> tracerOpt() {
+            return tracerOpt;
+        }
+
+        @Override
+        public Optional<Span> spanOpt() {
+            return getSpanOpt();
+        }
+    }
 
     @Override
     protected void configure() {
@@ -37,7 +126,6 @@ public class RabbitMQModule extends AbstractModule {
     @Provides
     private ConnectionFactory ConnectionFactory(@Named(CONFIG) JsonObject rootConfig) {
         final var config = rootConfig.getJsonObject("rabbit");
-
         final var connectionFactory = new ConnectionFactory();
         connectionFactory.useNio();
         connectionFactory.setHost(config.getString("host"));

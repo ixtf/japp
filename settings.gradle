@@ -12,5 +12,4 @@ include 'persistence-lucene'
 include 'api'
 include 'api-core'
 include 'api-vertx'
-include 'rabbitmq'
 
