@@ -17,4 +17,7 @@ dependencies {
             "io.projectreactor.rabbitmq:reactor-rabbitmq"
     
     testImplementation "io.projectreactor.rabbitmq:reactor-rabbitmq"
+    testImplementation "org.infinispan:infinispan-client-hotrod:12.0.2.Final"
+    testImplementation "org.infinispan:infinispan-query-dsl:12.0.2.Final"
+    testImplementation "org.infinispan:infinispan-remote-query-client:12.0.2.Final"
 }
