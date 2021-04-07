@@ -5,7 +5,6 @@ import com.google.inject.name.Named;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Promise;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
@@ -26,10 +25,6 @@ public class ServiceServerVerticle extends AbstractVerticle {
                 .map(ReplyHandler::consumer)
                 .collect(toUnmodifiableList()))
                 .<Void>mapEmpty()
-                .onFailure(e -> {
-                    final var log = LoggerFactory.getLogger(getClass());
-                    log.error("", e);
-                })
                 .onComplete(startPromise);
     }
 

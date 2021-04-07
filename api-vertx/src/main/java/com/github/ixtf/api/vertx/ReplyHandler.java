@@ -58,11 +58,11 @@ public class ReplyHandler implements Handler<Message<Object>> {
     }
 
     public static Future<Void> consumer(Method method) {
-        return Future.future(p -> {
+        return Future.<Void>future(p -> {
             final var handler = new ReplyHandler(method);
             injectMembers(handler);
             getInstance(Vertx.class).eventBus().consumer(handler.address, handler).completionHandler(p);
-        });
+        }).onFailure(Throwable::printStackTrace);
     }
 
     public static Future<Void> localConsumer(Method method) {
