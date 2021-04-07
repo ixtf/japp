@@ -28,7 +28,9 @@ public class Util {
     }
 
     public static JsonObject config(final String env, final String defaultV) {
-        return ofNullable(System.getenv(env))
+        return ofNullable(System.getProperty(env))
+                .filter(J::nonBlank)
+                .or(() -> ofNullable(System.getenv(env)))
                 .filter(J::nonBlank)
                 .or(() -> ofNullable(defaultV))
                 .map(J::getFile)
