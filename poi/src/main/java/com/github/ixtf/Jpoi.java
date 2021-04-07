@@ -1,12 +1,19 @@
 package com.github.ixtf;
 
+import lombok.Cleanup;
+import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellUtil;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xwpf.usermodel.*;
 import org.openxmlformats.schemas.drawingml.x2006.main.CTPositiveSize2D;
 import org.openxmlformats.schemas.drawingml.x2006.picture.CTPicture;
@@ -20,6 +27,8 @@ import java.io.*;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Spliterator;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -27,6 +36,44 @@ import static java.util.Optional.ofNullable;
 import static java.util.Spliterators.spliteratorUnknownSize;
 
 public final class Jpoi {
+
+    public static Workbook wb(String file) {
+        return wb(J.getFile(file));
+    }
+
+    @SneakyThrows(IOException.class)
+    public static Workbook wb(File file) {
+        @Cleanup final var is = new FileInputStream(file);
+        final var ext = FilenameUtils.getExtension(file.getName());
+        if ("xlsx".equalsIgnoreCase(ext)) {
+            return new XSSFWorkbook(is);
+        }
+        return new HSSFWorkbook(is);
+    }
+
+    public static Collection<CellRangeAddress> listCellRangeAddress(Sheet sheet) {
+        return IntStream.range(0, sheet.getNumMergedRegions())
+                .parallel()
+                .mapToObj(sheet::getMergedRegion)
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    public static Optional<CellRangeAddress> getCellRangeAddress(Collection<CellRangeAddress> rangeList, Cell cell) {
+        final var rowIndex = cell.getRowIndex();
+        final var columnIndex = cell.getColumnIndex();
+        return rangeList.parallelStream().filter(range -> {
+            if (rowIndex < range.getFirstRow()) {
+                return false;
+            }
+            if (rowIndex > range.getLastRow()) {
+                return false;
+            }
+            if (columnIndex < range.getFirstColumn()) {
+                return false;
+            }
+            return columnIndex <= range.getLastColumn();
+        }).findFirst();
+    }
 
     public static Stream<Row> rowStream(Sheet sheet) {
         return StreamSupport.stream(spliteratorUnknownSize(sheet.rowIterator(), Spliterator.ORDERED), false);
@@ -47,13 +94,26 @@ public final class Jpoi {
         return CellUtil.getCell(row, c - 'A');
     }
 
+    public static final Cell cell(Sheet sheet, int rowIndex, char c) {
+        final var row = CellUtil.getRow(rowIndex, sheet);
+        return CellUtil.getCell(row, c - 'A');
+    }
+
     public static Cell cell(Sheet sheet, int rowIndex, int columnIndex) {
         final var row = CellUtil.getRow(rowIndex, sheet);
         return CellUtil.getCell(row, columnIndex);
     }
 
+    public static boolean isColumn(Cell cell, char c) {
+        return c - 'A' == cell.getColumnIndex();
+    }
+
+    public static boolean isFirst(CellRangeAddress range, Cell cell) {
+        return cell.getRowIndex() == range.getFirstRow() && cell.getColumnIndex() == range.getFirstColumn();
+    }
+
     public static Optional<String> stringOpt(Cell cell) {
-        return ofNullable(cell).map(it -> {
+        return ofNullable(cell).map(__ -> {
             switch (cell.getCellType()) {
                 case STRING:
                     return cell.getStringCellValue();
