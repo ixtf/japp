@@ -20,9 +20,6 @@ subprojects {
     apply plugin: "io.spring.dependency-management"
     apply plugin: "io.freefair.lombok"
 
-    sourceCompatibility = 11
-    targetCompatibility = 11
-
     repositories {
         mavenLocal()
         mavenCentral()
@@ -48,11 +45,20 @@ subprojects {
     }
 
     java {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
         withJavadocJar()
         withSourcesJar()
     }
+    compileJava {
+        options.encoding = 'UTF-8'
+        options.compilerArgs << '-parameters'
+    }
     javadoc {
         options.addBooleanOption('html5', true)
+    }
+    compileTestJava {
+        options.encoding = 'UTF-8'
     }
     // ref https://docs.gradle.org/current/userguide/publishing_maven.html
     publishing {

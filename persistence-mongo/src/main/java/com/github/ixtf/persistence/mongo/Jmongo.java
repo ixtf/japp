@@ -184,7 +184,7 @@ public abstract class Jmongo {
     public <T> Flux<T> query(Class<T> entityClass, Bson filter, int skip, int limit) {
         final var deletedFilter = eq(DELETED_COL, false);
         final var condition = and(filter, deletedFilter);
-        return Flux.from(collection(entityClass).find(condition).skip(skip).limit(limit)).map(it -> entityConverter.toEntity(entityClass, it));
+        return Flux.from(collection(entityClass).find(condition).batchSize(limit).skip(skip).limit(limit)).map(it -> entityConverter.toEntity(entityClass, it));
     }
 
     public <T> Flux<T> query(Class<T> entityClass, Optional<Bson> filterOpt) {
