@@ -1,6 +1,8 @@
 package com.github.ixtf.api.guice;
 
 import com.github.ixtf.api.ApiAction;
+import com.github.ixtf.api.GraphqlAction;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -14,19 +16,17 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toUnmodifiableSet;
+import static java.util.stream.Collectors.*;
 
 public abstract class ApiModule extends AbstractModule {
     public static final String SERVICE = "com.github.ixtf.api.guice:__SERVICE__";
     public static final String CONFIG = "com.github.ixtf.api.guice:__CONFIG__";
     public static final String ACTIONS = "com.github.ixtf.api.guice:__ACTIONS__";
+    public static final String GRAPHQL_ACTION_MAP = "com.github.ixtf.api.guice:__GRAPHQL_ACTION_MAP__";
 
     protected final Vertx vertx;
     protected final String service;
@@ -50,23 +50,26 @@ public abstract class ApiModule extends AbstractModule {
         bind(JsonObject.class).annotatedWith(Names.named(annotatedWith)).toInstance(config.getJsonObject(key, new JsonObject()));
     }
 
-    @Named(ACTIONS)
-    @Singleton
-    @Provides
-    private Collection<Method> ACTIONS() {
-        final var ret = new ClassGraph()
+    protected Stream<Method> streamMethod(Class annotationClass) {
+        return new ClassGraph()
                 .enableAllInfo()
                 .acceptPackages(ActionPackages().toArray(String[]::new))
                 .acceptClasses(ActionClasses().toArray(String[]::new))
                 .scan()
-                .getClassesWithMethodAnnotation(ApiAction.class.getName())
+                .getClassesWithMethodAnnotation(annotationClass.getName())
                 .loadClasses()
                 .parallelStream()
                 .map(Class::getMethods)
                 .flatMap(Arrays::stream)
                 .parallel()
-                .filter(it -> Objects.nonNull(it.getAnnotation(ApiAction.class)))
-                .collect(toUnmodifiableSet());
+                .filter(it -> Objects.nonNull(it.getAnnotation(annotationClass)));
+    }
+
+    @Named(ACTIONS)
+    @Singleton
+    @Provides
+    private Collection<Method> ACTIONS() {
+        final var ret = streamMethod(ApiAction.class).collect(toUnmodifiableSet());
         ret.parallelStream().collect(groupingBy(it -> {
             final var annotation = it.getAnnotation(ApiAction.class);
             final var service = annotation.service();
@@ -78,6 +81,19 @@ public abstract class ApiModule extends AbstractModule {
             }
         });
         return ret;
+    }
+
+    @Named(GRAPHQL_ACTION_MAP)
+    @Singleton
+    @Provides
+    private Map<String, Map<String, Method>> GRAPHQL_ACTION_MAP() {
+        return streamMethod(GraphqlAction.class).collect(toUnmodifiableMap(it -> {
+            final var annotation = it.getAnnotation(GraphqlAction.class);
+            return annotation.type();
+        }, it -> {
+            final var annotation = it.getAnnotation(GraphqlAction.class);
+            return Map.of(annotation.action(), it);
+        }, (a, b) -> ImmutableMap.<String, Method>builder().putAll(a).putAll(b).build()));
     }
 
     protected abstract Collection<String> ActionPackages();

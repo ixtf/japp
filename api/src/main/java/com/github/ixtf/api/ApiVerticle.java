@@ -107,6 +107,8 @@ public class ApiVerticle extends AbstractVerticle {
         final var sockJSBridgeOptions = new SockJSBridgeOptions().addOutboundPermitted(permitted);
         router.mountSubRouter("/eventbus", SockJSHandler.create(vertx).bridge(sockJSBridgeOptions));
 
+//        router.route("/graphiql/services/:service/*").handler(GraphiQLHandler.create(new GraphiQLHandlerOptions().setEnabled(true)));
+//        router.route("/graphql/services/:service").handler(ApolloWSHandler.create(graphQL));
         router.route("/graphql/services/:service").handler(OAuth2AuthHandler.create(vertx, oAuth2Auth)).handler(this::handleGraphql);
         router.route("/api/services/:service/actions/:action").handler(OAuth2AuthHandler.create(vertx, oAuth2Auth)).handler(this::handleApi);
         router.route("/dl/services/:service/actions/:action/tokens/:token").handler(this::handleDl);

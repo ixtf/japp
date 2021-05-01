@@ -6,7 +6,11 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface GraphqlAction {
-    String service();
+    String type();
 
     String action();
+
+    enum Type {
+        QUERY
+    }
 }
