@@ -21,7 +21,6 @@ import reactor.core.publisher.Mono;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static com.github.ixtf.api.ApiResponse.bodyMono;
 import static com.github.ixtf.api.guice.ApiModule.ACTIONS;
@@ -79,22 +78,28 @@ public class ServiceServerVerticle extends AbstractVerticle {
         public void handle(Message<Object> reply) {
             final var ctx = new VertxContext(reply, tracerOpt, address);
             final var spanOpt = ctx.spanOpt();
-            Mono.fromCallable(() -> bodyMono(method.invoke(instance, ctx)))
-                    .flatMap(Function.identity())
-                    .subscribe(it -> {
-                        if (it instanceof ApiResponse apiResponse) {
-                            reply(reply, apiResponse, spanOpt);
-                        } else {
-                            reply(reply, it, new DeliveryOptions(), spanOpt);
-                        }
-                    }, e -> fail(reply, e, spanOpt));
+            Mono.fromCallable(() -> bodyMono(method.invoke(instance, ctx))).subscribe(it -> it.whenComplete((v, e) -> {
+                if (e != null) {
+                    fail(reply, e, spanOpt);
+                } else if (v instanceof ApiResponse apiResponse) {
+                    reply(reply, apiResponse, spanOpt);
+                } else {
+                    reply(reply, v, new DeliveryOptions(), spanOpt);
+                }
+            }), e -> fail(reply, e, spanOpt));
         }
 
         private void reply(Message<Object> reply, ApiResponse apiResponse, Optional<Span> spanOpt) {
             final var deliveryOptions = new DeliveryOptions();
             apiResponse.getHeaders().forEach((k, v) -> deliveryOptions.addHeader(k, v));
             deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "" + apiResponse.getStatus());
-            apiResponse.bodyMono().subscribe(it -> reply(reply, it, deliveryOptions, spanOpt), e -> fail(reply, e, spanOpt));
+            apiResponse.bodyMono().whenComplete((v, e) -> {
+                if (e != null) {
+                    fail(reply, e, spanOpt);
+                } else {
+                    reply(reply, v, deliveryOptions, spanOpt);
+                }
+            });
         }
 
         private void reply(Message<Object> reply, Object o, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
