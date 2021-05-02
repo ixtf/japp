@@ -33,7 +33,7 @@ import static io.netty.handler.codec.http.HttpHeaderValues.TEXT_PLAIN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class ApiVerticle extends AbstractVerticle {
+public class ServiceServerVerticle extends AbstractVerticle {
     @Named(ACTIONS)
     @Inject
     private Collection<Method> methods;

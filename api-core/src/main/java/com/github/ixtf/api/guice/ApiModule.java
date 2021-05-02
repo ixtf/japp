@@ -9,12 +9,16 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import graphql.GraphQL;
+import graphql.schema.idl.SchemaGenerator;
+import graphql.schema.idl.TypeDefinitionRegistry;
 import io.github.classgraph.ClassGraph;
 import io.jaegertracing.Configuration;
 import io.opentracing.Tracer;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Stream;
@@ -94,6 +98,17 @@ public abstract class ApiModule extends AbstractModule {
             final var annotation = it.getAnnotation(GraphqlAction.class);
             return Map.of(annotation.action(), it);
         }, (a, b) -> ImmutableMap.<String, Method>builder().putAll(a).putAll(b).build()));
+    }
+
+    @Named(GRAPHQL_ACTION_MAP)
+    @Singleton
+    @Provides
+    private GraphQL GraphQL(@Named(GRAPHQL_ACTION_MAP) Map<String, Map<String, Method>> GRAPHQL_ACTION_MAP) throws IOException {
+        final var typeDefinitionRegistry = TypeDefinitionRegistry();
+//        final var runtimeWiring = buildRuntimeWiring(GRAPHQL_ACTION_MAP);
+        final var schemaGenerator = new SchemaGenerator();
+        final var graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
+        return GraphQL.newGraphQL(graphQLSchema).build();
     }
 
     protected abstract Collection<String> ActionPackages();
