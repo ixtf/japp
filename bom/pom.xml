@@ -21,7 +21,7 @@
         <jacksonVersion>2.12.2</jacksonVersion>
         <reactorVersion>2020.0.5</reactorVersion>
         <guiceVersion>5.0.1</guiceVersion>
-        <jaegerVersion>1.5.0</jaegerVersion>
+        <jaegerVersion>1.6.0</jaegerVersion>
         <keycloakVersion>11.0.3</keycloakVersion>
         <droolsVersion>7.51.0.Final</droolsVersion>
         <grpcVersion>1.28.1</grpcVersion>

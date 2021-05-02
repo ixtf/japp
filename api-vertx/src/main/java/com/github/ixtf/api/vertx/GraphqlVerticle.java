@@ -99,7 +99,7 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
             final var executionInput = newExecutionInput()
                     .query(graphQLQuery.getQuery())
                     .build();
-            return graphQL.executeAsync(executionInput);
+            return getGraphQL().executeAsync(executionInput);
         }).map(executionResult -> {
             final var specification = executionResult.toSpecification();
             final var jsonObject = new JsonObject(specification);
