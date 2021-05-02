@@ -34,24 +34,19 @@ public class ApiResponse {
         if (o instanceof String || o instanceof byte[] || o instanceof ApiResponse) {
             return Mono.just(o);
         }
-        if (o instanceof JsonObject) {
-            final var v = (JsonObject) o;
+        if (o instanceof JsonObject v) {
             return Mono.just(v.toBuffer());
         }
-        if (o instanceof JsonArray) {
-            final var v = (JsonArray) o;
+        if (o instanceof JsonArray v) {
             return Mono.just(v.toBuffer());
         }
-        if (o instanceof CompletionStage) {
-            final var v = (CompletionStage) o;
+        if (o instanceof CompletionStage v) {
             return Mono.fromCompletionStage(v).flatMap(ApiResponse::bodyMono).defaultIfEmpty(Buffer.buffer());
         }
-        if (o instanceof Mono) {
-            final var v = (Mono) o;
+        if (o instanceof Mono v) {
             return v.flatMap(ApiResponse::bodyMono).defaultIfEmpty(Buffer.buffer());
         }
-        if (o instanceof Flux) {
-            final var v = (Flux) o;
+        if (o instanceof Flux v) {
             return v.collectList().map(it -> new JsonArray((List) it).toBuffer());
         }
         return Mono.fromCallable(() -> MAPPER.writeValueAsBytes(o));

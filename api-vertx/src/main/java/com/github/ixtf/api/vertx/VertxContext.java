@@ -47,15 +47,13 @@ public class VertxContext implements ApiContext {
 
     private byte[] _body() {
         return ofNullable(reply.body()).map(it -> {
-            if (it instanceof Buffer) {
-                return (Buffer) it;
-            } else if (it instanceof byte[]) {
-                return Buffer.buffer((byte[]) it);
-            } else if (it instanceof JsonObject) {
-                final var v = (JsonObject) it;
+            if (it instanceof Buffer buffer) {
+                return buffer;
+            } else if (it instanceof byte[] bytes) {
+                return Buffer.buffer(bytes);
+            } else if (it instanceof JsonObject v) {
                 return Buffer.buffer(v.encode());
-            } else if (it instanceof JsonArray) {
-                final var v = (JsonArray) it;
+            } else if (it instanceof JsonArray v) {
                 return Buffer.buffer(v.encode());
             } else {
                 return Buffer.buffer((String) it);

@@ -144,13 +144,12 @@ public class ApiVerticle extends AbstractVerticle implements Handler<RoutingCont
             final var body = message.body();
             if (body == null) {
                 response.end();
-            } else if (body instanceof Buffer) {
-                response.end((Buffer) body);
-            } else if (body instanceof byte[]) {
-                final var bytes = (byte[]) body;
+            } else if (body instanceof Buffer buffer) {
+                response.end(buffer);
+            } else if (body instanceof byte[] bytes) {
                 response.end(Buffer.buffer(bytes));
-            } else if (body instanceof String) {
-                response.end((String) body);
+            } else if (body instanceof String s) {
+                response.end(s);
             } else {
                 onFailure(rc, new RuntimeException("body must be (null | Buffer | byte[] | String)"));
             }

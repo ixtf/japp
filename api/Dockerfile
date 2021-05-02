@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/java/jre:11-zulu-alpine
+FROM mcr.microsoft.com/java/jre:16-zulu-alpine
 
 ENV TZ Asia/Shanghai
 ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport"

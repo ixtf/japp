@@ -78,8 +78,7 @@ public class Jlucene {
     public static <T extends IEntity> Document doc(@NotNull T entity) {
         final var doc = new Document();
         addId(doc, entity.getId());
-        if (entity instanceof IEntityLoggable) {
-            final var loggable = (IEntityLoggable) entity;
+        if (entity instanceof IEntityLoggable loggable) {
             addLoggable(doc, loggable);
         }
         return doc;

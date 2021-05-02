@@ -14,7 +14,6 @@ import io.vertx.core.*;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import jakarta.validation.ConstraintViolationException;
-import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
@@ -55,8 +54,6 @@ public class ServiceServerVerticle extends AbstractVerticle {
         private final Object instance;
         private final Method method;
         private final String address;
-        @Getter
-        private final String operationName;
         private final Logger log;
 
         private ReplyHandler(Method method) {
@@ -70,7 +67,6 @@ public class ServiceServerVerticle extends AbstractVerticle {
             final var action = annotation.action();
             address = String.join(":", service, action);
 
-            operationName = String.join(":", instance.getClass().getName(), method.getName());
             log = LoggerFactory.getLogger(instance.getClass());
         }
 
@@ -81,13 +77,13 @@ public class ServiceServerVerticle extends AbstractVerticle {
 
         @Override
         public void handle(Message<Object> reply) {
-            final var ctx = new VertxContext(reply, tracerOpt, operationName);
+            final var ctx = new VertxContext(reply, tracerOpt, address);
             final var spanOpt = ctx.spanOpt();
             Mono.fromCallable(() -> bodyMono(method.invoke(instance, ctx)))
                     .flatMap(Function.identity())
                     .subscribe(it -> {
-                        if (it instanceof ApiResponse) {
-                            reply(reply, (ApiResponse) it, spanOpt);
+                        if (it instanceof ApiResponse apiResponse) {
+                            reply(reply, apiResponse, spanOpt);
                         } else {
                             reply(reply, it, new DeliveryOptions(), spanOpt);
                         }
@@ -102,8 +98,7 @@ public class ServiceServerVerticle extends AbstractVerticle {
         }
 
         private void reply(Message<Object> reply, Object o, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
-            if (o instanceof String) {
-                final var v = (String) o;
+            if (o instanceof String v) {
                 if (J.isBlank(v)) {
                     reply.reply(null, deliveryOptions);
                 } else {
