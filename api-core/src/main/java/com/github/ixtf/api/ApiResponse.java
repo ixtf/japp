@@ -43,28 +43,23 @@ public class ApiResponse {
         if (o instanceof JsonArray v) {
             return Mono.just(v.toBuffer());
         }
-        if (o instanceof CompletionStage) {
-            final var v = (CompletionStage) o;
+        if (o instanceof CompletionStage v) {
             return Mono.fromCompletionStage(v).flatMap(ApiResponse::bodyMono).defaultIfEmpty(StringUtils.EMPTY);
         }
-        if (o instanceof Mono) {
-            final var v = (Mono) o;
+        if (o instanceof Mono v) {
             return v.flatMap(ApiResponse::bodyMono).defaultIfEmpty(StringUtils.EMPTY);
         }
-        if (o instanceof Flux) {
-            final var v = (Flux) o;
+        if (o instanceof Flux v) {
             return v.map(ApiResponse::convertInnerValue).collectList().flatMap(ApiResponse::bodyMono);
         }
         return Mono.fromCallable(() -> MAPPER.writeValueAsBytes(o));
     }
 
     private static Object convertInnerValue(Object o) {
-        if (o instanceof JsonObject) {
-            final var v = (JsonObject) o;
+        if (o instanceof JsonObject v) {
             return v.stream().parallel().collect(toUnmodifiableMap(Entry::getKey, it -> convertInnerValue(it.getValue())));
         }
-        if (o instanceof JsonArray) {
-            final var v = (JsonArray) o;
+        if (o instanceof JsonArray v) {
             return v.stream().map(ApiResponse::convertInnerValue).collect(toUnmodifiableList());
         }
         return o;
