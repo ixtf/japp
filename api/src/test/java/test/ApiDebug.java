@@ -4,17 +4,22 @@ import com.github.ixtf.api.ApiLauncher;
 import com.github.ixtf.api.MainVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import lombok.Cleanup;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import reactor.tools.agent.ReactorDebugAgent;
+
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 
 @Slf4j
 public class ApiDebug extends ApiLauncher {
 
     public static void main(String[] args) {
-        ReactorDebugAgent.init();
-
         System.setProperty("vertx.hazelcast.config", "/home/data/api/cluster.xml");
-        System.setProperty("hazelcast.local.publicAddress", "172.10.10.111");
+        System.setProperty("hazelcast.local.publicAddress", localIp());
         new ApiDebug().dispatch(new String[]{"-cluster"});
 
 //        new ApiDebug().dispatch(args);
@@ -33,6 +38,13 @@ public class ApiDebug extends ApiLauncher {
             final var ret = new JsonObject().put("test", "test");
             reply.reply(ret.encode());
         });
+    }
+
+    @SneakyThrows({SocketException.class, UnknownHostException.class})
+    private static String localIp() {
+        @Cleanup final var socket = new DatagramSocket();
+        socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+        return socket.getLocalAddress().getHostAddress();
     }
 
 }

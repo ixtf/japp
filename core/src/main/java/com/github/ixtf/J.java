@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.github.ixtf.cli.SaferExec;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validation;
+import lombok.Cleanup;
 import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -17,6 +18,10 @@ import org.apache.commons.text.StringSubstitutor;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.time.*;
 import java.time.temporal.TemporalAccessor;
 import java.util.*;
@@ -36,6 +41,13 @@ public class J {
             return (Class<T>) Class.forName(actualClassName);
         }
         return clazz;
+    }
+
+    @SneakyThrows({SocketException.class, UnknownHostException.class})
+    public static String localIp() {
+        @Cleanup final var socket = new DatagramSocket();
+        socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+        return socket.getLocalAddress().getHostAddress();
     }
 
     public static String strTpl(final String tpl, Map<String, String> map) {
