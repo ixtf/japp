@@ -34,7 +34,8 @@ public class ApiDebug extends ApiLauncher {
 
         vertx.eventBus().consumer("test:test", reply -> {
             final var ret = new JsonObject().put("test", "test");
-            reply.reply(ret.encode());
+            reply.reply(ret.toBuffer());
+//            reply.reply(ret.encode());
         });
     }
 

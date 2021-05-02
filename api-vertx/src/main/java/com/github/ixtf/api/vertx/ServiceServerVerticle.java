@@ -22,7 +22,7 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Optional;
 
-import static com.github.ixtf.api.ApiResponse.bodyMono;
+import static com.github.ixtf.api.ApiResponse.bodyFuture;
 import static com.github.ixtf.api.guice.ApiModule.ACTIONS;
 import static com.github.ixtf.guice.GuiceModule.getInstance;
 import static com.github.ixtf.guice.GuiceModule.injectMembers;
@@ -78,7 +78,7 @@ public class ServiceServerVerticle extends AbstractVerticle {
         public void handle(Message<Object> reply) {
             final var ctx = new VertxContext(reply, tracerOpt, address);
             final var spanOpt = ctx.spanOpt();
-            Mono.fromCallable(() -> bodyMono(method.invoke(instance, ctx))).subscribe(it -> it.whenComplete((v, e) -> {
+            Mono.fromCallable(() -> bodyFuture(method.invoke(instance, ctx))).subscribe(it -> it.whenComplete((v, e) -> {
                 if (e != null) {
                     fail(reply, e, spanOpt);
                 } else if (v instanceof ApiResponse apiResponse) {
@@ -93,7 +93,7 @@ public class ServiceServerVerticle extends AbstractVerticle {
             final var deliveryOptions = new DeliveryOptions();
             apiResponse.getHeaders().forEach((k, v) -> deliveryOptions.addHeader(k, v));
             deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "" + apiResponse.getStatus());
-            apiResponse.bodyMono().whenComplete((v, e) -> {
+            apiResponse.bodyFuture().whenComplete((v, e) -> {
                 if (e != null) {
                     fail(reply, e, spanOpt);
                 } else {

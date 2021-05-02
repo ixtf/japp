@@ -2,6 +2,7 @@ package com.github.ixtf.api;
 
 import com.google.common.collect.Maps;
 import io.netty.util.AsciiString;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
@@ -27,25 +28,25 @@ public class ApiResponse {
     @Setter
     private Object body;
 
-    public static CompletionStage<?> bodyMono(Object o) {
-        if (o == null || o instanceof String || o instanceof byte[] || o instanceof ApiResponse) {
+    public static CompletionStage<?> bodyFuture(Object o) {
+        if (o == null || o instanceof String || o instanceof Buffer || o instanceof byte[] || o instanceof ApiResponse) {
             return CompletableFuture.completedStage(o);
         }
-        if (o instanceof CompletionStage v) {
-            return v;
-        }
         if (o instanceof JsonObject v) {
-            return bodyMono(v.toBuffer());
+            return CompletableFuture.completedStage(v.toBuffer());
         }
         if (o instanceof JsonArray v) {
-            return bodyMono(v.toBuffer());
+            return CompletableFuture.completedStage(v.toBuffer());
+        }
+        if (o instanceof CompletionStage v) {
+            return v.thenCompose(ApiResponse::bodyFuture);
         }
         if (o instanceof Mono v) {
-            return bodyMono(v.block());
-//            return v.toFuture().thenCompose(ApiResponse::bodyMono);
+            return bodyFuture(v.toFuture());
+//            return bodyMono(v.block());
         }
         if (o instanceof Flux v) {
-            return bodyMono(v.collectList().map(it -> new JsonArray((List) it)));
+            return bodyFuture(v.collectList().map(it -> new JsonArray((List) it)));
         }
         return Mono.fromCallable(() -> MAPPER.writeValueAsBytes(o)).toFuture();
     }
@@ -63,7 +64,7 @@ public class ApiResponse {
         return putHeaders(key.toString(), value);
     }
 
-    public CompletionStage<?> bodyMono() {
-        return bodyMono(body);
+    public CompletionStage<?> bodyFuture() {
+        return bodyFuture(body);
     }
 }
