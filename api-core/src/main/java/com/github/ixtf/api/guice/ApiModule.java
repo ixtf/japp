@@ -11,7 +11,6 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import graphql.GraphQL;
 import graphql.schema.idl.SchemaGenerator;
-import graphql.schema.idl.TypeDefinitionRegistry;
 import io.github.classgraph.ClassGraph;
 import io.jaegertracing.Configuration;
 import io.opentracing.Tracer;
@@ -104,11 +103,12 @@ public abstract class ApiModule extends AbstractModule {
     @Singleton
     @Provides
     private GraphQL GraphQL(@Named(GRAPHQL_ACTION_MAP) Map<String, Map<String, Method>> GRAPHQL_ACTION_MAP) throws IOException {
-        final var typeDefinitionRegistry = TypeDefinitionRegistry();
+//        final var typeDefinitionRegistry = TypeDefinitionRegistry();
 //        final var runtimeWiring = buildRuntimeWiring(GRAPHQL_ACTION_MAP);
         final var schemaGenerator = new SchemaGenerator();
-        final var graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
-        return GraphQL.newGraphQL(graphQLSchema).build();
+//        final var graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
+//        return GraphQL.newGraphQL(graphQLSchema).build();
+        return null;
     }
 
     protected abstract Collection<String> ActionPackages();

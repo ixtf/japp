@@ -2,11 +2,9 @@ package com.github.ixtf.api.vertx;
 
 import com.github.ixtf.api.GraphqlAction;
 import com.google.inject.Inject;
-import com.google.inject.name.Names;
 import graphql.GraphQL;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.idl.SchemaGenerator;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
@@ -25,10 +23,8 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Method;
-import java.util.Map;
 import java.util.Optional;
 
-import static com.github.ixtf.api.guice.ApiModule.GRAPHQL_ACTION_MAP;
 import static com.github.ixtf.guice.GuiceModule.getInstance;
 import static com.github.ixtf.guice.GuiceModule.injectMembers;
 import static graphql.ExecutionInput.newExecutionInput;
@@ -44,11 +40,12 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
     }
 
     protected static GraphQL _graphQL() {
-        final var typeDefinitionRegistry = buildTypeDefinitionRegistry();
-        final var runtimeWiring = buildRuntimeWiring(getInstance(Map.class, Names.named(GRAPHQL_ACTION_MAP)));
-        final var schemaGenerator = new SchemaGenerator();
-        final var graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
-        return GraphQL.newGraphQL(graphQLSchema).build();
+//        final var typeDefinitionRegistry = buildTypeDefinitionRegistry();
+//        final var runtimeWiring = buildRuntimeWiring(getInstance(Map.class, Names.named(GRAPHQL_ACTION_MAP)));
+//        final var schemaGenerator = new SchemaGenerator();
+//        final var graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
+//        return GraphQL.newGraphQL(graphQLSchema).build();
+        return null;
     }
 
 

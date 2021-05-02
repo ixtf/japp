@@ -8,6 +8,7 @@ import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.tag.Tags;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -15,6 +16,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.tracing.TracingPolicy;
 import io.vertx.ext.auth.oauth2.OAuth2Auth;
 import io.vertx.ext.auth.oauth2.OAuth2Options;
 import io.vertx.ext.bridge.PermittedOptions;
@@ -34,7 +36,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.security.Principal;
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.Optional;
 
 import static com.github.ixtf.api.ApiModule.*;
 import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
@@ -46,14 +47,21 @@ import static io.vertx.ext.auth.oauth2.providers.OpenIDConnectAuth.discover;
 import static java.util.Optional.ofNullable;
 
 @Slf4j
-public class ApiVerticle extends AbstractVerticle {
+public class ApiVerticle extends AbstractVerticle implements Handler<RoutingContext> {
+    private static final long DL_TIMEOUT = Duration.ofMinutes(5).toMillis();
     private static final String KeycloakAdmin = "__com.github.ixtf.api:KeycloakAdmin__";
     @Inject
-    private Optional<Tracer> tracerOpt;
+    private Tracer tracer;
     @Inject
     private OAuth2Options oAuth2Options;
     @Inject
     private CorsHandler corsHandler;
+
+    public static String apiAddress(RoutingContext rc) {
+        final var service = rc.pathParam("service");
+        final var action = rc.pathParam("action");
+        return String.join(":", service, action);
+    }
 
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
@@ -64,30 +72,8 @@ public class ApiVerticle extends AbstractVerticle {
         discover(vertx, oAuth2Options).flatMap(this::createHttpServer).<Void>mapEmpty().onComplete(startPromise);
     }
 
-    private static String apiAddress(RoutingContext rc) {
-        final var service = rc.pathParam("service");
-        final var action = rc.pathParam("action");
-        return String.join(":", service, action);
-    }
-
-    private static String graphqlAddress(RoutingContext rc) {
-        final var service = rc.pathParam("service");
-        return String.join(":", service, "graphql");
-    }
-
-    private void handleApi(RoutingContext rc) {
-        final var address = apiAddress(rc);
-        final var spanOpt = spanOpt(rc, address);
-        final var deliveryOptions = deliveryOptions(rc, spanOpt);
-        final var principal = rc.user().attributes().getString("sub");
-        deliveryOptions.addHeader(Principal.class.getName(), principal);
-        rc.response().putHeader(CONTENT_TYPE, APPLICATION_JSON);
-        vertx.eventBus().request(address, rc.getBody(), deliveryOptions)
-                .onSuccess(it -> this.onSuccess(rc, it, spanOpt))
-                .onFailure(e -> this.onFailure(rc, e, spanOpt));
-    }
-
     private Future<HttpServer> createHttpServer(final OAuth2Auth oAuth2Auth) {
+        final var oAuth2AuthHandler = OAuth2AuthHandler.create(vertx, oAuth2Auth);
         final var router = Router.router(vertx);
         router.route().handler(corsHandler);
         router.route().handler(BodyHandler.create());
@@ -95,8 +81,8 @@ public class ApiVerticle extends AbstractVerticle {
         router.route("/health*").handler(HealthCheckHandler.create(vertx));
         router.route("/ping*").handler(HealthCheckHandler.createWithHealthChecks(HealthChecks.create(vertx)));
         final var procedure = ClusterHealthCheck.createProcedure(vertx);
-        final var checks = HealthChecks.create(vertx).register("cluster-health", procedure);
-        router.get("/readiness").handler(HealthCheckHandler.createWithHealthChecks(checks));
+        final var healthChecks = HealthChecks.create(vertx).register("cluster-health", procedure);
+        router.get("/readiness").handler(HealthCheckHandler.createWithHealthChecks(healthChecks));
 
         router.route().failureHandler(rc -> {
             final var errMsg = new JsonObject().put("errMsg", rc.failure().getMessage());
@@ -107,17 +93,41 @@ public class ApiVerticle extends AbstractVerticle {
         final var sockJSBridgeOptions = new SockJSBridgeOptions().addOutboundPermitted(permitted);
         router.mountSubRouter("/eventbus", SockJSHandler.create(vertx).bridge(sockJSBridgeOptions));
 
-//        router.route("/graphiql/services/:service/*").handler(GraphiQLHandler.create(new GraphiQLHandlerOptions().setEnabled(true)));
-//        router.route("/graphql/services/:service").handler(ApolloWSHandler.create(graphQL));
-        router.route("/graphql/services/:service").handler(OAuth2AuthHandler.create(vertx, oAuth2Auth)).handler(this::handleGraphql);
-        router.route("/api/services/:service/actions/:action").handler(OAuth2AuthHandler.create(vertx, oAuth2Auth)).handler(this::handleApi);
-        router.route("/dl/services/:service/actions/:action/tokens/:token").handler(this::handleDl);
+        router.route("/api/services/:service/actions/:action").handler(oAuth2AuthHandler).handler(this);
+        router.route("/dl/services/:service/actions/:action/tokens/:token").handler(this);
 
         final var httpServerOptions = new HttpServerOptions().setCompressionSupported(true);
         return vertx.createHttpServer(httpServerOptions).requestHandler(router).listen(9998);
     }
 
-    private void onSuccess(RoutingContext rc, Message<Object> message, Optional<Span> spanOpt) {
+    @Override
+    public void handle(RoutingContext rc) {
+        Future.<Message<Object>>future(p -> {
+            final var deliveryOptions = deliveryOptions(rc);
+            final var token = rc.pathParam("token");
+            final Object body;
+            if (token == null) {
+                body = rc.getBody();
+                final var principal = rc.user().attributes().getString("sub");
+                deliveryOptions.addHeader(Principal.class.getName(), principal);
+                rc.response().putHeader(CONTENT_TYPE, APPLICATION_JSON);
+            } else {
+                body = token;
+                deliveryOptions.setSendTimeout(Math.max(DL_TIMEOUT, deliveryOptions.getSendTimeout()));
+                rc.response().putHeader(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
+            }
+            vertx.eventBus().request(apiAddress(rc), body, deliveryOptions, p);
+        }).onComplete(ar -> {
+            if (ar.failed()) {
+                onFailure(rc, ar.cause());
+            } else {
+                onSuccess(rc, ar.result());
+            }
+            tracer.activeSpan().setTag(Tags.HTTP_STATUS, rc.response().getStatusCode()).finish();
+        });
+    }
+
+    private void onSuccess(RoutingContext rc, Message<Object> message) {
         final var response = rc.response();
         message.headers().forEach(it -> {
             if (it.getKey().equals(HttpResponseStatus.class.getName())) {
@@ -142,60 +152,24 @@ public class ApiVerticle extends AbstractVerticle {
             } else if (body instanceof String) {
                 response.end((String) body);
             } else {
-                onFailure(rc, new RuntimeException("body must be (null | Buffer | byte[] | String)"), spanOpt);
+                onFailure(rc, new RuntimeException("body must be (null | Buffer | byte[] | String)"));
             }
         }
     }
 
-    private void onFailure(RoutingContext rc, Throwable e, Optional<Span> spanOpt) {
+    private void onFailure(RoutingContext rc, Throwable e) {
         rc.fail(e);
         log.error(apiAddress(rc), e);
-        spanOpt.ifPresent(it -> it.setTag(Tags.ERROR, true).log(e.getMessage()));
+        tracer.activeSpan().setTag(Tags.ERROR, true).log(e.getMessage());
     }
 
-    private void handleGraphql(RoutingContext rc) {
-        final var address = graphqlAddress(rc);
-        final var spanOpt = spanOpt(rc, address);
-        final var deliveryOptions = deliveryOptions(rc, spanOpt);
-        final var principal = rc.user().attributes().getString("sub");
-        deliveryOptions.addHeader(Principal.class.getName(), principal);
-        rc.response().putHeader(CONTENT_TYPE, APPLICATION_JSON);
-        vertx.eventBus().request(address, rc.getBody(), deliveryOptions)
-                .onSuccess(it -> this.onSuccess(rc, it, spanOpt))
-                .onFailure(e -> this.onFailure(rc, e, spanOpt));
-    }
-
-    private void handleDl(RoutingContext rc) {
-        final var address = apiAddress(rc);
-        final var spanOpt = spanOpt(rc, address);
-        final var deliveryOptions = deliveryOptions(rc, spanOpt);
-        if (deliveryOptions.getSendTimeout() <= DeliveryOptions.DEFAULT_TIMEOUT) {
-            deliveryOptions.setSendTimeout(Duration.ofMinutes(5).toMillis());
-        }
-        final var token = rc.pathParam("token");
-        rc.response().putHeader(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
-        vertx.eventBus().request(address, token, deliveryOptions)
-                .onSuccess(it -> this.onSuccess(rc, it, spanOpt))
-                .onFailure(e -> this.onFailure(rc, e, spanOpt));
-    }
-
-    private Optional<Span> spanOpt(RoutingContext rc, String address) {
-        return tracerOpt.map(tracer -> {
+    private DeliveryOptions deliveryOptions(RoutingContext rc) {
+        final var deliveryOptions = new DeliveryOptions().setTracingPolicy(TracingPolicy.ALWAYS);
+        ofNullable(activateSpan(rc)).map(Span::context).ifPresent(it -> {
             final var map = new HashMap<String, String>();
-            rc.request().headers().forEach(entry -> map.put(entry.getKey(), entry.getValue()));
-            final var spanBuilder = tracer.buildSpan(address);
-            ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(map))).ifPresent(spanBuilder::asChildOf);
-            return spanBuilder.start();
-        });
-    }
-
-    private DeliveryOptions deliveryOptions(RoutingContext rc, Optional<Span> spanOpt) {
-        final var deliveryOptions = new DeliveryOptions();
-        tracerOpt.ifPresent(tracer -> spanOpt.ifPresent(span -> {
-            final var map = new HashMap<String, String>();
-            tracer.inject(span.context(), TEXT_MAP, new TextMapAdapter(map));
+            tracer.inject(it, TEXT_MAP, new TextMapAdapter(map));
             map.forEach((k, v) -> deliveryOptions.addHeader(k, v));
-        }));
+        });
         ofNullable(rc.queryParam("timeout"))
                 .filter(it -> it.size() > 0)
                 .map(it -> it.get(0))
@@ -212,4 +186,18 @@ public class ApiVerticle extends AbstractVerticle {
         return deliveryOptions;
     }
 
+    // todo 使用vertx TracingOptions
+    private Span activateSpan(RoutingContext rc) {
+        final var request = rc.request();
+        final var operationName = request.method().name();
+        final var spanBuilder = tracer.buildSpan(operationName);
+        final var map = new HashMap<String, String>();
+        request.headers().forEach(entry -> map.put(entry.getKey(), entry.getValue()));
+        ofNullable(tracer.extract(TEXT_MAP, new TextMapAdapter(map))).ifPresent(spanBuilder::asChildOf);
+        final var span = spanBuilder.start()
+                .setTag(Tags.HTTP_METHOD, operationName)
+                .setTag(Tags.HTTP_URL, request.uri());
+        tracer.activateSpan(span);
+        return span;
+    }
 }
