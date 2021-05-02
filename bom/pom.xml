@@ -18,7 +18,7 @@
         <micrometerVersion>1.6.5</micrometerVersion>
         <slf4jVersion>1.7.30</slf4jVersion>
         <logbackVersion>1.2.3</logbackVersion>
-        <jacksonVersion>2.12.2</jacksonVersion>
+        <jacksonVersion>2.12.3</jacksonVersion>
         <reactorVersion>2020.0.6</reactorVersion>
         <guiceVersion>5.0.1</guiceVersion>
         <jaegerVersion>1.6.0</jaegerVersion>
