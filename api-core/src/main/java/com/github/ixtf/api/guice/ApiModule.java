@@ -102,7 +102,7 @@ public abstract class ApiModule extends AbstractModule {
     @Named(GRAPHQL_ACTION_MAP)
     @Singleton
     @Provides
-    private GraphQL GraphQL(@Named(GRAPHQL_ACTION_MAP) Map<String, Map<String, Method>> GRAPHQL_ACTION_MAP) throws IOException {
+    private GraphQL GraphQL(@Named(GRAPHQL_ACTION_MAP) Map<String, Map<String, Method>> MAP) throws IOException {
 //        final var typeDefinitionRegistry = TypeDefinitionRegistry();
 //        final var runtimeWiring = buildRuntimeWiring(GRAPHQL_ACTION_MAP);
         final var schemaGenerator = new SchemaGenerator();
