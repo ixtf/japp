@@ -171,7 +171,7 @@ public abstract class Jmongo {
 
     public <T> Flux<T> query(Class<T> entityClass, int skip, int limit) {
         final var condition = eq(DELETED_COL, false);
-        return Flux.from(collection(entityClass).find(condition).skip(skip).limit(limit)).map(it -> entityConverter.toEntity(entityClass, it));
+        return Flux.from(collection(entityClass).find(condition).batchSize(limit).skip(skip).limit(limit)).map(it -> entityConverter.toEntity(entityClass, it));
     }
 
     // 按条件查询
