@@ -41,7 +41,8 @@ public class ApiResponse {
             return bodyMono(v.toBuffer());
         }
         if (o instanceof Mono v) {
-            return v.toFuture().thenCompose(ApiResponse::bodyMono);
+            return bodyMono(v.block());
+//            return v.toFuture().thenCompose(ApiResponse::bodyMono);
         }
         if (o instanceof Flux v) {
             return bodyMono(v.collectList().map(it -> new JsonArray((List) it)));
