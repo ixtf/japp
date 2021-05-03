@@ -14,7 +14,6 @@ import io.vertx.ext.web.handler.CorsHandler;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -38,7 +37,7 @@ public class ApiModule extends AbstractModule {
         if (INJECTOR == null) {
             INJECTOR = Guice.createInjector(Stream.concat(
                     Stream.of(new ApiModule(vertx, config)),
-                    ofNullable(modules).map(Arrays::stream).stream().flatMap(Function.identity())
+                    ofNullable(modules).stream().flatMap(Arrays::stream)
             ).toArray(Module[]::new));
         }
     }

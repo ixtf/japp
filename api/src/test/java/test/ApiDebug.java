@@ -32,7 +32,7 @@ public class ApiDebug extends ApiLauncher {
     public void afterStartingVertx(Vertx vertx) {
         super.afterStartingVertx(vertx);
 
-        vertx.eventBus().consumer("test:test", reply -> {
+        vertx.eventBus().consumer("test", reply -> {
             final var ret = new JsonObject().put("test", "test");
             reply.reply(ret.toBuffer());
 //            reply.reply(ret.encode());

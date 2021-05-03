@@ -93,6 +93,14 @@ public class ApiVerticle extends AbstractVerticle implements Handler<RoutingCont
         final var sockJSBridgeOptions = new SockJSBridgeOptions().addOutboundPermitted(permitted);
         router.mountSubRouter("/eventbus", SockJSHandler.create(vertx).bridge(sockJSBridgeOptions));
 
+        router.route("/test").handler(rc -> vertx.eventBus().<Buffer>request("test", null).onComplete(ar -> {
+            if (ar.succeeded()) {
+                final var body = ar.result().body();
+                rc.response().end(body);
+            } else {
+                rc.fail(ar.cause());
+            }
+        }));
         router.route("/api/services/:service/actions/:action").handler(oAuth2AuthHandler).handler(this);
         router.route("/dl/services/:service/actions/:action/tokens/:token").handler(this);
 
