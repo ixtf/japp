@@ -2,6 +2,9 @@ package test;
 
 import com.github.ixtf.api.ApiLauncher;
 import com.github.ixtf.api.MainVerticle;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import lombok.Cleanup;
@@ -32,11 +35,23 @@ public class ApiDebug extends ApiLauncher {
     public void afterStartingVertx(Vertx vertx) {
         super.afterStartingVertx(vertx);
 
-        vertx.eventBus().consumer("test", reply -> {
-            final var ret = new JsonObject().put("test", "test");
-            reply.reply(ret.toBuffer());
-//            reply.reply(ret.encode());
-        });
+        vertx.deployVerticle(new AbstractVerticle() {
+            @Override
+            public void start(Promise<Void> startPromise) throws Exception {
+                vertx.eventBus().localConsumer("test1", reply -> {
+                    final var context = vertx.getOrCreateContext();
+                    context.put("test", "test1");
+                    final var ret = new JsonObject().put("test1", Thread.currentThread().toString());
+                    reply.reply(ret.toBuffer());
+                });
+                vertx.eventBus().localConsumer("test2", reply -> {
+                    final var context = vertx.getOrCreateContext();
+                    System.out.println((String) context.get("test"));
+                    final var ret = new JsonObject().put("test2", Thread.currentThread().toString());
+                    reply.reply(ret.toBuffer());
+                });
+            }
+        }, new DeploymentOptions().setWorker(true));
     }
 
     @SneakyThrows({SocketException.class, UnknownHostException.class})
