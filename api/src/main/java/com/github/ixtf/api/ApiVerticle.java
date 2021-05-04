@@ -40,8 +40,7 @@ import java.util.HashMap;
 import static com.github.ixtf.api.ApiModule.*;
 import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_JSON;
-import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_OCTET_STREAM;
+import static io.netty.handler.codec.http.HttpHeaderValues.*;
 import static io.opentracing.propagation.Format.Builtin.TEXT_MAP;
 import static io.vertx.ext.auth.oauth2.providers.OpenIDConnectAuth.discover;
 import static java.util.Optional.ofNullable;
@@ -160,7 +159,7 @@ public class ApiVerticle extends AbstractVerticle implements Handler<RoutingCont
                 response.end(Buffer.buffer(bytes));
             } else if (body instanceof String) {
                 final var s = (String) body;
-                response.end(s);
+                response.putHeader(CONTENT_TYPE, TEXT_PLAIN).end(s);
             } else {
                 onFailure(rc, new RuntimeException("body must be (null | Buffer | byte[] | String)"));
             }
