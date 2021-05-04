@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/java/jre:16-zulu-alpine
+FROM mcr.microsoft.com/java/jre:11-zulu-alpine
 #FROM azul/zulu-openjdk:16-jre
 
 ENV TZ Asia/Shanghai
