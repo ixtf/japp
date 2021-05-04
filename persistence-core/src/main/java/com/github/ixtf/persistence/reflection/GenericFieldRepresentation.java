@@ -35,7 +35,8 @@ public class GenericFieldRepresentation extends AbstractFieldRepresentation {
     }
 
     private Class getActualType(Type type) {
-        if (type instanceof ParameterizedType pType) {
+        if (type instanceof ParameterizedType) {
+            final var pType = (ParameterizedType) type;
             return getActualType(pType.getActualTypeArguments()[0]);
         }
         return (Class) type;
@@ -56,8 +57,9 @@ public class GenericFieldRepresentation extends AbstractFieldRepresentation {
             return Collectors.toCollection(TreeSet::new);
         } else if (Set.class.isAssignableFrom(type)) {
             final var genericType = getNativeField().getGenericType();
-            if (genericType instanceof ParameterizedType parameterizedType) {
-                final var subType = parameterizedType.getActualTypeArguments()[0];
+            if (genericType instanceof ParameterizedType) {
+                final var pType = (ParameterizedType) genericType;
+                final var subType = pType.getActualTypeArguments()[0];
                 if (subType instanceof TreeSet) {
 
                 }

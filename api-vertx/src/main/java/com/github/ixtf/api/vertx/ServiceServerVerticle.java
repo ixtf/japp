@@ -98,7 +98,8 @@ public class ServiceServerVerticle extends AbstractVerticle {
         }
 
         private void reply(Message<Object> reply, Object o, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
-            if (o instanceof String v) {
+            if (o instanceof String) {
+                final var v = (String) o;
                 if (J.isBlank(v)) {
                     reply.reply(null, deliveryOptions);
                 } else {
