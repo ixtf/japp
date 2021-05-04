@@ -97,8 +97,7 @@ public class ServiceServerVerticle extends AbstractVerticle {
             if (o == null || o instanceof String || o instanceof Buffer || o instanceof byte[]) {
                 reply.reply(o, deliveryOptions);
             } else {
-                Mono.fromCallable(() -> MAPPER.writeValueAsBytes(o))
-                        .subscribe(it -> onSuccess(reply, it, deliveryOptions, spanOpt), e -> onFail(reply, e, spanOpt));
+                Mono.fromCallable(() -> MAPPER.writeValueAsBytes(o)).subscribe(it -> onSuccess(reply, it, deliveryOptions, spanOpt), e -> onFail(reply, e, spanOpt));
             }
         }
 
