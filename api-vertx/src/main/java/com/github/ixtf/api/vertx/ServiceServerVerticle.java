@@ -1,6 +1,5 @@
 package com.github.ixtf.api.vertx;
 
-import com.github.ixtf.J;
 import com.github.ixtf.api.ApiAction;
 import com.github.ixtf.api.ApiResponse;
 import com.github.ixtf.exception.JError;
@@ -11,9 +10,11 @@ import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 import io.vertx.core.*;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
@@ -21,17 +22,16 @@ import reactor.core.publisher.Mono;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.concurrent.CompletionStage;
 
-import static com.github.ixtf.api.ApiResponse.bodyMono;
+import static com.github.ixtf.Constant.MAPPER;
+import static com.github.ixtf.api.ApiResponse.bodyFuture;
 import static com.github.ixtf.api.guice.ApiModule.ACTIONS;
 import static com.github.ixtf.guice.GuiceModule.getInstance;
 import static com.github.ixtf.guice.GuiceModule.injectMembers;
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpHeaderValues.TEXT_PLAIN;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+@Slf4j
 public class ServiceServerVerticle extends AbstractVerticle {
     @Named(ACTIONS)
     @Inject
@@ -42,87 +42,78 @@ public class ServiceServerVerticle extends AbstractVerticle {
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
         injectMembers(this);
-        CompositeFuture.all(methods.stream()
-                .map(ReplyHandler::new)
-                .map(ReplyHandler::consumer)
-                .collect(toUnmodifiableList()))
-                .<Void>mapEmpty()
-                .onComplete(startPromise);
+        CompositeFuture.all(methods.stream().map(method -> {
+            final var handler = new ReplyHandler(method);
+            final var consumer = vertx.eventBus().consumer(handler.address).handler(handler);
+            return Future.<Void>future(p -> consumer.completionHandler(p)).onFailure(e -> log.error(handler.address, e));
+        }).collect(toUnmodifiableList())).<Void>mapEmpty().onComplete(startPromise);
     }
 
     private class ReplyHandler implements Handler<Message<Object>> {
         private final Object instance;
         private final Method method;
         private final String address;
-        private final Logger log;
+        private final Logger instanceLog;
 
         private ReplyHandler(Method method) {
             this.method = method;
 
             final var declaringClass = method.getDeclaringClass();
+            instanceLog = LoggerFactory.getLogger(declaringClass);
             instance = getInstance(declaringClass);
 
             final var annotation = method.getAnnotation(ApiAction.class);
             final var service = annotation.service();
             final var action = annotation.action();
             address = String.join(":", service, action);
-
-            log = LoggerFactory.getLogger(instance.getClass());
-        }
-
-        private Future<Void> consumer() {
-            final var consumer = vertx.eventBus().consumer(address).handler(this);
-            return Future.<Void>future(p -> consumer.completionHandler(p)).onFailure(e -> log.error("", e));
         }
 
         @Override
         public void handle(Message<Object> reply) {
             final var ctx = new VertxContext(reply, tracerOpt, address);
             final var spanOpt = ctx.spanOpt();
-            Mono.fromCallable(() -> bodyMono(method.invoke(instance, ctx)))
-                    .flatMap(Function.identity())
-                    .subscribe(it -> {
-                        if (it instanceof ApiResponse) {
-                            reply(reply, (ApiResponse) it, spanOpt);
-                        } else {
-                            reply(reply, it, new DeliveryOptions(), spanOpt);
-                        }
-                    }, e -> fail(reply, e, spanOpt));
+            Mono.fromCallable(() -> bodyFuture(method.invoke(instance, ctx)))
+                    .doFinally(__ -> spanOpt.ifPresent(Span::finish))
+                    .subscribe(it -> onSuccess(reply, it, new DeliveryOptions(), spanOpt), e -> onFail(reply, e, spanOpt));
         }
 
-        private void reply(Message<Object> reply, ApiResponse apiResponse, Optional<Span> spanOpt) {
-            final var deliveryOptions = new DeliveryOptions();
+        private void onSuccess(Message<Object> reply, CompletionStage<?> completionStage, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
+            completionStage.whenComplete((v, e) -> {
+                if (e != null) {
+                    onFail(reply, e, spanOpt);
+                } else {
+                    onSuccess(reply, v, deliveryOptions, spanOpt);
+                }
+            });
+        }
+
+        private void onSuccess(Message<Object> reply, ApiResponse apiResponse, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
             apiResponse.getHeaders().forEach((k, v) -> deliveryOptions.addHeader(k, v));
             deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "" + apiResponse.getStatus());
-            apiResponse.bodyMono().subscribe(it -> reply(reply, it, deliveryOptions, spanOpt), e -> fail(reply, e, spanOpt));
+            onSuccess(reply, apiResponse.bodyFuture(), deliveryOptions, spanOpt);
         }
 
-        private void reply(Message<Object> reply, Object o, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
-            if (o instanceof String) {
-                final var v = (String) o;
-                if (J.isBlank(v)) {
-                    reply.reply(null, deliveryOptions);
-                } else {
-                    deliveryOptions.addHeader(CONTENT_TYPE.toString(), TEXT_PLAIN.toString());
-                    reply.reply(v.getBytes(UTF_8), deliveryOptions);
-                }
-            } else {
+        private void onSuccess(Message<Object> reply, Object o, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
+            if (o == null || o instanceof String || o instanceof Buffer || o instanceof byte[]) {
                 reply.reply(o, deliveryOptions);
-            }
-            spanOpt.ifPresent(Span::finish);
-        }
-
-        private void fail(Message<Object> reply, Throwable e, Optional<Span> spanOpt) {
-            if (e.getCause() != null) {
-                fail(reply, e.getCause(), spanOpt);
             } else {
-                reply.fail(400, e.getMessage());
-                spanOpt.ifPresent(span -> span.setTag(Tags.ERROR, true).log(e.getMessage()).finish());
-                if (!(e instanceof JError || e instanceof ConstraintViolationException)) {
-                    log.error(address, e);
-                }
+                Mono.fromCallable(() -> MAPPER.writeValueAsBytes(o))
+                        .subscribe(it -> onSuccess(reply, it, deliveryOptions, spanOpt), e -> onFail(reply, e, spanOpt));
             }
         }
 
+        private void onFail(Message<Object> reply, Throwable e, Optional<Span> spanOpt) {
+            spanOpt.ifPresent(span -> span.setTag(Tags.ERROR, true));
+            if (e.getCause() != null) {
+                onFail(reply, e.getCause(), spanOpt);
+            } else if (e instanceof JError || e instanceof ConstraintViolationException) {
+                reply.fail(400, e.getMessage());
+            } else {
+                reply.fail(501, e.getMessage());
+                instanceLog.error(address, e);
+                spanOpt.ifPresent(span -> span.log(e.getMessage()));
+            }
+        }
     }
+
 }
