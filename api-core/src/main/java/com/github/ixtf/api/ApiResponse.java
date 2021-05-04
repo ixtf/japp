@@ -31,7 +31,7 @@ public class ApiResponse {
         }
         if (o instanceof Flux) {
             final var v = (Flux<?>) o;
-            return bodyFuture(v.collectList().map(JsonArray::new));
+            return bodyFuture(v.collectList());
         }
         if (o instanceof JsonObject) {
             final var v = (JsonObject) o;
