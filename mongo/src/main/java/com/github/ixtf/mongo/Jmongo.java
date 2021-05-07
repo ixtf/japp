@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import static com.github.ixtf.guice.GuiceModule.getInstance;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
+import static java.util.Optional.ofNullable;
 
 public class Jmongo {
     public static final String ID_COL = "_id";
@@ -42,18 +43,18 @@ public class Jmongo {
     }
 
     public Mono<Long> count(Class clazz, Stream<Bson> filterStream) {
-        final var filter = Stream.concat(filterStream, Stream.of(DELETED_FILTER)).toArray(Bson[]::new);
-        return Mono.from(countPublisher(clazz, filter));
+        final var filters = Stream.concat(filterStream, Stream.of(DELETED_FILTER)).toArray(Bson[]::new);
+        return Mono.from(countPublisher(clazz, filters));
     }
 
     public <T> Flux<T> query(Class<T> clazz, Stream<Bson> filterStream) {
-        final var filter = Stream.concat(filterStream, Stream.of(DELETED_FILTER)).toArray(Bson[]::new);
-        return Flux.defer(() -> findPublisher(clazz, filter));
+        final var filters = Stream.concat(filterStream, Stream.of(DELETED_FILTER)).toArray(Bson[]::new);
+        return Flux.defer(() -> findPublisher(clazz, filters));
     }
 
     public <T> Flux<T> query(Class<T> clazz, Stream<Bson> filterStream, int skip, int limit) {
-        final var filter = Stream.concat(filterStream, Stream.of(DELETED_FILTER)).toArray(Bson[]::new);
-        return Flux.defer(() -> findPublisher(clazz, filter).batchSize(limit).skip(skip).limit(limit));
+        final var filters = Stream.concat(filterStream, Stream.of(DELETED_FILTER)).toArray(Bson[]::new);
+        return Flux.defer(() -> findPublisher(clazz, filters).skip(skip).limit(limit).batchSize(limit));
     }
 
     public MongoClient client() {
@@ -65,41 +66,38 @@ public class Jmongo {
     }
 
     public MongoDatabase database(Class<?> clazz) {
-        return Optional.ofNullable(clazz.getAnnotation(MongoEntity.class))
+        return ofNullable(clazz.getAnnotation(MongoEntity.class))
                 .map(MongoEntity::database)
                 .filter(J::nonBlank)
-                .map(it -> client().getDatabase(it))
+                .map(client()::getDatabase)
                 .orElseGet(this::database);
     }
 
     public String collectionName(Class<?> clazz) {
-        return Optional.ofNullable(clazz.getAnnotation(MongoEntity.class))
+        return ofNullable(clazz.getAnnotation(MongoEntity.class))
                 .map(MongoEntity::collection)
                 .filter(J::nonBlank)
                 .orElseGet(() -> "T_" + clazz.getSimpleName());
     }
 
     public MongoCollection<Document> collection(Class<?> clazz) {
-        final var database = database(clazz);
-        return database.getCollection(collectionName(clazz));
+        return database(clazz).getCollection(collectionName(clazz));
     }
 
     public <T> MongoCollection<T> entityCollection(Class<T> clazz) {
-        final var database = database(clazz);
-        return database.getCollection(collectionName(clazz), clazz);
+        return database(clazz).getCollection(collectionName(clazz), clazz);
     }
 
     public <T> MongoCollection<BsonDocument> bsonDocumentCollection(Class<T> clazz) {
-        final var database = database(clazz);
-        return database.getCollection(collectionName(clazz), BsonDocument.class);
+        return database(clazz).getCollection(collectionName(clazz), BsonDocument.class);
     }
 
     public BsonDocument toBsonDocument(Object entity) {
-        final var codecRegistry = getInstance(CodecRegistry.class);
-        final Codec codec = codecRegistry.get(entity.getClass());
         final var bsonDocument = new BsonDocument();
         final var writer = new BsonDocumentWriter(bsonDocument);
         final var encoderContext = EncoderContext.builder().build();
+        final var codecRegistry = getInstance(CodecRegistry.class);
+        final Codec codec = codecRegistry.get(entity.getClass());
         codec.encode(writer, entity, encoderContext);
         return bsonDocument;
     }
