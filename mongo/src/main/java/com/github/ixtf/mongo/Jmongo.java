@@ -5,6 +5,7 @@ import com.github.ixtf.data.EntityDTO;
 import com.github.ixtf.persistence.IEntity;
 import com.google.common.collect.ImmutableList;
 import com.mongodb.DBRef;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -13,16 +14,20 @@ import org.bson.BsonDocumentWriter;
 import org.bson.Document;
 import org.bson.codecs.Codec;
 import org.bson.codecs.EncoderContext;
+import org.bson.conversions.Bson;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Optional;
 
 import static com.github.ixtf.guice.GuiceModule.getInstance;
+import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 
 public class Jmongo {
     public static final String ID_COL = "_id";
     public static final String DELETED_COL = "deleted";
+    public static final Bson DELETED_FILTER = eq(DELETED_COL, false);
 
     public MongoUnitOfWork uow() {
         return new MongoUnitOfWork(this);
@@ -44,6 +49,34 @@ public class Jmongo {
                 .orElseGet(this::database);
         final var collection = database.getCollection(dbRef.getCollectionName(), clazz);
         return find(collection, dbRef.getId());
+    }
+
+    public <T> List<T> query(Class<T> clazz) {
+        final var iterable = iterable(clazz, DELETED_FILTER);
+        return ImmutableList.copyOf(iterable);
+    }
+
+    public <T> List<T> query(Class<T> clazz, Bson filter) {
+        final var iterable = iterable(clazz, filter, DELETED_FILTER);
+        return ImmutableList.copyOf(iterable);
+    }
+
+    public <T> List<T> query(Class<T> clazz, Optional<Bson> filterOpt) {
+        return filterOpt.map(filter -> query(clazz, filter)).orElseGet(() -> query(clazz));
+    }
+
+    public <T> List<T> query(Class<T> clazz, int skip, int limit) {
+        final var iterable = iterable(clazz, DELETED_FILTER).batchSize(limit).skip(skip).limit(limit);
+        return ImmutableList.copyOf(iterable);
+    }
+
+    public <T> List<T> query(Class<T> clazz, Bson filter, int skip, int limit) {
+        final var iterable = iterable(clazz, filter, DELETED_FILTER).batchSize(limit).skip(skip).limit(limit);
+        return ImmutableList.copyOf(iterable);
+    }
+
+    public <T> List<T> query(Class<T> clazz, Optional<Bson> filterOpt, int skip, int limit) {
+        return filterOpt.map(filter -> query(clazz, filter, skip, limit)).orElseGet(() -> query(clazz, skip, limit));
     }
 
     public MongoClient client() {
@@ -118,5 +151,10 @@ public class Jmongo {
         final var collection = collection(clazz);
         final var condition = eq(ID_COL, id);
         return collection.countDocuments(condition) > 0;
+    }
+
+    public <T> FindIterable<T> iterable(Class<T> clazz, Bson... filters) {
+        final var collection = entityCollection(clazz);
+        return J.isEmpty(filters) ? collection.find() : collection.find(and(filters));
     }
 }
