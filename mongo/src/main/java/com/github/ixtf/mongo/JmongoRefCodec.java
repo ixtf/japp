@@ -15,8 +15,8 @@ import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
 public class JmongoRefCodec implements Codec<JmongoRef> {
-    private static final String ID_COL = "$id";
     private static final String COLLECTION_NAME_COL = "$ref";
+    private static final String ID_COL = "$id";
     private static final String DATABASE_NAME_COL = "$db";
     private final CodecRegistry registry;
 
@@ -28,8 +28,8 @@ public class JmongoRefCodec implements Codec<JmongoRef> {
     public void encode(BsonWriter writer, JmongoRef value, EncoderContext encoderContext) {
         writer.writeStartDocument();
         // $id field without a $ref before it, which is invalid.
-        writer.writeString(ID_COL, value.getId());
         writer.writeString(COLLECTION_NAME_COL, value.getCollectionName());
+        writer.writeString(ID_COL, value.getId());
         ofNullable(value.getDatabaseName()).filter(J::nonBlank).ifPresent(it -> writer.writeString(DATABASE_NAME_COL, it));
         writer.writeEndDocument();
     }
@@ -45,12 +45,12 @@ public class JmongoRefCodec implements Codec<JmongoRef> {
             final var name = reader.readName();
             final var value = reader.readString();
             switch (name) {
-                case ID_COL: {
-                    id = value;
-                    break;
-                }
                 case COLLECTION_NAME_COL: {
                     collectionName = value;
+                    break;
+                }
+                case ID_COL: {
+                    id = value;
                     break;
                 }
                 case DATABASE_NAME_COL: {
