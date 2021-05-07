@@ -103,18 +103,8 @@ public class Jmongo {
     }
 
     public <T> Mono<T> find(MongoCollection<T> collection, Object id) {
-        return Flux.defer(() -> {
-            final var condition = eq(ID_COL, id);
-            return collection.find(condition);
-        }).collectList().flatMap(list -> {
-            if (J.isEmpty(list)) {
-                return Mono.empty();
-            }
-            if (list.size() == 1) {
-                return Mono.just(list.get(0));
-            }
-            return Mono.error(new RuntimeException("[" + id + "]"));
-        });
+        final var condition = eq(ID_COL, id);
+        return Mono.from(collection.find(condition));
     }
 
     public <T> Mono<T> find(Class<T> clazz, Principal principal) {

@@ -1,6 +1,5 @@
 package com.github.ixtf.mongo;
 
-
 import com.github.ixtf.J;
 import org.apache.commons.lang3.Validate;
 import org.bson.BsonReader;

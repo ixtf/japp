@@ -1,6 +1,5 @@
 package com.github.ixtf.mongo;
 
-
 import lombok.Getter;
 import org.apache.commons.lang3.Validate;
 import reactor.core.publisher.Mono;
