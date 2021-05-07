@@ -79,6 +79,18 @@ public class Jmongo {
         return filterOpt.map(filter -> query(clazz, filter, skip, limit)).orElseGet(() -> query(clazz, skip, limit));
     }
 
+    public long count(Class clazz) {
+        return entityCollection(clazz).countDocuments();
+    }
+
+    public long count(Class clazz, Bson filter) {
+        return entityCollection(clazz).countDocuments(and(filter, DELETED_FILTER));
+    }
+
+    public long count(Class clazz, Optional<Bson> filterOpt) {
+        return filterOpt.map(filter -> count(clazz, filter)).orElseGet(() -> count(clazz));
+    }
+
     public MongoClient client() {
         return getInstance(MongoClient.class);
     }
