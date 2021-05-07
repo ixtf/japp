@@ -2,6 +2,10 @@ package com.github.ixtf.mongo;
 
 import lombok.Getter;
 import org.apache.commons.lang3.Validate;
+import org.bson.BsonDocument;
+import org.bson.BsonDocumentReader;
+import org.bson.codecs.DecoderContext;
+import org.bson.codecs.configuration.CodecRegistry;
 import reactor.core.publisher.Mono;
 
 import java.io.Serializable;
@@ -17,19 +21,29 @@ public final class JmongoRef implements Serializable {
     private final String collectionName;
     @Getter
     private final String databaseName;
+    @Getter
+    private final Mono<BsonDocument> bsonDocument$;
 
     JmongoRef(final String databaseName, final String collectionName, final String id) {
         this.id = Validate.notBlank(id, "id");
         this.collectionName = Validate.notBlank(collectionName, "collectionName");
         this.databaseName = databaseName;
+        this.bsonDocument$ = Mono.defer(() -> {
+            final var jmongo = getInstance(Jmongo.class);
+            final var client = jmongo.client();
+            final var database = ofNullable(databaseName).map(client::getDatabase).orElseGet(jmongo::database);
+            final var collection = database.getCollection(collectionName, BsonDocument.class);
+            return jmongo.find(collection, id);
+        }).cache();
     }
 
     public <T extends MongoEntityBase> Mono<T> toEntity(Class<T> clazz) {
-        final var jmongo = getInstance(Jmongo.class);
-        final var client = jmongo.client();
-        final var database = ofNullable(databaseName).map(client::getDatabase).orElseGet(jmongo::database);
-        final var collection = database.getCollection(collectionName, clazz);
-        return jmongo.find(collection, id);
+        return this.bsonDocument$.map(bsonDocument -> {
+            final var reader = new BsonDocumentReader(bsonDocument);
+            final var registry = getInstance(CodecRegistry.class);
+            final var codec = registry.get(clazz);
+            return codec.decode(reader, DecoderContext.builder().build());
+        });
     }
 
     @Override
