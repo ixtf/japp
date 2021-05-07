@@ -23,7 +23,7 @@ public abstract class MongoEntityBase implements IEntity {
         final var namespace = collection.getNamespace();
         final var databaseName = namespace.getDatabaseName();
         final var collectionName = namespace.getCollectionName();
-        return new DBRef(databaseName, collectionName, id);
+        return new DBRef(databaseName, collectionName, getId());
     }
 
 }
