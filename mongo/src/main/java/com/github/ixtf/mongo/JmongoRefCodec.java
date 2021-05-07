@@ -36,10 +36,11 @@ public class JmongoRefCodec implements Codec<JmongoRef> {
 
     @Override
     public JmongoRef decode(BsonReader reader, DecoderContext decoderContext) {
-        reader.readStartDocument();
         String id = null;
         String collectionName = null;
         String databaseName = null;
+
+        reader.readStartDocument();
         while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
             final var name = reader.readName();
             final var value = reader.readString();
@@ -62,6 +63,7 @@ public class JmongoRefCodec implements Codec<JmongoRef> {
             }
         }
         reader.readEndDocument();
+
         if (J.isBlank(id)) {
             return null;
         }
