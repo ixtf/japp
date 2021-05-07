@@ -171,6 +171,34 @@ public class Jmongo {
         return query(clazz, Flux.fromIterable(filters).toStream(), skip, limit);
     }
 
+    public <T> Flux<T> autocomplete(Class<T> clazz, Bson... filters) {
+        return autocomplete(clazz, 10, filters);
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Optional<Bson>... filters) {
+        return autocomplete(clazz, 10, filters);
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Iterable<Bson> filters) {
+        return autocomplete(clazz, filters, 10);
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, int limit, Bson... filters) {
+        return autocomplete(clazz, Arrays.stream(filters), limit);
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, int limit, Optional<Bson>... filters) {
+        return autocomplete(clazz, Arrays.stream(filters).flatMap(Optional::stream), limit);
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Iterable<Bson> filters, int limit) {
+        return autocomplete(clazz, Flux.fromIterable(filters).toStream(), limit);
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Stream<Bson> filterStream, int limit) {
+        return query(clazz, filterStream, 0, Math.max(limit, 10));
+    }
+
     public <T> FindPublisher<T> findPublisher(Class<T> clazz, Bson... filters) {
         final var collection = entityCollection(clazz);
         return J.isEmpty(filters) ? collection.find() : collection.find(and(filters));
