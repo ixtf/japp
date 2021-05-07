@@ -111,8 +111,12 @@ public class Jmongo {
     }
 
     public boolean exists(IEntity entity) {
-        final var collection = collection(entity.getClass());
-        final var condition = eq(ID_COL, entity.getId());
+        return exists(entity.getClass(), entity.getId());
+    }
+
+    public boolean exists(Class clazz, Object id) {
+        final var collection = collection(clazz);
+        final var condition = eq(ID_COL, id);
         return collection.countDocuments(condition) > 0;
     }
 }
