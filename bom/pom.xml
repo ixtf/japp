@@ -53,6 +53,11 @@
             </dependency>
             <dependency>
                 <groupId>com.github.ixtf.japp</groupId>
+                <artifactId>mongo</artifactId>
+                <version>${jappVersion}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ixtf.japp</groupId>
                 <artifactId>persistence-mongo</artifactId>
                 <version>${jappVersion}</version>
             </dependency>

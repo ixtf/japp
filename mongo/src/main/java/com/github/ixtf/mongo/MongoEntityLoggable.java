@@ -28,19 +28,19 @@ public abstract class MongoEntityLoggable extends MongoEntityBase {
     @Setter
     protected Date modifyDateTime;
 
-    void log(IOperator operator) {
+    public void log(IOperator operator) {
         log(operator, new Date());
     }
 
-    void log(IOperator operator, Date date) {
+    public void log(IOperator operator, Date date) {
         log(Operator.from(operator), date);
     }
 
-    void log(Operator operator) {
+    public void log(Operator operator) {
         log(operator, new Date());
     }
 
-    void log(Operator operator, Date date) {
+    public void log(Operator operator, Date date) {
         if (getCreator() == null) {
             setCreator(operator);
         } else {

@@ -15,20 +15,20 @@ import static com.mongodb.MongoClientSettings.getDefaultCodecRegistry;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
-public abstract class MongoModule extends AbstractModule {
+public abstract class MongoModuleBase extends AbstractModule {
 
     protected abstract MongoClientSettings.Builder builder(MongoClientSettings.Builder builder);
 
     protected abstract String database();
 
-    protected abstract CodecRegistry builder();
+    protected abstract CodecRegistry codecRegistry();
 
     @Provides
     private CodecRegistry CodecRegistry() {
         final var pojoCodecProvider = PojoCodecProvider.builder()
                 .register(MongoEntityLoggable.Operator.class)
                 .build();
-        return fromRegistries(getDefaultCodecRegistry(), fromProviders(pojoCodecProvider));
+        return fromRegistries(getDefaultCodecRegistry(), fromProviders(pojoCodecProvider), codecRegistry());
     }
 
     @Singleton
