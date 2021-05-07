@@ -12,6 +12,7 @@ import org.bson.BsonDocumentWriter;
 import org.bson.Document;
 import org.bson.codecs.Codec;
 import org.bson.codecs.EncoderContext;
+import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -71,29 +72,31 @@ public class Jmongo {
                 .orElseGet(this::database);
     }
 
-    public MongoCollection<Document> collection(Class<?> clazz) {
-        final var database = database(clazz);
+    public String collectionName(Class<?> clazz) {
         return Optional.ofNullable(clazz.getAnnotation(MongoEntity.class))
                 .map(MongoEntity::collection)
                 .filter(J::nonBlank)
-                .map(it -> database.getCollection(it))
-                .orElseGet(() -> database.getCollection("T_" + clazz.getSimpleName()));
+                .orElseGet(() -> "T_" + clazz.getSimpleName());
+    }
+
+    public MongoCollection<Document> collection(Class<?> clazz) {
+        final var database = database(clazz);
+        return database.getCollection(collectionName(clazz));
     }
 
     public <T> MongoCollection<T> entityCollection(Class<T> clazz) {
         final var database = database(clazz);
-        return Optional.ofNullable(clazz.getAnnotation(MongoEntity.class))
-                .map(MongoEntity::collection)
-                .filter(J::nonBlank)
-                .map(it -> database.getCollection(it, clazz))
-                .orElseGet(() -> database.getCollection("T_" + clazz.getSimpleName(), clazz));
+        return database.getCollection(collectionName(clazz), clazz);
+    }
+
+    public <T> MongoCollection<BsonDocument> bsonDocumentCollection(Class<T> clazz) {
+        final var database = database(clazz);
+        return database.getCollection(collectionName(clazz), BsonDocument.class);
     }
 
     public BsonDocument toBsonDocument(Object entity) {
-        final var clazz = entity.getClass();
-        final var collection = entityCollection(clazz);
-        final var codecRegistry = collection.getCodecRegistry();
-        final Codec codec = codecRegistry.get(clazz);
+        final var codecRegistry = getInstance(CodecRegistry.class);
+        final Codec codec = codecRegistry.get(entity.getClass());
         final var bsonDocument = new BsonDocument();
         final var writer = new BsonDocumentWriter(bsonDocument);
         final var encoderContext = EncoderContext.builder().build();

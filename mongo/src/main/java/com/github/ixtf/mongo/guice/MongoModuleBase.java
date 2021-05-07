@@ -24,6 +24,7 @@ public abstract class MongoModuleBase extends AbstractModule {
 
     protected abstract CodecRegistry codecRegistry();
 
+    @Singleton
     @Provides
     private CodecRegistry CodecRegistry() {
         final var jmongoRefCodecProvider = new JmongoRefCodecProvider();

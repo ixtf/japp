@@ -1,21 +1,25 @@
 package com.github.ixtf.mongo;
 
 import com.github.ixtf.persistence.IEntity;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.bson.codecs.pojo.annotations.BsonId;
 
 import java.util.Objects;
 
 import static com.github.ixtf.guice.GuiceModule.getInstance;
 
+@ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Getter
+@Setter
 public abstract class MongoEntityBase implements IEntity {
+    @ToString.Include
+    @EqualsAndHashCode.Include
     @BsonId
-    @Getter
-    @Setter
     protected String id;
-    @Getter
-    @Setter
     protected boolean deleted;
 
     public JmongoRef toRef() {
