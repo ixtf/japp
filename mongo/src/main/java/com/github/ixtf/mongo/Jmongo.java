@@ -3,7 +3,6 @@ package com.github.ixtf.mongo;
 import com.github.ixtf.J;
 import com.github.ixtf.data.EntityDTO;
 import com.github.ixtf.persistence.IEntity;
-import com.mongodb.DBRef;
 import com.mongodb.reactivestreams.client.FindPublisher;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoCollection;
@@ -115,16 +114,6 @@ public class Jmongo {
             }
             return Mono.error(new RuntimeException("[" + id + "]"));
         });
-    }
-
-    public <T> Mono<T> find(Class<T> clazz, DBRef dbRef) {
-        final var collection = Optional.ofNullable(dbRef)
-                .map(DBRef::getDatabaseName)
-                .filter(J::nonBlank)
-                .map(it -> client().getDatabase(it))
-                .orElseGet(this::database)
-                .getCollection(dbRef.getCollectionName(), clazz);
-        return find(collection, dbRef.getId());
     }
 
     public <T> Mono<T> find(Class<T> clazz, Principal principal) {

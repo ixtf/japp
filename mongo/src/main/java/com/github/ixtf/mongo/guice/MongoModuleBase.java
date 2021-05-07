@@ -1,5 +1,6 @@
 package com.github.ixtf.mongo.guice;
 
+import com.github.ixtf.mongo.JmongoRefCodecProvider;
 import com.github.ixtf.mongo.MongoEntityLoggable;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -25,10 +26,11 @@ public abstract class MongoModuleBase extends AbstractModule {
 
     @Provides
     private CodecRegistry CodecRegistry() {
+        final var jmongoRefCodecProvider = new JmongoRefCodecProvider();
         final var pojoCodecProvider = PojoCodecProvider.builder()
                 .register(MongoEntityLoggable.Operator.class)
                 .build();
-        return fromRegistries(getDefaultCodecRegistry(), fromProviders(pojoCodecProvider), codecRegistry());
+        return fromRegistries(getDefaultCodecRegistry(), codecRegistry(), fromProviders(jmongoRefCodecProvider, pojoCodecProvider));
     }
 
     @Singleton
