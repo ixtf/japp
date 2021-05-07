@@ -3,16 +3,12 @@ package com.github.ixtf.mongo;
 import com.github.ixtf.J;
 import com.github.ixtf.persistence.IEntity;
 import com.github.ixtf.persistence.runtime.AbstractUnitOfWork;
-import com.google.common.collect.Lists;
-import com.mongodb.bulk.BulkWriteResult;
-import com.mongodb.client.MongoCollection;
+import com.mongodb.reactivestreams.client.MongoCollection;
 import jakarta.persistence.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.BsonDocument;
 import org.bson.types.ObjectId;
-
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import reactor.core.publisher.Mono;
 
 import static com.github.ixtf.mongo.Jmongo.ID_COL;
 
@@ -22,7 +18,7 @@ import static com.github.ixtf.mongo.Jmongo.ID_COL;
 @Slf4j
 public class MongoUnitOfWork extends AbstractUnitOfWork {
     private final Jmongo jmongo;
-    private final List<BulkWriteResult> commitResult = Lists.newArrayList();
+    private boolean committed;
 
     MongoUnitOfWork(Jmongo jmongo) {
         this.jmongo = jmongo;
@@ -35,9 +31,15 @@ public class MongoUnitOfWork extends AbstractUnitOfWork {
 
     @Override
     synchronized public MongoUnitOfWork commit() {
-        handleNewList();
-        handleDirtyList();
-        handleDeleteList();
+        if (!committed) {
+            try {
+                handleNewList();
+                handleDirtyList();
+                handleDeleteList();
+            } finally {
+                committed = true;
+            }
+        }
         return this;
     }
 
@@ -48,7 +50,7 @@ public class MongoUnitOfWork extends AbstractUnitOfWork {
             if (J.isBlank(entity.getId())) {
                 entity.setId(new ObjectId().toHexString());
             }
-            collection.insertOne(entity);
+            Mono.from(collection.insertOne(entity)).block();
             callbackStream(entity, PostPersist.class).forEach(it -> it.callback(entity));
         }
     }
@@ -60,7 +62,7 @@ public class MongoUnitOfWork extends AbstractUnitOfWork {
             final var document = jmongo.toBsonDocument(entity);
             final var id = document.get(ID_COL);
             final var condition = new BsonDocument().append(ID_COL, id);
-            collection.replaceOne(condition, entity);
+            Mono.from(collection.replaceOne(condition, entity)).block();
             callbackStream(entity, PostUpdate.class).forEach(it -> it.callback(entity));
         }
     }
@@ -72,7 +74,7 @@ public class MongoUnitOfWork extends AbstractUnitOfWork {
             final var document = jmongo.toBsonDocument(entity);
             final var id = document.get(ID_COL);
             final var condition = new BsonDocument().append(ID_COL, id);
-            collection.deleteOne(condition);
+            Mono.from(collection.deleteOne(condition)).block();
             callbackStream(entity, PostRemove.class).forEach(it -> it.callback(entity));
         }
     }
@@ -83,23 +85,4 @@ public class MongoUnitOfWork extends AbstractUnitOfWork {
         return this;
     }
 
-    private void log(Iterable<BulkWriteResult> bulkWriteResults) {
-        final var newCount = new AtomicInteger();
-        final var dirtyCount = new AtomicInteger();
-        final var deleteCount = new AtomicInteger();
-        bulkWriteResults.forEach(bulkWriteResult -> {
-            final int insertedCount = bulkWriteResult.getInsertedCount();
-            newCount.addAndGet(insertedCount);
-            final int modifiedCount = bulkWriteResult.getModifiedCount();
-            dirtyCount.addAndGet(modifiedCount);
-            final int deletedCount = bulkWriteResult.getDeletedCount();
-            deleteCount.addAndGet(deletedCount);
-        });
-        final String join = String.join(";",
-                "newList=" + newList.size() + ",newCount=" + newCount.get(),
-                "dirtyList=" + dirtyList.size() + ",dirtyCount=" + dirtyCount.get(),
-                "deleteList=" + deleteList.size() + ",deleteCount=" + deleteCount.get()
-        );
-        log.info(join);
-    }
 }

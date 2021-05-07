@@ -3,22 +3,25 @@ package com.github.ixtf.mongo;
 import com.github.ixtf.J;
 import com.github.ixtf.data.EntityDTO;
 import com.github.ixtf.persistence.IEntity;
-import com.google.common.collect.ImmutableList;
 import com.mongodb.DBRef;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.reactivestreams.client.FindPublisher;
+import com.mongodb.reactivestreams.client.MongoClient;
+import com.mongodb.reactivestreams.client.MongoCollection;
+import com.mongodb.reactivestreams.client.MongoDatabase;
 import org.bson.BsonDocument;
 import org.bson.BsonDocumentWriter;
 import org.bson.Document;
 import org.bson.codecs.Codec;
 import org.bson.codecs.EncoderContext;
 import org.bson.conversions.Bson;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.security.Principal;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static com.github.ixtf.guice.GuiceModule.getInstance;
 import static com.mongodb.client.model.Filters.and;
@@ -33,62 +36,24 @@ public class Jmongo {
         return new MongoUnitOfWork(this);
     }
 
-    public <T> T find(Class<T> clazz, Principal principal) {
-        return find(clazz, principal.getName());
+    public <T> Mono<T> find(Class<T> clazz, Object id) {
+        // todo add cache
+        return find(entityCollection(clazz), id);
     }
 
-    public <T> T find(Class<T> clazz, EntityDTO dto) {
-        return find(clazz, dto.getId());
+    public Mono<Long> count(Class clazz, Stream<Bson> filterStream) {
+        final var filter = Stream.concat(filterStream, Stream.of(DELETED_FILTER)).toArray(Bson[]::new);
+        return Mono.from(countPublisher(clazz, filter));
     }
 
-    public <T> T find(Class<T> clazz, DBRef dbRef) {
-        final var database = Optional.ofNullable(dbRef)
-                .map(DBRef::getDatabaseName)
-                .filter(J::nonBlank)
-                .map(it -> client().getDatabase(it))
-                .orElseGet(this::database);
-        final var collection = database.getCollection(dbRef.getCollectionName(), clazz);
-        return find(collection, dbRef.getId());
+    public <T> Flux<T> query(Class<T> clazz, Stream<Bson> filterStream) {
+        final var filter = Stream.concat(filterStream, Stream.of(DELETED_FILTER)).toArray(Bson[]::new);
+        return Flux.defer(() -> findPublisher(clazz, filter));
     }
 
-    public <T> List<T> query(Class<T> clazz) {
-        final var iterable = iterable(clazz, DELETED_FILTER);
-        return ImmutableList.copyOf(iterable);
-    }
-
-    public <T> List<T> query(Class<T> clazz, Bson filter) {
-        final var iterable = iterable(clazz, filter, DELETED_FILTER);
-        return ImmutableList.copyOf(iterable);
-    }
-
-    public <T> List<T> query(Class<T> clazz, Optional<Bson> filterOpt) {
-        return filterOpt.map(filter -> query(clazz, filter)).orElseGet(() -> query(clazz));
-    }
-
-    public <T> List<T> query(Class<T> clazz, int skip, int limit) {
-        final var iterable = iterable(clazz, DELETED_FILTER).batchSize(limit).skip(skip).limit(limit);
-        return ImmutableList.copyOf(iterable);
-    }
-
-    public <T> List<T> query(Class<T> clazz, Bson filter, int skip, int limit) {
-        final var iterable = iterable(clazz, filter, DELETED_FILTER).batchSize(limit).skip(skip).limit(limit);
-        return ImmutableList.copyOf(iterable);
-    }
-
-    public <T> List<T> query(Class<T> clazz, Optional<Bson> filterOpt, int skip, int limit) {
-        return filterOpt.map(filter -> query(clazz, filter, skip, limit)).orElseGet(() -> query(clazz, skip, limit));
-    }
-
-    public long count(Class clazz) {
-        return entityCollection(clazz).countDocuments();
-    }
-
-    public long count(Class clazz, Bson filter) {
-        return entityCollection(clazz).countDocuments(and(filter, DELETED_FILTER));
-    }
-
-    public long count(Class clazz, Optional<Bson> filterOpt) {
-        return filterOpt.map(filter -> count(clazz, filter)).orElseGet(() -> count(clazz));
+    public <T> Flux<T> query(Class<T> clazz, Stream<Bson> filterStream, int skip, int limit) {
+        final var filter = Stream.concat(filterStream, Stream.of(DELETED_FILTER)).toArray(Bson[]::new);
+        return Flux.defer(() -> findPublisher(clazz, filter).batchSize(limit).skip(skip).limit(limit));
     }
 
     public MongoClient client() {
@@ -137,22 +102,71 @@ public class Jmongo {
         return bsonDocument;
     }
 
-    public <T> T find(Class<T> clazz, Object id) {
-        // todo add cache
-        return find(entityCollection(clazz), id);
+    public <T> Mono<T> find(MongoCollection<T> collection, Object id) {
+        return Flux.defer(() -> {
+            final var condition = eq(ID_COL, id);
+            return collection.find(condition);
+        }).collectList().flatMap(list -> {
+            if (J.isEmpty(list)) {
+                return Mono.empty();
+            }
+            if (list.size() == 1) {
+                return Mono.just(list.get(0));
+            }
+            return Mono.error(new RuntimeException("[" + id + "]"));
+        });
     }
 
-    public <T> T find(MongoCollection<T> collection, Object id) {
-        final var condition = eq(ID_COL, id);
-        final var iterable = collection.find(condition);
-        final var list = ImmutableList.copyOf(iterable);
-        if (J.isEmpty(list)) {
-            return null;
-        }
-        if (list.size() == 1) {
-            return list.get(0);
-        }
-        throw new RuntimeException("[" + id + "]");
+    public <T> Mono<T> find(Class<T> clazz, DBRef dbRef) {
+        final var collection = Optional.ofNullable(dbRef)
+                .map(DBRef::getDatabaseName)
+                .filter(J::nonBlank)
+                .map(it -> client().getDatabase(it))
+                .orElseGet(this::database)
+                .getCollection(dbRef.getCollectionName(), clazz);
+        return find(collection, dbRef.getId());
+    }
+
+    public <T> Mono<T> find(Class<T> clazz, Principal principal) {
+        return find(clazz, principal.getName());
+    }
+
+    public <T> Mono<T> find(Class<T> clazz, EntityDTO dto) {
+        return find(clazz, dto.getId());
+    }
+
+    public Mono<Long> count(Class clazz, Bson... filters) {
+        return count(clazz, Arrays.stream(filters));
+    }
+
+    public Mono<Long> count(Class clazz, Iterable<Bson> filters) {
+        return count(clazz, Flux.fromIterable(filters).toStream());
+    }
+
+    public <T> Flux<T> query(Class<T> clazz, Bson... filters) {
+        return query(clazz, Arrays.stream(filters));
+    }
+
+    public <T> Flux<T> query(Class<T> clazz, Iterable<Bson> filters) {
+        return query(clazz, Flux.fromIterable(filters).toStream());
+    }
+
+    public <T> Flux<T> query(Class<T> clazz, int skip, int limit, Bson... filters) {
+        return query(clazz, Arrays.stream(filters), skip, limit);
+    }
+
+    public <T> Flux<T> query(Class<T> clazz, Iterable<Bson> filters, int skip, int limit) {
+        return query(clazz, Flux.fromIterable(filters).toStream(), skip, limit);
+    }
+
+    public <T> FindPublisher<T> findPublisher(Class<T> clazz, Bson... filters) {
+        final var collection = entityCollection(clazz);
+        return J.isEmpty(filters) ? collection.find() : collection.find(and(filters));
+    }
+
+    public Publisher<Long> countPublisher(Class clazz, Bson... filters) {
+        final var collection = entityCollection(clazz);
+        return J.isEmpty(filters) ? collection.countDocuments() : collection.countDocuments(and(filters));
     }
 
     public boolean exists(IEntity entity) {
@@ -160,13 +174,6 @@ public class Jmongo {
     }
 
     public boolean exists(Class clazz, Object id) {
-        final var collection = collection(clazz);
-        final var condition = eq(ID_COL, id);
-        return collection.countDocuments(condition) > 0;
-    }
-
-    public <T> FindIterable<T> iterable(Class<T> clazz, Bson... filters) {
-        final var collection = entityCollection(clazz);
-        return J.isEmpty(filters) ? collection.find() : collection.find(and(filters));
+        return Mono.from(countPublisher(clazz, eq(ID_COL, id))).block() > 0;
     }
 }
