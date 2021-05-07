@@ -57,7 +57,7 @@ public class JmongoRefCodec implements Codec<JmongoRef> {
                     break;
                 }
                 default: {
-                    throw new CodecConfigurationException(format("Missing codec in '%s' for '%s'", JmongoRef.class.getClass().getName(), name));
+                    throw new CodecConfigurationException(format("解码出错： '%s' for '%s'", JmongoRef.class.getClass().getName(), name));
                 }
             }
         }
