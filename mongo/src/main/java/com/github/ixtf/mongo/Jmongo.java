@@ -139,6 +139,10 @@ public class Jmongo {
         return count(clazz, Arrays.stream(filters));
     }
 
+    public Mono<Long> count(Class clazz, Optional<Bson>... filters) {
+        return count(clazz, Arrays.stream(filters).flatMap(Optional::stream));
+    }
+
     public Mono<Long> count(Class clazz, Iterable<Bson> filters) {
         return count(clazz, Flux.fromIterable(filters).toStream());
     }
@@ -147,12 +151,20 @@ public class Jmongo {
         return query(clazz, Arrays.stream(filters));
     }
 
+    public <T> Flux<T> query(Class<T> clazz, Optional<Bson>... filters) {
+        return query(clazz, Arrays.stream(filters).flatMap(Optional::stream));
+    }
+
     public <T> Flux<T> query(Class<T> clazz, Iterable<Bson> filters) {
         return query(clazz, Flux.fromIterable(filters).toStream());
     }
 
     public <T> Flux<T> query(Class<T> clazz, int skip, int limit, Bson... filters) {
         return query(clazz, Arrays.stream(filters), skip, limit);
+    }
+
+    public <T> Flux<T> query(Class<T> clazz, int skip, int limit, Optional<Bson>... filters) {
+        return query(clazz, Arrays.stream(filters).flatMap(Optional::stream), skip, limit);
     }
 
     public <T> Flux<T> query(Class<T> clazz, Iterable<Bson> filters, int skip, int limit) {
