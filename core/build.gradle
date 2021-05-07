@@ -14,4 +14,8 @@ dependencies {
             "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml",
             "com.fasterxml.jackson.datatype:jackson-datatype-jdk8",
             "com.fasterxml.jackson.module:jackson-module-parameter-names"
+
+
+    testImplementation "io.smallrye.config:smallrye-config:2.2.0",
+            "io.smallrye.config:smallrye-config-examples:1.10.0"
 }

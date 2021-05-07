@@ -1,0 +1,70 @@
+package com.github.ixtf.mongo;
+
+import com.github.ixtf.persistence.IOperator;
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import org.bson.codecs.pojo.annotations.BsonId;
+import org.bson.codecs.pojo.annotations.BsonProperty;
+
+import java.io.Serializable;
+import java.util.Date;
+
+public abstract class MongoEntityLoggable extends MongoEntityBase {
+    @BsonId
+    @Getter
+    @Setter
+    protected String id;
+    @Getter
+    @Setter
+    protected Operator creator;
+    @Getter
+    @Setter
+    protected Date createDateTime;
+    @Getter
+    @Setter
+    protected Operator modifier;
+    @Getter
+    @Setter
+    protected Date modifyDateTime;
+
+    void log(IOperator operator) {
+        log(operator, new Date());
+    }
+
+    void log(IOperator operator, Date date) {
+        log(Operator.from(operator), date);
+    }
+
+    void log(Operator operator) {
+        log(operator, new Date());
+    }
+
+    void log(Operator operator, Date date) {
+        if (getCreator() == null) {
+            setCreator(operator);
+        } else {
+            setModifier(operator);
+        }
+        if (getCreateDateTime() == null) {
+            setCreateDateTime(date);
+        } else {
+            setModifyDateTime(date);
+        }
+    }
+
+    @Data
+    public static class Operator implements Serializable {
+        @BsonProperty("id")
+        private String id;
+        private String name;
+
+        public static Operator from(IOperator o) {
+            final var operator = new Operator();
+            operator.setId(o.getId());
+            operator.setName(o.getName());
+            return operator;
+        }
+    }
+
+}
