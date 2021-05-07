@@ -1,5 +1,6 @@
 package com.github.ixtf.api;
 
+import com.github.ixtf.api.proxy.KeycloakService;
 import com.google.inject.Inject;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.opentracing.Span;
@@ -30,6 +31,7 @@ import io.vertx.ext.web.handler.OAuth2AuthHandler;
 import io.vertx.ext.web.handler.sockjs.SockJSBridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 import io.vertx.micrometer.PrometheusScrapingHandler;
+import io.vertx.serviceproxy.ServiceBinder;
 import io.vertx.spi.cluster.hazelcast.ClusterHealthCheck;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,6 +57,8 @@ public class ApiVerticle extends AbstractVerticle implements Handler<RoutingCont
     private OAuth2Options oAuth2Options;
     @Inject
     private CorsHandler corsHandler;
+    @Inject
+    private KeycloakService keycloakService;
 
     public static String apiAddress(RoutingContext rc) {
         final var service = rc.pathParam("service");
@@ -66,6 +70,7 @@ public class ApiVerticle extends AbstractVerticle implements Handler<RoutingCont
     public void start(Promise<Void> startPromise) throws Exception {
         injectMembers(this);
 
+        new ServiceBinder(vertx).register(KeycloakService.class, keycloakService);
         vertx.eventBus().consumer(KeycloakAdmin, reply -> reply.reply(getInstance(JsonObject.class, CONFIG).getJsonObject("keycloak-admin", new JsonObject())));
 
         discover(vertx, oAuth2Options).flatMap(this::createHttpServer).<Void>mapEmpty().onComplete(startPromise);
@@ -207,6 +212,7 @@ public class ApiVerticle extends AbstractVerticle implements Handler<RoutingCont
                 .setTag(Tags.HTTP_METHOD, operationName)
                 .setTag(Tags.HTTP_URL, request.uri());
         tracer.activateSpan(span);
+        rc.put(Span.class.getName(), span);
         return span;
     }
 }

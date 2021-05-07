@@ -27,6 +27,7 @@ public class JmongoRefCodec implements Codec<JmongoRef> {
     @Override
     public void encode(BsonWriter writer, JmongoRef value, EncoderContext encoderContext) {
         writer.writeStartDocument();
+        // $id field without a $ref before it, which is invalid.
         writer.writeString(ID_COL, value.getId());
         writer.writeString(COLLECTION_NAME_COL, value.getCollectionName());
         ofNullable(value.getDatabaseName()).filter(J::nonBlank).ifPresent(it -> writer.writeString(DATABASE_NAME_COL, it));
