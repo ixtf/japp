@@ -18,8 +18,8 @@
         <micrometerVersion>1.6.5</micrometerVersion>
         <slf4jVersion>1.7.30</slf4jVersion>
         <logbackVersion>1.2.3</logbackVersion>
-        <jacksonVersion>2.12.2</jacksonVersion>
-        <reactorVersion>2020.0.5</reactorVersion>
+        <jacksonVersion>2.12.3</jacksonVersion>
+        <reactorVersion>2020.0.6</reactorVersion>
         <guiceVersion>5.0.1</guiceVersion>
         <jaegerVersion>1.6.0</jaegerVersion>
         <keycloakVersion>11.0.3</keycloakVersion>
@@ -49,6 +49,11 @@
             <dependency>
                 <groupId>com.github.ixtf.japp</groupId>
                 <artifactId>api-vertx</artifactId>
+                <version>${jappVersion}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ixtf.japp</groupId>
+                <artifactId>mongo</artifactId>
                 <version>${jappVersion}</version>
             </dependency>
             <dependency>
@@ -121,12 +126,12 @@
             <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java</artifactId>
-                <version>16.1</version>
+                <version>16.2</version>
             </dependency>
             <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java-extended-scalars</artifactId>
-                <version>15.0.0</version>
+                <version>16.0.0</version>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
@@ -239,7 +244,7 @@
         </repository>
         <repository>
             <id>maven.geo-solutions.it</id>
-            <url>http://maven.geo-solutions.it</url>
+            <url>https://maven.geo-solutions.it</url>
         </repository>
     </repositories>
 </project>

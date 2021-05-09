@@ -3,6 +3,7 @@ dependencies {
             "jakarta.ws.rs:jakarta.ws.rs-api",
             "io.projectreactor:reactor-core",
             "io.vertx:vertx-web-graphql",
+            "com.graphql-java:graphql-java",
             "com.graphql-java:graphql-java-extended-scalars",
             "io.vertx:vertx-hazelcast",
             "io.vertx:vertx-reactive-streams",
@@ -15,7 +16,7 @@ dependencies {
             project(":persistence-lucene"),
             "org.keycloak:keycloak-admin-client",
             "io.projectreactor.rabbitmq:reactor-rabbitmq"
-    
+
     testImplementation "io.projectreactor.rabbitmq:reactor-rabbitmq"
     testImplementation "org.infinispan:infinispan-client-hotrod:12.0.2.Final"
     testImplementation "org.infinispan:infinispan-query-dsl:12.0.2.Final"

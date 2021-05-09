@@ -2,7 +2,6 @@ package com.github.ixtf.api;
 
 import com.google.common.collect.Maps;
 import io.netty.util.AsciiString;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
@@ -11,11 +10,9 @@ import lombok.experimental.Accessors;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-
-import static com.github.ixtf.Constant.MAPPER;
 
 @Accessors(chain = true)
 public class ApiResponse {
@@ -27,34 +24,32 @@ public class ApiResponse {
     @Setter
     private Object body;
 
-    public static Mono<?> bodyMono(Object o) {
-        if (o == null) {
-            return Mono.just(Buffer.buffer());
+    public static CompletionStage bodyFuture(Object o) {
+        if (o instanceof Mono) {
+            final var v = (Mono) o;
+            return bodyFuture(v.toFuture());
         }
-        if (o instanceof String || o instanceof byte[] || o instanceof ApiResponse) {
-            return Mono.just(o);
+        if (o instanceof Flux) {
+            final var v = (Flux<?>) o;
+            return bodyFuture(v.collectList().map(JsonArray::new));
         }
         if (o instanceof JsonObject) {
             final var v = (JsonObject) o;
-            return Mono.just(v.toBuffer());
+            return CompletableFuture.supplyAsync(v::toBuffer);
         }
         if (o instanceof JsonArray) {
             final var v = (JsonArray) o;
-            return Mono.just(v.toBuffer());
+            return CompletableFuture.supplyAsync(v::toBuffer);
         }
         if (o instanceof CompletionStage) {
             final var v = (CompletionStage) o;
-            return Mono.fromCompletionStage(v).flatMap(ApiResponse::bodyMono).defaultIfEmpty(Buffer.buffer());
+            return v.thenCompose(ApiResponse::bodyFuture);
         }
-        if (o instanceof Mono) {
-            final var v = (Mono) o;
-            return v.flatMap(ApiResponse::bodyMono).defaultIfEmpty(Buffer.buffer());
-        }
-        if (o instanceof Flux) {
-            final var v = (Flux) o;
-            return v.collectList().map(it -> new JsonArray((List) it).toBuffer());
-        }
-        return Mono.fromCallable(() -> MAPPER.writeValueAsBytes(o));
+        return CompletableFuture.completedStage(o);
+    }
+
+    public CompletionStage bodyFuture() {
+        return bodyFuture(body);
     }
 
     public ApiResponse putHeaders(final String key, final String value) {
@@ -68,9 +63,5 @@ public class ApiResponse {
 
     public ApiResponse putHeaders(final AsciiString key, final String value) {
         return putHeaders(key.toString(), value);
-    }
-
-    public Mono<?> bodyMono() {
-        return bodyMono(body);
     }
 }
