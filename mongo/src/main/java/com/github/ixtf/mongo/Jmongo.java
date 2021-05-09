@@ -19,8 +19,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.security.Principal;
-import java.util.Arrays;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.github.ixtf.guice.GuiceModule.getInstance;
@@ -31,10 +31,46 @@ import static java.util.Optional.ofNullable;
 public class Jmongo {
     public static final String ID_COL = "_id";
     public static final String DELETED_COL = "deleted";
-    public static final Bson DELETED_FILTER = eq(DELETED_COL, false);
+    public static final Mono<Bson> DELETED_FILTER$ = Mono.fromCallable(() -> eq(DELETED_COL, false));
 
     public MongoUnitOfWork uow() {
         return new MongoUnitOfWork(this);
+    }
+
+    public <T> Mono<T> find(MongoCollection<T> collection, Object id) {
+        return Mono.from(collection.find(eq(ID_COL, id)));
+    }
+
+    public boolean exists(Class clazz, Object id) {
+        return Mono.from(collection(clazz).countDocuments(eq(ID_COL, id))).block() > 0;
+    }
+
+    public boolean exists(IEntity entity) {
+        return exists(entity.getClass(), entity.getId());
+    }
+
+    public <T> Mono<FindPublisher<T>> findPublisher(MongoCollection<T> collection, Publisher<Bson> filter$) {
+        return Flux.from(filter$).collectList().map(filters -> {
+            if (J.isEmpty(filters)) {
+                return collection.find();
+            } else if (filters.size() == 1) {
+                return collection.find(filters.get(0));
+            } else {
+                return collection.find(and(filters));
+            }
+        });
+    }
+
+    public Mono<Long> countCollection(MongoCollection collection, Publisher<Bson> filter$) {
+        return Flux.from(filter$).collectList().flatMapMany(filters -> {
+            if (J.isEmpty(filters)) {
+                return collection.countDocuments();
+            } else if (filters.size() == 1) {
+                return collection.countDocuments(filters.get(0));
+            } else {
+                return collection.countDocuments(and(filters));
+            }
+        }).next();
     }
 
     public <T> Mono<T> find(Class<T> clazz, Object id) {
@@ -42,19 +78,12 @@ public class Jmongo {
         return find(entityCollection(clazz), id);
     }
 
-    public Mono<Long> count(Class clazz, Stream<Bson> filterStream) {
-        final var filters = Stream.concat(filterStream, Stream.of(DELETED_FILTER)).toArray(Bson[]::new);
-        return Mono.from(countPublisher(clazz, filters));
+    public <T> Mono<T> find(Class<T> clazz, Principal principal) {
+        return find(clazz, principal.getName());
     }
 
-    public <T> Flux<T> query(Class<T> clazz, Stream<Bson> filterStream) {
-        final var filters = Stream.concat(filterStream, Stream.of(DELETED_FILTER)).toArray(Bson[]::new);
-        return Flux.defer(() -> findPublisher(clazz, filters));
-    }
-
-    public <T> Flux<T> query(Class<T> clazz, Stream<Bson> filterStream, int skip, int limit) {
-        final var filters = Stream.concat(filterStream, Stream.of(DELETED_FILTER)).toArray(Bson[]::new);
-        return Flux.defer(() -> findPublisher(clazz, filters).skip(skip).limit(limit).batchSize(limit));
+    public <T> Mono<T> find(Class<T> clazz, EntityDTO dto) {
+        return find(clazz, dto.getId());
     }
 
     public MongoClient client() {
@@ -102,98 +131,110 @@ public class Jmongo {
         return bsonDocument;
     }
 
-    public <T> Mono<T> find(MongoCollection<T> collection, Object id) {
-        final var condition = eq(ID_COL, id);
-        return Mono.from(collection.find(condition));
+    public <T> Flux<T> query(Class<T> clazz, Publisher<Bson> filter$) {
+        return findPublisher(entityCollection(clazz), Flux.merge(filter$, DELETED_FILTER$)).flatMapMany(Function.identity());
     }
 
-    public <T> Mono<T> find(Class<T> clazz, Principal principal) {
-        return find(clazz, principal.getName());
+    public <T> Flux<T> query(Class<T> clazz, Stream<Bson> stream) {
+        return query(clazz, Mono.justOrEmpty(stream).flatMapMany(Flux::fromStream));
     }
 
-    public <T> Mono<T> find(Class<T> clazz, EntityDTO dto) {
-        return find(clazz, dto.getId());
+    public <T> Flux<T> query(Class<T> clazz, Iterable<Bson> iterable) {
+        return query(clazz, Mono.justOrEmpty(iterable).flatMapMany(Flux::fromIterable));
     }
 
-    public Mono<Long> count(Class clazz, Bson... filters) {
-        return count(clazz, Arrays.stream(filters));
+    public <T> Flux<T> query(Class<T> clazz, Bson... array) {
+        return query(clazz, Mono.justOrEmpty(array).flatMapMany(Flux::fromArray));
     }
 
-    public Mono<Long> count(Class clazz, Optional<Bson>... filters) {
-        return count(clazz, Arrays.stream(filters).flatMap(Optional::stream));
+    public <T> Flux<T> query(Class<T> clazz, Optional<Bson>... array) {
+        return query(clazz, Mono.justOrEmpty(array).flatMapMany(Flux::fromArray).flatMap(Mono::justOrEmpty));
     }
 
-    public Mono<Long> count(Class clazz, Iterable<Bson> filters) {
-        return count(clazz, Flux.fromIterable(filters).toStream());
+    public <T> Flux<T> query(Class<T> clazz, Publisher<Bson> filter$, int skip, int limit) {
+        return findPublisher(entityCollection(clazz), Flux.merge(filter$, DELETED_FILTER$)).flatMapMany(it -> it.skip(skip).limit(limit).batchSize(limit));
     }
 
-    public <T> Flux<T> query(Class<T> clazz, Bson... filters) {
-        return query(clazz, Arrays.stream(filters));
+    public <T> Flux<T> query(Class<T> clazz, Stream<Bson> stream, int skip, int limit) {
+        return query(clazz, Mono.justOrEmpty(stream).flatMapMany(Flux::fromStream), skip, limit);
     }
 
-    public <T> Flux<T> query(Class<T> clazz, Optional<Bson>... filters) {
-        return query(clazz, Arrays.stream(filters).flatMap(Optional::stream));
+    public <T> Flux<T> query(Class<T> clazz, Iterable<Bson> iterable, int skip, int limit) {
+        return query(clazz, Mono.justOrEmpty(iterable).flatMapMany(Flux::fromIterable), skip, limit);
     }
 
-    public <T> Flux<T> query(Class<T> clazz, Iterable<Bson> filters) {
-        return query(clazz, Flux.fromIterable(filters).toStream());
+    public <T> Flux<T> query(Class<T> clazz, int skip, int limit, Bson... array) {
+        return query(clazz, Mono.justOrEmpty(array).flatMapMany(Flux::fromArray), skip, limit);
     }
 
-    public <T> Flux<T> query(Class<T> clazz, int skip, int limit, Bson... filters) {
-        return query(clazz, Arrays.stream(filters), skip, limit);
+    public <T> Flux<T> query(Class<T> clazz, int skip, int limit, Optional<Bson>... array) {
+        return query(clazz, Mono.justOrEmpty(array).flatMapMany(Flux::fromArray).flatMap(Mono::justOrEmpty), skip, limit);
     }
 
-    public <T> Flux<T> query(Class<T> clazz, int skip, int limit, Optional<Bson>... filters) {
-        return query(clazz, Arrays.stream(filters).flatMap(Optional::stream), skip, limit);
+    public Mono<Long> count(MongoCollection collection, Publisher<Bson> filter$) {
+        return countCollection(collection, Flux.merge(filter$, DELETED_FILTER$));
     }
 
-    public <T> Flux<T> query(Class<T> clazz, Iterable<Bson> filters, int skip, int limit) {
-        return query(clazz, Flux.fromIterable(filters).toStream(), skip, limit);
+    public Mono<Long> count(Class clazz, Publisher<Bson> filter$) {
+        return count(collection(clazz), filter$);
     }
 
-    public <T> Flux<T> autocomplete(Class<T> clazz, Bson... filters) {
-        return autocomplete(clazz, 10, filters);
+    public Mono<Long> count(Class clazz, Stream<Bson> stream) {
+        return count(clazz, Mono.justOrEmpty(stream).flatMapMany(Flux::fromStream));
     }
 
-    public <T> Flux<T> autocomplete(Class<T> clazz, Optional<Bson>... filters) {
-        return autocomplete(clazz, 10, filters);
+    public Mono<Long> count(Class clazz, Iterable<Bson> iterable) {
+        return count(clazz, Mono.justOrEmpty(iterable).flatMapMany(Flux::fromIterable));
     }
 
-    public <T> Flux<T> autocomplete(Class<T> clazz, Iterable<Bson> filters) {
-        return autocomplete(clazz, filters, 10);
+    public Mono<Long> count(Class clazz, Bson... array) {
+        return count(clazz, Mono.justOrEmpty(array).flatMapMany(Flux::fromArray));
     }
 
-    public <T> Flux<T> autocomplete(Class<T> clazz, int limit, Bson... filters) {
-        return autocomplete(clazz, Arrays.stream(filters), limit);
+    public Mono<Long> count(Class clazz, Optional<Bson>... array) {
+        return count(clazz, Mono.justOrEmpty(array).flatMapMany(Flux::fromArray).flatMap(Mono::justOrEmpty));
     }
 
-    public <T> Flux<T> autocomplete(Class<T> clazz, int limit, Optional<Bson>... filters) {
-        return autocomplete(clazz, Arrays.stream(filters).flatMap(Optional::stream), limit);
+    public <T> Flux<T> autocomplete(Class<T> clazz, Publisher<Bson> filter$, int limit) {
+        return findPublisher(entityCollection(clazz), Flux.merge(filter$, DELETED_FILTER$)).flatMapMany(publisher -> {
+            final var max = Math.max(limit, 10);
+            return publisher.limit(max).batchSize(max);
+        });
     }
 
-    public <T> Flux<T> autocomplete(Class<T> clazz, Iterable<Bson> filters, int limit) {
-        return autocomplete(clazz, Flux.fromIterable(filters).toStream(), limit);
+    public <T> Flux<T> autocomplete(Class<T> clazz, Stream<Bson> stream, int limit) {
+        return autocomplete(clazz, Mono.justOrEmpty(stream).flatMapMany(Flux::fromStream), limit);
     }
 
-    public <T> Flux<T> autocomplete(Class<T> clazz, Stream<Bson> filterStream, int limit) {
-        return query(clazz, filterStream, 0, Math.max(limit, 10));
+    public <T> Flux<T> autocomplete(Class<T> clazz, Iterable<Bson> iterable, int limit) {
+        return autocomplete(clazz, Mono.justOrEmpty(iterable).flatMapMany(Flux::fromIterable), limit);
     }
 
-    public <T> FindPublisher<T> findPublisher(Class<T> clazz, Bson... filters) {
-        final var collection = entityCollection(clazz);
-        return J.isEmpty(filters) ? collection.find() : collection.find(and(filters));
+    public <T> Flux<T> autocomplete(Class<T> clazz, int limit, Bson... array) {
+        return autocomplete(clazz, Mono.justOrEmpty(array).flatMapMany(Flux::fromArray), limit);
     }
 
-    public Publisher<Long> countPublisher(Class clazz, Bson... filters) {
-        final var collection = entityCollection(clazz);
-        return J.isEmpty(filters) ? collection.countDocuments() : collection.countDocuments(and(filters));
+    public <T> Flux<T> autocomplete(Class<T> clazz, int limit, Optional<Bson>... array) {
+        return autocomplete(clazz, Mono.justOrEmpty(array).flatMapMany(Flux::fromArray).flatMap(Mono::justOrEmpty), limit);
     }
 
-    public boolean exists(IEntity entity) {
-        return exists(entity.getClass(), entity.getId());
+    public <T> Flux<T> autocomplete(Class<T> clazz, Publisher<Bson> filter$) {
+        return autocomplete(clazz, filter$, 10);
     }
 
-    public boolean exists(Class clazz, Object id) {
-        return Mono.from(countPublisher(clazz, eq(ID_COL, id))).block() > 0;
+    public <T> Flux<T> autocomplete(Class<T> clazz, Stream<Bson> stream) {
+        return autocomplete(clazz, Mono.justOrEmpty(stream).flatMapMany(Flux::fromStream));
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Iterable<Bson> iterable) {
+        return autocomplete(clazz, Mono.justOrEmpty(iterable).flatMapMany(Flux::fromIterable));
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Bson... array) {
+        return autocomplete(clazz, Mono.justOrEmpty(array).flatMapMany(Flux::fromArray));
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Optional<Bson>... array) {
+        return autocomplete(clazz, Mono.justOrEmpty(array).flatMapMany(Flux::fromArray).flatMap(Mono::justOrEmpty));
     }
 }
