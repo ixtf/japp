@@ -38,7 +38,7 @@ public class Jmongo {
     }
 
     public <T> Mono<T> find(MongoCollection<T> collection, Object id) {
-        return Mono.from(collection.find(eq(ID_COL, id)));
+        return Flux.defer(() -> collection.find(eq(ID_COL, id))).next();
     }
 
     public boolean exists(Class clazz, Object id) {
@@ -50,7 +50,7 @@ public class Jmongo {
     }
 
     public <T> Mono<FindPublisher<T>> findPublisher(MongoCollection<T> collection, Publisher<Bson> filter$) {
-        return Flux.from(filter$).collectList().map(filters -> {
+        return Flux.defer(() -> filter$).collectList().map(filters -> {
             if (J.isEmpty(filters)) {
                 return collection.find();
             } else if (filters.size() == 1) {
@@ -62,7 +62,7 @@ public class Jmongo {
     }
 
     public Mono<Long> countCollection(MongoCollection collection, Publisher<Bson> filter$) {
-        return Flux.from(filter$).collectList().flatMapMany(filters -> {
+        return Flux.defer(() -> filter$).collectList().flatMapMany(filters -> {
             if (J.isEmpty(filters)) {
                 return collection.countDocuments();
             } else if (filters.size() == 1) {
