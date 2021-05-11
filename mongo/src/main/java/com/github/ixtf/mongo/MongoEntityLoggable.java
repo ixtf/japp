@@ -14,19 +14,19 @@ public abstract class MongoEntityLoggable extends MongoEntityBase {
     @BsonId
     @Getter
     @Setter
-    protected String id;
+    private String id;
     @Getter
     @Setter
-    protected Operator creator;
+    private Operator creator;
     @Getter
     @Setter
-    protected Date createDateTime;
+    private Date createDateTime;
     @Getter
     @Setter
-    protected Operator modifier;
+    private Operator modifier;
     @Getter
     @Setter
-    protected Date modifyDateTime;
+    private Date modifyDateTime;
 
     public void log(IOperator operator) {
         log(operator, new Date());

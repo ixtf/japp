@@ -19,8 +19,8 @@ public abstract class MongoEntityBase implements IEntity {
     @ToString.Include
     @EqualsAndHashCode.Include
     @BsonId
-    protected String id;
-    protected boolean deleted;
+    private String id;
+    private boolean deleted;
 
     public JmongoRef toRef() {
         final var jmongo = getInstance(Jmongo.class);
