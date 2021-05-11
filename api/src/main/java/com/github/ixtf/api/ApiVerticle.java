@@ -31,7 +31,6 @@ import io.vertx.ext.web.handler.OAuth2AuthHandler;
 import io.vertx.ext.web.handler.sockjs.SockJSBridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 import io.vertx.micrometer.PrometheusScrapingHandler;
-import io.vertx.serviceproxy.ServiceBinder;
 import io.vertx.spi.cluster.hazelcast.ClusterHealthCheck;
 import lombok.extern.slf4j.Slf4j;
 
@@ -70,7 +69,7 @@ public class ApiVerticle extends AbstractVerticle implements Handler<RoutingCont
     public void start(Promise<Void> startPromise) throws Exception {
         injectMembers(this);
 
-        new ServiceBinder(vertx).register(KeycloakService.class, keycloakService);
+//        new ServiceBinder(vertx).register(KeycloakService.class, keycloakService);
         vertx.eventBus().consumer(KeycloakAdmin, reply -> reply.reply(getInstance(JsonObject.class, CONFIG).getJsonObject("keycloak-admin", new JsonObject())));
 
         discover(vertx, oAuth2Options).flatMap(this::createHttpServer).<Void>mapEmpty().onComplete(startPromise);
