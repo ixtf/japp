@@ -33,7 +33,7 @@ subprojects {
     }
 
     dependencies {
-        implementation enforcedPlatform("com.github.ixtf.japp:bom:${bomVersion}")
+//        implementation enforcedPlatform("com.github.ixtf.japp:bom:${bomVersion}")
         testImplementation "io.projectreactor:reactor-tools"
         testImplementation "org.junit.jupiter:junit-jupiter-api:5.7.0"
         testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.7.0"

@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.bson.codecs.pojo.annotations.BsonId;
-import org.bson.codecs.pojo.annotations.BsonProperty;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -55,7 +54,6 @@ public abstract class MongoEntityLoggable extends MongoEntityBase {
 
     @Data
     public static class Operator implements Serializable {
-        @BsonProperty("id")
         private String id;
         private String name;
 
