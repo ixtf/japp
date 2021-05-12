@@ -13,12 +13,10 @@ subprojects {
     group "com.github.ixtf.japp"
     version "1.0.0"
 
-    apply plugin: "idea"
     apply plugin: "java-library"
     apply plugin: "maven-publish"
-    apply plugin: "java"
-    apply plugin: "io.spring.dependency-management"
     apply plugin: "io.freefair.lombok"
+    apply plugin: "io.spring.dependency-management"
 
     repositories {
         mavenLocal()
@@ -35,6 +33,7 @@ subprojects {
     }
 
     dependencies {
+//        implementation enforcedPlatform("com.github.ixtf.japp:bom:${bomVersion}")
         testImplementation "io.projectreactor:reactor-tools"
         testImplementation "org.junit.jupiter:junit-jupiter-api:5.7.0"
         testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.7.0"
