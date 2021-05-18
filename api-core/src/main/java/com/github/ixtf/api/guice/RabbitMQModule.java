@@ -6,7 +6,6 @@ import com.github.ixtf.api.Util;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.BasicProperties;
@@ -107,20 +106,22 @@ public class RabbitMQModule extends AbstractModule {
         }
     }
 
-    @Override
-    protected void configure() {
-        bind(SendOptions.class).toInstance(new SendOptions().trackReturned(true).exceptionHandler(
-                new ExceptionHandlers.RetrySendingExceptionHandler(
-                        Duration.ofHours(1), Duration.ofMinutes(5),
-                        ExceptionHandlers.CONNECTION_RECOVERY_PREDICATE
-                )
-        ));
-        bind(ConsumeOptions.class).toInstance(new ConsumeOptions().exceptionHandler(
-                new ExceptionHandlers.RetryAcknowledgmentExceptionHandler(
-                        Duration.ofDays(1), Duration.ofMinutes(5),
-                        ExceptionHandlers.CONNECTION_RECOVERY_PREDICATE
-                )
-        ));
+    @Provides
+    private SendOptions SendOptions() {
+        final var exceptionHandler = new ExceptionHandlers.RetrySendingExceptionHandler(
+                Duration.ofHours(1), Duration.ofMinutes(5),
+                ExceptionHandlers.CONNECTION_RECOVERY_PREDICATE
+        );
+        return new SendOptions().trackReturned(true).exceptionHandler(exceptionHandler);
+    }
+
+    @Provides
+    private ConsumeOptions ConsumeOptions() {
+        final var exceptionHandler = new ExceptionHandlers.RetryAcknowledgmentExceptionHandler(
+                Duration.ofDays(1), Duration.ofMinutes(5),
+                ExceptionHandlers.CONNECTION_RECOVERY_PREDICATE
+        );
+        return new ConsumeOptions().qos(10).exceptionHandler(exceptionHandler);
     }
 
     @Provides
@@ -134,7 +135,6 @@ public class RabbitMQModule extends AbstractModule {
         return connectionFactory;
     }
 
-    @Singleton
     @Provides
     private Sender Sender(ConnectionFactory connectionFactory, @Named(SERVICE) String group) {
         final var connectionMono = singleConnectionMono(() -> {
@@ -151,7 +151,6 @@ public class RabbitMQModule extends AbstractModule {
         return RabbitFlux.createSender(senderOptions);
     }
 
-    @Singleton
     @Provides
     private Receiver Receiver(ConnectionFactory connectionFactory, @Named(SERVICE) String group) {
         final var receiverOptions = new ReceiverOptions()
