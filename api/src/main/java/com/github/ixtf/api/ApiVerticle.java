@@ -1,6 +1,5 @@
 package com.github.ixtf.api;
 
-import com.github.ixtf.api.proxy.KeycloakService;
 import com.google.inject.Inject;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.opentracing.Span;
@@ -56,8 +55,6 @@ public class ApiVerticle extends AbstractVerticle implements Handler<RoutingCont
     private OAuth2Options oAuth2Options;
     @Inject
     private CorsHandler corsHandler;
-    @Inject
-    private KeycloakService keycloakService;
 
     public static String apiAddress(RoutingContext rc) {
         final var service = rc.pathParam("service");
