@@ -1,6 +1,7 @@
 package com.github.ixtf.mongo;
 
 import com.github.ixtf.data.EntityDTO;
+import reactor.core.publisher.Flux;
 
 import static java.util.Optional.ofNullable;
 
@@ -13,6 +14,8 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
     void update(T entity);
 
     T find(String id);
+
+    Flux<T> list();
 
     void delete(T t);
 

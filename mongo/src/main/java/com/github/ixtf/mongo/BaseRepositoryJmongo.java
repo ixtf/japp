@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.bson.types.ObjectId;
+import reactor.core.publisher.Flux;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
@@ -41,6 +42,11 @@ public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements
     @Override
     public T find(String id) {
         return getCache().get(id);
+    }
+
+    @Override
+    public Flux<T> list() {
+        return jmongo.list(entityClass);
     }
 
     @Override
