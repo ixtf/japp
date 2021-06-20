@@ -13,9 +13,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 
 public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements RepositoryJmongo<T> {
-    private final Class<T> entityClass = _entityClass();
+    protected final Class<T> entityClass = _entityClass();
     @Inject
-    private Jmongo jmongo;
+    protected Jmongo jmongo;
     @Getter(lazy = true, value = AccessLevel.PRIVATE)
     private final LoadingCache<String, T> cache = _cache();
 
