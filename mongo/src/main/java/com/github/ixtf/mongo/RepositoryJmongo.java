@@ -31,6 +31,14 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
         return ofNullable(o).map(JmongoRef::getId).map(this::find).orElse(null);
     }
 
+    default T fetch(EntityDTO o) {
+        return ofNullable(o).map(EntityDTO::getId).map(this::fetch).orElse(null);
+    }
+
+    default T fetch(JmongoRef o) {
+        return ofNullable(o).map(JmongoRef::getId).map(this::fetch).orElse(null);
+    }
+
     default void delete(String id) {
         delete(find(id));
     }
