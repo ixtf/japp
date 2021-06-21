@@ -1,9 +1,8 @@
 package com.github.ixtf.mongo;
 
+import com.github.ixtf.J;
 import com.github.ixtf.data.EntityDTO;
 import reactor.core.publisher.Flux;
-
-import static java.util.Optional.ofNullable;
 
 public interface RepositoryJmongo<T extends MongoEntityBase> {
 
@@ -15,28 +14,20 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
 
     T find(String id);
 
-    Flux<T> list();
+    T fetch(String id);
 
     void delete(T t);
 
+    Flux<T> list();
+
     boolean exists(String id);
 
-    T fetch(String id);
-
     default T find(EntityDTO o) {
-        return ofNullable(o).map(EntityDTO::getId).map(this::find).orElse(null);
-    }
-
-    default T find(JmongoRef o) {
-        return ofNullable(o).map(JmongoRef::getId).map(this::find).orElse(null);
+        return find(o.getId());
     }
 
     default T fetch(EntityDTO o) {
-        return ofNullable(o).map(EntityDTO::getId).map(this::fetch).orElse(null);
-    }
-
-    default T fetch(JmongoRef o) {
-        return ofNullable(o).map(JmongoRef::getId).map(this::fetch).orElse(null);
+        return fetch(o.getId());
     }
 
     default void delete(String id) {
@@ -47,12 +38,12 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
         delete(find(o));
     }
 
-    default void delete(JmongoRef o) {
-        delete(find(o));
-    }
-
     default T getOrCreate(String id) {
-        return exists(id) ? find(id) : create();
+        final var entity = exists(id) ? find(id) : create();
+        if (J.nonBlank(id)) {
+            entity.setId(id);
+        }
+        return entity;
     }
 
     default void save(T entity) {
