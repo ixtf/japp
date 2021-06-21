@@ -19,7 +19,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.security.Principal;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.github.ixtf.guice.GuiceModule.getInstance;
@@ -49,7 +48,7 @@ public class Jmongo {
         return exists(entity.getClass(), entity.getId());
     }
 
-    public <T> Mono<FindPublisher<T>> findPublisher(MongoCollection<T> collection, Publisher<Bson> filter$) {
+    public <T> FindPublisher<T> findPublisher(MongoCollection<T> collection, Publisher<Bson> filter$) {
         return Flux.defer(() -> filter$).collectList().map(filters -> {
             if (J.isEmpty(filters)) {
                 return collection.find().batchSize(DEFAULT_BATCH_SIZE);
@@ -58,7 +57,7 @@ public class Jmongo {
             } else {
                 return collection.find(and(filters)).batchSize(DEFAULT_BATCH_SIZE);
             }
-        });
+        }).block();
     }
 
     public Mono<Long> countCollection(MongoCollection collection, Publisher<Bson> filter$) {
@@ -132,11 +131,11 @@ public class Jmongo {
     }
 
     public <T extends MongoEntityBase> Flux<T> list(Class<T> clazz) {
-        return findPublisher(entityCollection(clazz), DELETED_FILTER$).flatMapMany(Function.identity());
+        return Flux.defer(() -> findPublisher(entityCollection(clazz), DELETED_FILTER$));
     }
 
     public <T> Flux<T> query(Class<T> clazz, Publisher<Bson> filter$) {
-        return findPublisher(entityCollection(clazz), Flux.merge(filter$, DELETED_FILTER$)).flatMapMany(Function.identity());
+        return Flux.defer(() -> findPublisher(entityCollection(clazz), Flux.merge(filter$, DELETED_FILTER$)));
     }
 
     public <T> Flux<T> query(Class<T> clazz, Stream<Bson> stream) {
@@ -148,7 +147,7 @@ public class Jmongo {
     }
 
     public <T> Flux<T> query(Class<T> clazz, Publisher<Bson> filter$, int skip, int limit) {
-        return findPublisher(entityCollection(clazz), Flux.merge(filter$, DELETED_FILTER$)).flatMapMany(it -> it.skip(skip).limit(limit).batchSize(limit));
+        return Flux.defer(() -> findPublisher(entityCollection(clazz), Flux.merge(filter$, DELETED_FILTER$)).skip(skip).limit(limit).batchSize(limit));
     }
 
     public <T> Flux<T> query(Class<T> clazz, Stream<Bson> stream, int skip, int limit) {
@@ -176,10 +175,8 @@ public class Jmongo {
     }
 
     public <T> Flux<T> autocomplete(Class<T> clazz, Publisher<Bson> filter$, int limit) {
-        return findPublisher(entityCollection(clazz), Flux.merge(filter$, DELETED_FILTER$)).flatMapMany(publisher -> {
-            final var max = Math.max(limit, 10);
-            return publisher.limit(max).batchSize(max);
-        });
+        final var max = Math.max(limit, 10);
+        return Flux.defer(() -> findPublisher(entityCollection(clazz), Flux.merge(filter$, DELETED_FILTER$)).limit(max).batchSize(max));
     }
 
     public <T> Flux<T> autocomplete(Class<T> clazz, Stream<Bson> stream, int limit) {
