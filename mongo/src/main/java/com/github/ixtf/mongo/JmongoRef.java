@@ -34,7 +34,7 @@ public final class JmongoRef implements Serializable {
             final var database = ofNullable(databaseName).map(client::getDatabase).orElseGet(jmongo::database);
             final var collection = database.getCollection(collectionName, BsonDocument.class);
             return jmongo.find(collection, id);
-        }).cache();
+        });
     }
 
     public <T extends MongoEntityBase> Mono<T> toEntity(Class<T> clazz) {
