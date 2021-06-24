@@ -2,6 +2,7 @@ package com.github.ixtf.mongo;
 
 import com.github.ixtf.J;
 import com.github.ixtf.data.EntityDTO;
+import org.apache.commons.lang3.Validate;
 import reactor.core.publisher.Flux;
 
 public interface RepositoryJmongo<T extends MongoEntityBase> {
@@ -22,12 +23,12 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
 
     boolean exists(String id);
 
-    default T find(EntityDTO o) {
-        return find(o.getId());
+    default boolean exists(T entity) {
+        return exists(entity.getId());
     }
 
-    default T fetch(EntityDTO o) {
-        return fetch(o.getId());
+    default T find(EntityDTO o) {
+        return find(o.getId());
     }
 
     default void delete(String id) {
@@ -39,6 +40,7 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
     }
 
     default T getOrCreate(String id) {
+        Validate.notBlank(id);
         final var entity = exists(id) ? find(id) : create();
         if (J.nonBlank(id)) {
             entity.setId(id);
@@ -47,7 +49,7 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
     }
 
     default void save(T entity) {
-        if (exists(entity.getId())) {
+        if (exists(entity)) {
             update(entity);
         } else {
             insert(entity);
