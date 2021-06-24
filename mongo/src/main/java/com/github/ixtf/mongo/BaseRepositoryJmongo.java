@@ -16,8 +16,13 @@ public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements
     protected final Class<T> entityClass = _entityClass();
     @Inject
     protected Jmongo jmongo;
-    @Getter(lazy = true, value = AccessLevel.PRIVATE)
+    @Getter(lazy = true, value = AccessLevel.PROTECTED)
     private final LoadingCache<String, T> cache = _cache();
+
+    @Override
+    public T build(String id) {
+        return getCache().get(id);
+    }
 
     @SneakyThrows({NoSuchMethodException.class, InvocationTargetException.class, InstantiationException.class, IllegalAccessException.class})
     @Override
@@ -36,9 +41,14 @@ public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements
     @Override
     public void update(T entity) {
         jmongo.uow().registerDirty(entity).commit();
-        getCache().put(entity.getId(), entity);
+        if (entity.isDeleted()) {
+            getCache().invalidate(entity.getId());
+        } else {
+            getCache().put(entity.getId(), entity);
+        }
     }
 
+    // fixme
     @Override
     public T find(String id) {
         return getCache().get(id);

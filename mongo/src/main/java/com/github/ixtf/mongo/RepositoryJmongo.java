@@ -6,6 +6,13 @@ import org.apache.commons.lang3.Validate;
 import reactor.core.publisher.Flux;
 
 public interface RepositoryJmongo<T extends MongoEntityBase> {
+    /**
+     * 常驻内存
+     *
+     * @param id
+     * @return
+     */
+    T build(String id);
 
     T create();
 
