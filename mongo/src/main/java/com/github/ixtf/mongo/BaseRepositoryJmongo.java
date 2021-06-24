@@ -6,6 +6,7 @@ import com.google.inject.Inject;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.Validate;
 import org.bson.types.ObjectId;
 import reactor.core.publisher.Flux;
 
@@ -23,6 +24,7 @@ public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements
 
     @Override
     public T build(String id) {
+        Validate.notBlank(id);
         return ofNullable(getCache().get(id)).orElseGet(() -> {
             final var entity = create();
             entity.setId(id);
@@ -32,6 +34,7 @@ public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements
 
     @Override
     public void invalidateBuild(String id) {
+        Validate.notBlank(id);
         getCache().invalidate(id);
     }
 
@@ -64,10 +67,9 @@ public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements
         }
     }
 
-    // fixme
     @Override
     public T find(String id) {
-        return getCache().get(id);
+        return jmongo.find(entityClass, id).block();
     }
 
     @Override
@@ -97,13 +99,8 @@ public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements
         return jmongo.exists(entityClass, id);
     }
 
-    @Override
-    public T fetch(String id) {
-        return jmongo.find(entityClass, id).block();
-    }
-
     protected LoadingCache<String, T> _cache() {
-        return Caffeine.newBuilder().build(this::fetch);
+        return Caffeine.newBuilder().build(this::find);
     }
 
     private final Class<T> _entityClass() {

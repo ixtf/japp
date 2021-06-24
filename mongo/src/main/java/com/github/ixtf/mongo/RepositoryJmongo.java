@@ -52,12 +52,6 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
         return find(o.getId());
     }
 
-    T fetch(String id);
-
-    default T fetch(EntityDTO o) {
-        return fetch(o.getId());
-    }
-
     void delete(T t);
 
     default void delete(String id) {
