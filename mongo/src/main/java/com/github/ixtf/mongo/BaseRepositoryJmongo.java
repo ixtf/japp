@@ -12,6 +12,8 @@ import reactor.core.publisher.Flux;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 
+import static java.util.Optional.ofNullable;
+
 public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements RepositoryJmongo<T> {
     @Getter(lazy = true, value = AccessLevel.PROTECTED)
     private final LoadingCache<String, T> cache = _cache();
@@ -21,7 +23,11 @@ public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements
 
     @Override
     public T build(String id) {
-        return getCache().get(id);
+        return ofNullable(getCache().get(id)).orElseGet(() -> {
+            final var entity = create();
+            entity.setId(id);
+            return entity;
+        });
     }
 
     @Override
