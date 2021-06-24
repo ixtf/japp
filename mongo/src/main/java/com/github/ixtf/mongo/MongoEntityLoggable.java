@@ -35,15 +35,11 @@ public abstract class MongoEntityLoggable extends MongoEntityBase {
     }
 
     public void log(Operator operator, Date date) {
+        setModifier(operator);
+        setModifyDateTime(date);
         if (getCreator() == null) {
             setCreator(operator);
-        } else {
-            setModifier(operator);
-        }
-        if (getCreateDateTime() == null) {
             setCreateDateTime(date);
-        } else {
-            setModifyDateTime(date);
         }
     }
 
