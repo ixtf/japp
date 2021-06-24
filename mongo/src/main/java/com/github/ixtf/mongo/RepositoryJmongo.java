@@ -14,6 +14,10 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
      */
     T build(String id);
 
+    default T build(EntityDTO o) {
+        return build(o.getId());
+    }
+
     /**
      * 清理常驻内存，单个
      *
