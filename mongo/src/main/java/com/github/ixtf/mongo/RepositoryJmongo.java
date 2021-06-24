@@ -38,6 +38,14 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
 
     void update(T entity);
 
+    default void save(T entity) {
+        if (exists(entity)) {
+            update(entity);
+        } else {
+            insert(entity);
+        }
+    }
+
     T find(String id);
 
     default T find(EntityDTO o) {
@@ -67,12 +75,4 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
     }
 
     Flux<T> list();
-
-    default void save(T entity) {
-        if (exists(entity)) {
-            update(entity);
-        } else {
-            insert(entity);
-        }
-    }
 }

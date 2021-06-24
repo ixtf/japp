@@ -76,12 +76,20 @@ public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements
     }
 
     @Override
-    public void delete(T t) {
-        synchronized (t) {
-            t.setDeleted(true);
-        }
-        jmongo.uow().registerDirty(t).commit();
-        getCache().invalidate(t.getId());
+    public void delete(T entity) {
+        entity.setDeleted(true);
+        jmongo.uow().registerDirty(entity).commit();
+        invalidateBuild(entity);
+    }
+
+    /**
+     * 真正删除
+     *
+     * @param entity entity
+     */
+    protected void _delete(T entity) {
+        jmongo.uow().registerDelete(entity).commit();
+        invalidateBuild(entity);
     }
 
     @Override
