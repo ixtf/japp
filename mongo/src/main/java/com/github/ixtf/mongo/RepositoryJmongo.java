@@ -9,7 +9,7 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
     /**
      * 常驻内存
      *
-     * @param id
+     * @param id 根
      * @return
      */
     T build(String id);
@@ -17,7 +17,7 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
     /**
      * 清理常驻内存，单个
      *
-     * @param id
+     * @param id 根
      */
     void invalidateBuild(String id);
 
