@@ -10,7 +10,7 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
      * 常驻内存
      *
      * @param id 根
-     * @return
+     * @return entity
      */
     T build(String id);
 
