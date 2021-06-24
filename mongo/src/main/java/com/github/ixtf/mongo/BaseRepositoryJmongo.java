@@ -17,7 +17,7 @@ import static java.util.Optional.ofNullable;
 
 public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements RepositoryJmongo<T> {
     @Getter(lazy = true, value = AccessLevel.PROTECTED)
-    private final LoadingCache<String, T> cache = _cache();
+    private final LoadingCache<String, T> cache = _cacheBuilder().build(this::find);
     protected final Class<T> entityClass = _entityClass();
     @Inject
     protected Jmongo jmongo;
@@ -99,8 +99,8 @@ public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements
         return jmongo.exists(entityClass, id);
     }
 
-    protected LoadingCache<String, T> _cache() {
-        return Caffeine.newBuilder().build(this::find);
+    protected Caffeine<Object, Object> _cacheBuilder() {
+        return Caffeine.newBuilder();
     }
 
     private final Class<T> _entityClass() {
