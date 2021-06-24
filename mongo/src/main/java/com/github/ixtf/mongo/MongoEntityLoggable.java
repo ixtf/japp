@@ -2,6 +2,7 @@ package com.github.ixtf.mongo;
 
 import com.github.ixtf.persistence.IOperator;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -43,8 +44,10 @@ public abstract class MongoEntityLoggable extends MongoEntityBase {
         }
     }
 
+    @EqualsAndHashCode(onlyExplicitlyIncluded = true)
     @Data
     public static class Operator implements Serializable {
+        @EqualsAndHashCode.Include
         private String id;
         private String name;
 
