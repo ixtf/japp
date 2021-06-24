@@ -1,8 +1,6 @@
 package com.github.ixtf.mongo;
 
-import com.github.ixtf.J;
 import com.github.ixtf.data.EntityDTO;
-import org.apache.commons.lang3.Validate;
 import reactor.core.publisher.Flux;
 
 public interface RepositoryJmongo<T extends MongoEntityBase> {
@@ -42,21 +40,17 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
 
     T find(String id);
 
-    T fetch(String id);
-
-    void delete(T t);
-
-    Flux<T> list();
-
-    boolean exists(String id);
-
-    default boolean exists(T entity) {
-        return exists(entity.getId());
-    }
-
     default T find(EntityDTO o) {
         return find(o.getId());
     }
+
+    T fetch(String id);
+
+    default T fetch(EntityDTO o) {
+        return fetch(o.getId());
+    }
+
+    void delete(T t);
 
     default void delete(String id) {
         delete(find(id));
@@ -66,14 +60,13 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
         delete(find(o));
     }
 
-    default T getOrCreate(String id) {
-        Validate.notBlank(id);
-        final var entity = exists(id) ? find(id) : create();
-        if (J.nonBlank(id)) {
-            entity.setId(id);
-        }
-        return entity;
+    boolean exists(String id);
+
+    default boolean exists(T entity) {
+        return exists(entity.getId());
     }
+
+    Flux<T> list();
 
     default void save(T entity) {
         if (exists(entity)) {
