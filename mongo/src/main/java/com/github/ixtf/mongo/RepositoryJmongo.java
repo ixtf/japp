@@ -14,6 +14,22 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
      */
     T build(String id);
 
+    /**
+     * 清理常驻内存，单个
+     *
+     * @param id
+     */
+    void invalidateBuild(String id);
+
+    default void invalidateBuild(T entity) {
+        invalidateBuild(entity.getId());
+    }
+
+    /**
+     * 清理常驻内存
+     */
+    void invalidateBuild();
+
     T create();
 
     void insert(T entity);

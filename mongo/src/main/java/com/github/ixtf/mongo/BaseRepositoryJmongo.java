@@ -13,15 +13,25 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 
 public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements RepositoryJmongo<T> {
+    @Getter(lazy = true, value = AccessLevel.PROTECTED)
+    private final LoadingCache<String, T> cache = _cache();
     protected final Class<T> entityClass = _entityClass();
     @Inject
     protected Jmongo jmongo;
-    @Getter(lazy = true, value = AccessLevel.PROTECTED)
-    private final LoadingCache<String, T> cache = _cache();
 
     @Override
     public T build(String id) {
         return getCache().get(id);
+    }
+
+    @Override
+    public void invalidateBuild(String id) {
+        getCache().invalidate(id);
+    }
+
+    @Override
+    public void invalidateBuild() {
+        getCache().invalidateAll();
     }
 
     @SneakyThrows({NoSuchMethodException.class, InvocationTargetException.class, InstantiationException.class, IllegalAccessException.class})
