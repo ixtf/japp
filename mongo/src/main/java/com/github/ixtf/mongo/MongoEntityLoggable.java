@@ -4,16 +4,11 @@ import com.github.ixtf.persistence.IOperator;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import org.bson.codecs.pojo.annotations.BsonId;
 
 import java.io.Serializable;
 import java.util.Date;
 
 public abstract class MongoEntityLoggable extends MongoEntityBase {
-    @BsonId
-    @Getter
-    @Setter
-    private String id;
     @Getter
     @Setter
     private Operator creator;
