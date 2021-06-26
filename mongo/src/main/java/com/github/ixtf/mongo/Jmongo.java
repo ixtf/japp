@@ -131,6 +131,10 @@ public class Jmongo {
         return bsonDocument;
     }
 
+    public <T extends MongoEntityBase> Flux<T> list(Class<T> clazz) {
+        return findPublisher(entityCollection(clazz), DELETED_FILTER$).flatMapMany(Function.identity());
+    }
+
     public <T> Flux<T> query(Class<T> clazz, Publisher<Bson> filter$) {
         return findPublisher(entityCollection(clazz), Flux.merge(filter$, DELETED_FILTER$)).flatMapMany(Function.identity());
     }
