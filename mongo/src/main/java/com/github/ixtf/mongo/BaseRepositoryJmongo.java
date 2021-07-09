@@ -3,6 +3,7 @@ package com.github.ixtf.mongo;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.inject.Inject;
+import com.mongodb.reactivestreams.client.MongoCollection;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -97,6 +98,11 @@ public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements
     @Override
     public boolean exists(String id) {
         return jmongo.exists(entityClass, id);
+    }
+
+    @Override
+    public MongoCollection<T> entityCollection() {
+        return jmongo.entityCollection(entityClass);
     }
 
     protected Caffeine<Object, Object> _cacheBuilder() {

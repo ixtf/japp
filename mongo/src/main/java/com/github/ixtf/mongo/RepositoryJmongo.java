@@ -1,6 +1,7 @@
 package com.github.ixtf.mongo;
 
 import com.github.ixtf.data.EntityDTO;
+import com.mongodb.reactivestreams.client.MongoCollection;
 import reactor.core.publisher.Flux;
 
 public interface RepositoryJmongo<T extends MongoEntityBase> {
@@ -69,4 +70,6 @@ public interface RepositoryJmongo<T extends MongoEntityBase> {
     }
 
     Flux<T> list();
+
+    MongoCollection<T> entityCollection();
 }

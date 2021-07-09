@@ -135,6 +135,8 @@ public class RabbitMQModule extends AbstractModule {
         return connectionFactory;
     }
 
+    // todo fixme sender
+//    @Singleton
     @Provides
     private Sender Sender(ConnectionFactory connectionFactory, @Named(SERVICE) String group) {
         final var connectionMono = singleConnectionMono(() -> {
