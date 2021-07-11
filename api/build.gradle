@@ -23,7 +23,7 @@ dependencies {
 }
 
 codeGen {
-    vertxVersion = "4.0.3"
+    vertxVersion = "4.1.1"
 }
 
 mainClassName = "com.github.ixtf.api.ApiLauncher"
