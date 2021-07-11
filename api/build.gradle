@@ -6,7 +6,7 @@ plugins {
 }
 
 dependencies {
-    annotationProcessor "io.vertx:vertx-codegen:4.0.3:processor"
+    annotationProcessor "io.vertx:vertx-codegen:4.1.1:processor"
     annotationProcessor "io.vertx:vertx-service-proxy"
     implementation "ch.qos.logback:logback-classic",
             "com.google.inject:guice",
