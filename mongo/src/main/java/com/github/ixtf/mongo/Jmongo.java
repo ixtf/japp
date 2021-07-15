@@ -8,9 +8,11 @@ import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.MongoDatabase;
 import org.bson.BsonDocument;
+import org.bson.BsonDocumentReader;
 import org.bson.BsonDocumentWriter;
 import org.bson.Document;
 import org.bson.codecs.Codec;
+import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
@@ -128,6 +130,13 @@ public class Jmongo {
         final Codec codec = codecRegistry.get(entity.getClass());
         codec.encode(writer, entity, encoderContext);
         return bsonDocument;
+    }
+
+    public <T> T fromBsonDocument(BsonDocument bsonDocument, Class<T> clazz) {
+        final var reader = new BsonDocumentReader(bsonDocument);
+        final var registry = getInstance(CodecRegistry.class);
+        final var codec = registry.get(clazz);
+        return codec.decode(reader, DecoderContext.builder().build());
     }
 
     public <T extends MongoEntityBase> Flux<T> list(Class<T> clazz) {
