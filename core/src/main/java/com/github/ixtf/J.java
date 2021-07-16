@@ -50,7 +50,7 @@ public class J {
         return socket.getLocalAddress().getHostAddress();
     }
 
-    public static String strTpl(final String tpl, Map<String, String> map) {
+    public static <V> String strTpl(final String tpl, Map<String, V> map) {
         return StringSubstitutor.replace(tpl, map);
     }
 
