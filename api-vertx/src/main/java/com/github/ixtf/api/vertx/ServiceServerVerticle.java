@@ -87,15 +87,14 @@ public class ServiceServerVerticle extends AbstractVerticle {
             });
         }
 
-        private void onSuccess(Message<Object> reply, ApiResponse apiResponse, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
-            apiResponse.getHeaders().forEach((k, v) -> deliveryOptions.addHeader(k, v));
-            deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "" + apiResponse.getStatus());
-            onSuccess(reply, apiResponse.bodyFuture(), deliveryOptions, spanOpt);
-        }
-
         private void onSuccess(Message<Object> reply, Object o, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
             if (o == null || o instanceof String || o instanceof Buffer || o instanceof byte[]) {
                 reply.reply(o, deliveryOptions);
+            } else if (o instanceof ApiResponse) {
+                final var apiResponse = (ApiResponse) o;
+                apiResponse.getHeaders().forEach((k, v) -> deliveryOptions.addHeader(k, v));
+                deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "" + apiResponse.getStatus());
+                onSuccess(reply, apiResponse.bodyFuture(), deliveryOptions, spanOpt);
             } else {
                 Mono.fromCallable(() -> MAPPER.writeValueAsBytes(o)).subscribe(it -> onSuccess(reply, it, deliveryOptions, spanOpt), e -> onFail(reply, e, spanOpt));
             }
