@@ -40,13 +40,13 @@ public class ServiceServerVerticle extends AbstractVerticle {
     private Optional<Tracer> tracerOpt;
 
     @Override
-    public void start(Promise<Void> startPromise) throws Exception {
+    public void start(Promise<Void> startPromise) {
         injectMembers(this);
-        CompositeFuture.all(methods.stream().map(method -> {
+        CompositeFuture.all(methods.stream().map(method -> Future.<Void>future(p -> {
             final var handler = new ReplyHandler(method);
             final var consumer = vertx.eventBus().consumer(handler.address).handler(handler);
-            return Future.<Void>future(p -> consumer.completionHandler(p)).onFailure(e -> log.error(handler.address, e));
-        }).collect(toUnmodifiableList())).<Void>mapEmpty().onComplete(startPromise);
+            consumer.completionHandler(p);
+        })).collect(toUnmodifiableList())).<Void>mapEmpty().onComplete(startPromise);
     }
 
     private class ReplyHandler implements Handler<Message<Object>> {
@@ -77,22 +77,20 @@ public class ServiceServerVerticle extends AbstractVerticle {
                     .subscribe(it -> onSuccess(reply, it, new DeliveryOptions(), spanOpt), e -> onFail(reply, e, spanOpt));
         }
 
-        private void onSuccess(Message<Object> reply, CompletionStage<?> completionStage, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
-            completionStage.whenComplete((v, e) -> {
-                if (e != null) {
-                    onFail(reply, e, spanOpt);
-                } else {
-                    onSuccess(reply, v, deliveryOptions, spanOpt);
-                }
-            });
-        }
-
         private void onSuccess(Message<Object> reply, Object o, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
             if (o == null || o instanceof String || o instanceof Buffer || o instanceof byte[]) {
                 reply.reply(o, deliveryOptions);
+            } else if (o instanceof CompletionStage) {
+                ((CompletionStage<?>) o).whenComplete((v, e) -> {
+                    if (e != null) {
+                        onFail(reply, e, spanOpt);
+                    } else {
+                        onSuccess(reply, v, deliveryOptions, spanOpt);
+                    }
+                });
             } else if (o instanceof ApiResponse) {
                 final var apiResponse = (ApiResponse) o;
-                apiResponse.getHeaders().forEach((k, v) -> deliveryOptions.addHeader(k, v));
+                apiResponse.getHeaders().forEach(deliveryOptions::addHeader);
                 deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "" + apiResponse.getStatus());
                 onSuccess(reply, apiResponse.bodyFuture(), deliveryOptions, spanOpt);
             } else {
