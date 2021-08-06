@@ -158,6 +158,9 @@ public class J {
 
     @SneakyThrows(IOException.class)
     public static void moveFile(File srcFile, File destFile) {
+        if (destFile.exists()) {
+            FileUtils.deleteQuietly(destFile);
+        }
         FileUtils.moveFile(srcFile, destFile);
     }
 
