@@ -2,7 +2,12 @@ package com.github.ixtf;
 
 import com.fasterxml.uuid.Generators;
 import com.github.ixtf.codec.Base58;
+import lombok.AccessLevel;
+import lombok.Cleanup;
+import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.Validate;
 
 import javax.crypto.SecretKeyFactory;
@@ -21,9 +26,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * @author jzb 2018-08-17
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Jcodec {
 
-    public static final UUID _uuid() {
+    @SneakyThrows(IOException.class)
+    public static String sha256Hex(File file) {
+        @Cleanup final var fis = new FileInputStream(file);
+        return DigestUtils.sha256Hex(fis);
+    }
+
+    public static UUID _uuid() {
         return Generators.timeBasedGenerator().generate();
     }
 
@@ -31,7 +43,7 @@ public final class Jcodec {
      * @param names 注意:不要排序，不要 parallel stream，全部原始顺序
      * @return UUID
      */
-    public static final UUID _uuid(final String... names) {
+    public static UUID _uuid(final String... names) {
         final var join = String.join(",", names);
         Validate.notBlank(join);
         final var bytes = join.getBytes(UTF_8);
@@ -115,7 +127,7 @@ public final class Jcodec {
         }
     }
 
-    private static final byte[] password(final String password, final byte[] salt, final int iterationCount, final int keySize) throws IOException, InvalidKeySpecException, NoSuchAlgorithmException {
+    private static byte[] password(final String password, final byte[] salt, final int iterationCount, final int keySize) throws IOException, InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.notBlank(password);
         final var spec = new PBEKeySpec(password.toCharArray(), salt, iterationCount, keySize);
         final var factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
