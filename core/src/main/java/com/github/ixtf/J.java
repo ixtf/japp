@@ -156,7 +156,8 @@ public class J {
         return FileUtils.getTempDirectory();
     }
 
-    public static void moveFile(File srcFile, File destFile) throws IOException {
+    @SneakyThrows(IOException.class)
+    public static void moveFile(File srcFile, File destFile) {
         FileUtils.moveFile(srcFile, destFile);
     }
 
