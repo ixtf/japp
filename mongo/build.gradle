@@ -1,4 +1,4 @@
 dependencies {
-    api project(":guice"), project(":persistence"), "org.mongodb:mongodb-driver-reactivestreams:4.3.0"
+    api project(":guice"), project(":persistence"), "org.mongodb:mongodb-driver-reactivestreams:4.3.1"
     api "io.projectreactor:reactor-core"
 }
