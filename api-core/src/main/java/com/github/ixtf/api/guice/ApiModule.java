@@ -1,35 +1,33 @@
 package com.github.ixtf.api.guice;
 
 import com.github.ixtf.api.ApiAction;
-import com.github.ixtf.api.GraphqlAction;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-import graphql.GraphQL;
-import graphql.schema.idl.SchemaGenerator;
 import io.github.classgraph.ClassGraph;
 import io.jaegertracing.Configuration;
 import io.opentracing.Tracer;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public abstract class ApiModule extends AbstractModule {
     public static final String SERVICE = "com.github.ixtf.api.guice:__SERVICE__";
     public static final String CONFIG = "com.github.ixtf.api.guice:__CONFIG__";
     public static final String ACTIONS = "com.github.ixtf.api.guice:__ACTIONS__";
-    public static final String GRAPHQL_ACTION_MAP = "com.github.ixtf.api.guice:__GRAPHQL_ACTION_MAP__";
 
     protected final Vertx vertx;
     protected final String service;
@@ -84,31 +82,6 @@ public abstract class ApiModule extends AbstractModule {
             }
         });
         return ret;
-    }
-
-    @Named(GRAPHQL_ACTION_MAP)
-    @Singleton
-    @Provides
-    private Map<String, Map<String, Method>> GRAPHQL_ACTION_MAP() {
-        return streamMethod(GraphqlAction.class).collect(toUnmodifiableMap(it -> {
-            final var annotation = it.getAnnotation(GraphqlAction.class);
-            return annotation.type();
-        }, it -> {
-            final var annotation = it.getAnnotation(GraphqlAction.class);
-            return Map.of(annotation.action(), it);
-        }, (a, b) -> ImmutableMap.<String, Method>builder().putAll(a).putAll(b).build()));
-    }
-
-    @Named(GRAPHQL_ACTION_MAP)
-    @Singleton
-    @Provides
-    private GraphQL GraphQL(@Named(GRAPHQL_ACTION_MAP) Map<String, Map<String, Method>> MAP) throws IOException {
-//        final var typeDefinitionRegistry = TypeDefinitionRegistry();
-//        final var runtimeWiring = buildRuntimeWiring(GRAPHQL_ACTION_MAP);
-        final var schemaGenerator = new SchemaGenerator();
-//        final var graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
-//        return GraphQL.newGraphQL(graphQLSchema).build();
-        return null;
     }
 
     protected abstract Collection<String> ActionPackages();

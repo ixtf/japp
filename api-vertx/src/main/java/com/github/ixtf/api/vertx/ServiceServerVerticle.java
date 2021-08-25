@@ -43,7 +43,7 @@ public class ServiceServerVerticle extends AbstractVerticle {
     public void start(Promise<Void> startPromise) {
         injectMembers(this);
         CompositeFuture.all(methods.stream().map(method -> Future.<Void>future(p -> {
-            final var handler = new ReplyHandler(method);
+            final var handler = injectMembers(new ReplyHandler(method));
             final var consumer = vertx.eventBus().consumer(handler.address).handler(handler);
             consumer.completionHandler(p);
         })).collect(toUnmodifiableList())).<Void>mapEmpty().onComplete(startPromise);
