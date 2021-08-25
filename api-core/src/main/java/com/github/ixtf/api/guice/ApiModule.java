@@ -2,6 +2,7 @@ package com.github.ixtf.api.guice;
 
 import com.github.ixtf.J;
 import com.github.ixtf.api.ApiAction;
+import com.github.ixtf.api.GraphqlAction;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -29,6 +30,7 @@ public abstract class ApiModule extends AbstractModule {
     public static final String SERVICE = "com.github.ixtf.api.guice:__SERVICE__";
     public static final String CONFIG = "com.github.ixtf.api.guice:__CONFIG__";
     public static final String ACTIONS = "com.github.ixtf.api.guice:__ACTIONS__";
+    public static final String GRAPHQL_ACTIONS = "com.github.ixtf.api.guice:__GRAPHQL_ACTIONS__";
     public static final String GRAPHQL_ADDRESS = "com.github.ixtf.api.guice:__GRAPHQL_ADDRESS__";
 
     protected final Vertx vertx;
@@ -82,6 +84,30 @@ public abstract class ApiModule extends AbstractModule {
         })).forEach((k, v) -> {
             if (v.size() > 1) {
                 throw new RuntimeException("api地址重复 [" + k + "]");
+            }
+        });
+        return ret;
+    }
+
+    @Named(GRAPHQL_ACTIONS)
+    @Singleton
+    @Provides
+    private Collection<Class<?>> GRAPHQL_ACTIONS() {
+        final var ret = new ClassGraph()
+                .enableAllInfo()
+                .acceptPackages(ActionPackages().toArray(String[]::new))
+                .acceptClasses(ActionClasses().toArray(String[]::new))
+                .scan()
+                .getClassesWithAnnotation(GraphqlAction.class.getName())
+                .loadClasses();
+        ret.parallelStream().collect(groupingBy(it -> {
+            final var annotation = it.getAnnotation(GraphqlAction.class);
+            final var type = annotation.type();
+            final var action = annotation.action();
+            return String.join(":", type.name(), action);
+        })).forEach((k, v) -> {
+            if (v.size() > 1) {
+                throw new RuntimeException("graphql地址重复 [" + k + "]");
             }
         });
         return ret;
