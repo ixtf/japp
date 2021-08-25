@@ -15,6 +15,7 @@ import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.idl.*;
 import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import io.jaegertracing.Configuration;
 import io.opentracing.Tracer;
 import io.vertx.core.Vertx;
@@ -31,6 +32,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 import static com.github.ixtf.guice.GuiceModule.getInstance;
+import static graphql.scalars.ExtendedScalars.*;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toUnmodifiableSet;
@@ -65,30 +67,20 @@ public abstract class ApiModule extends AbstractModule {
         bind(JsonObject.class).annotatedWith(Names.named(annotatedWith)).toInstance(config.getJsonObject(key, new JsonObject()));
     }
 
-    protected Stream<Method> streamMethod(Class annotationClass) {
-        return new ClassGraph()
-                .enableAllInfo()
-                .acceptPackages(ActionPackages().toArray(String[]::new))
-                .acceptClasses(ActionClasses().toArray(String[]::new))
-                .scan()
-                .getClassesWithMethodAnnotation(annotationClass.getName())
-                .loadClasses()
-                .parallelStream()
+    private ScanResult cg_sr() {
+        return new ClassGraph().enableAllInfo().acceptPackages(ActionPackages().toArray(String[]::new)).acceptClasses(ActionClasses().toArray(String[]::new)).scan();
+    }
+
+    protected Stream<Method> streamMethod(Class clazz) {
+        return cg_sr().getClassesWithMethodAnnotation(clazz.getName()).loadClasses().parallelStream()
                 .map(Class::getMethods)
                 .flatMap(Arrays::stream)
                 .parallel()
-                .filter(it -> Objects.nonNull(it.getAnnotation(annotationClass)));
+                .filter(it -> Objects.nonNull(it.getAnnotation(clazz)));
     }
 
-    protected Stream<Class<?>> streamClass(Class annotationClass) {
-        return new ClassGraph()
-                .enableAllInfo()
-                .acceptPackages(ActionPackages().toArray(String[]::new))
-                .acceptClasses(ActionClasses().toArray(String[]::new))
-                .scan()
-                .getClassesWithAnnotation(annotationClass.getName())
-                .loadClasses()
-                .parallelStream();
+    protected Stream<Class<?>> streamClass(Class clazz) {
+        return cg_sr().getClassesWithAnnotation(clazz.getName()).loadClasses().parallelStream();
     }
 
     @Named(ACTIONS)
@@ -112,28 +104,7 @@ public abstract class ApiModule extends AbstractModule {
     @Singleton
     @Provides
     private GraphQL GraphQL(TypeDefinitionRegistry typeDefinitionRegistry, @Named(GRAPHQL_ACTIONS) Collection<Class<?>> classes) {
-        final var runtimeWiringBuilder = RuntimeWiring.newRuntimeWiring()
-                .scalar(ExtendedScalars.GraphQLLong)
-                .scalar(ExtendedScalars.GraphQLShort)
-                .scalar(ExtendedScalars.GraphQLByte)
-                .scalar(ExtendedScalars.GraphQLBigDecimal)
-                .scalar(ExtendedScalars.GraphQLBigInteger)
-                .scalar(ExtendedScalars.GraphQLChar)
-                .scalar(ExtendedScalars.PositiveInt)
-                .scalar(ExtendedScalars.NegativeInt)
-                .scalar(ExtendedScalars.NonPositiveInt)
-                .scalar(ExtendedScalars.NonNegativeInt)
-                .scalar(ExtendedScalars.PositiveFloat)
-                .scalar(ExtendedScalars.NegativeFloat)
-                .scalar(ExtendedScalars.NonPositiveFloat)
-                .scalar(ExtendedScalars.NonNegativeFloat)
-                .scalar(ExtendedScalars.Url)
-                .scalar(ExtendedScalars.Locale)
-                .scalar(ExtendedScalars.Date)
-                .scalar(ExtendedScalars.Time)
-                .scalar(ExtendedScalars.DateTime)
-                .scalar(ExtendedScalars.Object)
-                .scalar(ExtendedScalars.Json)
+        final var runtimeWiringBuilder = RuntimeWiring.newRuntimeWiring().scalar(GraphQLLong).scalar(GraphQLShort).scalar(GraphQLByte).scalar(GraphQLBigDecimal).scalar(GraphQLBigInteger).scalar(GraphQLChar).scalar(PositiveInt).scalar(NegativeInt).scalar(NonPositiveInt).scalar(NonNegativeInt).scalar(PositiveFloat).scalar(NegativeFloat).scalar(NonPositiveFloat).scalar(NonNegativeFloat).scalar(ExtendedScalars.Url).scalar(ExtendedScalars.Locale).scalar(ExtendedScalars.Date).scalar(ExtendedScalars.Time).scalar(ExtendedScalars.DateTime).scalar(ExtendedScalars.Object).scalar(ExtendedScalars.Json)
                 .wiringFactory(new WiringFactory() {
                     @Override
                     public DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
