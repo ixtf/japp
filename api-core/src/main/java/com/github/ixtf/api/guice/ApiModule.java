@@ -3,25 +3,34 @@ package com.github.ixtf.api.guice;
 import com.github.ixtf.J;
 import com.github.ixtf.api.ApiAction;
 import com.github.ixtf.api.GraphqlAction;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import graphql.GraphQL;
+import graphql.scalars.ExtendedScalars;
+import graphql.schema.DataFetcher;
+import graphql.schema.idl.*;
 import io.github.classgraph.ClassGraph;
 import io.jaegertracing.Configuration;
 import io.opentracing.Tracer;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.handler.graphql.schema.VertxDataFetcher;
+import io.vertx.ext.web.handler.graphql.schema.VertxPropertyDataFetcher;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
+import static com.github.ixtf.guice.GuiceModule.getInstance;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toUnmodifiableSet;
@@ -98,6 +107,66 @@ public abstract class ApiModule extends AbstractModule {
             }
         });
         return ret;
+    }
+
+    @Singleton
+    @Provides
+    private GraphQL GraphQL(TypeDefinitionRegistry typeDefinitionRegistry, @Named(GRAPHQL_ACTIONS) Collection<Class<?>> classes) {
+        final var runtimeWiringBuilder = RuntimeWiring.newRuntimeWiring()
+                .scalar(ExtendedScalars.GraphQLLong)
+                .scalar(ExtendedScalars.GraphQLShort)
+                .scalar(ExtendedScalars.GraphQLByte)
+                .scalar(ExtendedScalars.GraphQLBigDecimal)
+                .scalar(ExtendedScalars.GraphQLBigInteger)
+                .scalar(ExtendedScalars.GraphQLChar)
+                .scalar(ExtendedScalars.PositiveInt)
+                .scalar(ExtendedScalars.NegativeInt)
+                .scalar(ExtendedScalars.NonPositiveInt)
+                .scalar(ExtendedScalars.NonNegativeInt)
+                .scalar(ExtendedScalars.PositiveFloat)
+                .scalar(ExtendedScalars.NegativeFloat)
+                .scalar(ExtendedScalars.NonPositiveFloat)
+                .scalar(ExtendedScalars.NonNegativeFloat)
+                .scalar(ExtendedScalars.Url)
+                .scalar(ExtendedScalars.Locale)
+                .scalar(ExtendedScalars.Date)
+                .scalar(ExtendedScalars.Time)
+                .scalar(ExtendedScalars.DateTime)
+                .scalar(ExtendedScalars.Object)
+                .scalar(ExtendedScalars.Json)
+                .wiringFactory(new WiringFactory() {
+                    @Override
+                    public DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
+                        return VertxPropertyDataFetcher.create(environment.getFieldDefinition().getName());
+                    }
+                });
+        prepareRuntimeWiring(runtimeWiringBuilder);
+        final var queryBuilder = ImmutableMap.<String, DataFetcher>builder();
+        final var mutationBuilder = ImmutableMap.<String, DataFetcher>builder();
+        classes.forEach(clazz -> {
+            final var annotation = clazz.getAnnotation(GraphqlAction.class);
+            final var action = annotation.action();
+            final var instance = (BiConsumer) getInstance(clazz);
+            final var dataFetcher = VertxDataFetcher.create(instance);
+            switch (annotation.type()) {
+                case QUERY: {
+                    queryBuilder.put(action, dataFetcher);
+                }
+                case MUTATION: {
+                    mutationBuilder.put(action, dataFetcher);
+                }
+            }
+        });
+        final var runtimeWiring = runtimeWiringBuilder
+                .type("Query", builder -> builder.dataFetchers(queryBuilder.build()))
+                .type("Mutation", builder -> builder.dataFetchers(mutationBuilder.build()))
+                .build();
+        final var schemaGenerator = new SchemaGenerator();
+        final var graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
+        return GraphQL.newGraphQL(graphQLSchema).build();
+    }
+
+    protected void prepareRuntimeWiring(RuntimeWiring.Builder builder) {
     }
 
     @Named(GRAPHQL_ACTIONS)
