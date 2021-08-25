@@ -32,6 +32,7 @@ import static com.github.ixtf.api.guice.ApiModule.SERVICE;
 import static com.github.ixtf.guice.GuiceModule.getInstance;
 import static com.github.ixtf.guice.GuiceModule.injectMembers;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 @Slf4j
@@ -48,11 +49,14 @@ public class ServiceServerVerticle extends AbstractVerticle {
     @Override
     public void start(Promise<Void> startPromise) {
         injectMembers(this);
-        CompositeFuture.all(methods.stream().map(method -> Future.<Void>future(p -> {
-            final var handler = injectMembers(new ReplyHandler(method));
-            final var consumer = vertx.eventBus().consumer(handler.address).handler(handler);
-            consumer.completionHandler(p);
-        })).collect(toUnmodifiableList())).<Void>mapEmpty().onComplete(startPromise);
+        methods.stream().map(method -> {
+            final var future = Future.<Void>future(p -> {
+                final var handler = injectMembers(new ReplyHandler(method));
+                final var consumer = vertx.eventBus().consumer(handler.address).handler(handler);
+                consumer.completionHandler(p);
+            });
+            return (Future) future;
+        }).collect(collectingAndThen(toUnmodifiableList(), CompositeFuture::all)).<Void>mapEmpty().onComplete(startPromise);
     }
 
     private class ReplyHandler implements Handler<Message<Object>> {
