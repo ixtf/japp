@@ -71,6 +71,17 @@ public abstract class ApiModule extends AbstractModule {
                 .filter(it -> Objects.nonNull(it.getAnnotation(annotationClass)));
     }
 
+    protected Stream<Class<?>> streamClass(Class annotationClass) {
+        return new ClassGraph()
+                .enableAllInfo()
+                .acceptPackages(ActionPackages().toArray(String[]::new))
+                .acceptClasses(ActionClasses().toArray(String[]::new))
+                .scan()
+                .getClassesWithMethodAnnotation(annotationClass.getName())
+                .loadClasses()
+                .parallelStream();
+    }
+
     @Named(ACTIONS)
     @Singleton
     @Provides
@@ -93,13 +104,7 @@ public abstract class ApiModule extends AbstractModule {
     @Singleton
     @Provides
     private Collection<Class<?>> GRAPHQL_ACTIONS() {
-        final var ret = new ClassGraph()
-                .enableAllInfo()
-                .acceptPackages(ActionPackages().toArray(String[]::new))
-                .acceptClasses(ActionClasses().toArray(String[]::new))
-                .scan()
-                .getClassesWithAnnotation(GraphqlAction.class.getName())
-                .loadClasses();
+        final var ret = streamClass(GraphqlAction.class).collect(toUnmodifiableSet());
         ret.parallelStream().collect(groupingBy(it -> {
             final var annotation = it.getAnnotation(GraphqlAction.class);
             final var type = annotation.type();
