@@ -1,5 +1,6 @@
 package com.github.ixtf.api.guice;
 
+import com.github.ixtf.J;
 import com.github.ixtf.api.ApiAction;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -75,7 +76,7 @@ public abstract class ApiModule extends AbstractModule {
         final var ret = streamMethod(ApiAction.class).collect(toUnmodifiableSet());
         ret.parallelStream().collect(groupingBy(it -> {
             final var annotation = it.getAnnotation(ApiAction.class);
-            final var service = annotation.service();
+            final var service = ofNullable(annotation.service()).filter(J::nonBlank).orElse(this.service);
             final var action = annotation.action();
             return String.join(":", service, action);
         })).forEach((k, v) -> {

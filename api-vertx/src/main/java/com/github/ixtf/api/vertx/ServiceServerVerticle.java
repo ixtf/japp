@@ -1,5 +1,6 @@
 package com.github.ixtf.api.vertx;
 
+import com.github.ixtf.J;
 import com.github.ixtf.api.ApiAction;
 import com.github.ixtf.api.ApiResponse;
 import com.github.ixtf.exception.JError;
@@ -27,12 +28,17 @@ import java.util.concurrent.CompletionStage;
 import static com.github.ixtf.Constant.MAPPER;
 import static com.github.ixtf.api.ApiResponse.bodyFuture;
 import static com.github.ixtf.api.guice.ApiModule.ACTIONS;
+import static com.github.ixtf.api.guice.ApiModule.SERVICE;
 import static com.github.ixtf.guice.GuiceModule.getInstance;
 import static com.github.ixtf.guice.GuiceModule.injectMembers;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 @Slf4j
 public class ServiceServerVerticle extends AbstractVerticle {
+    @Named(SERVICE)
+    @Inject
+    private String service;
     @Named(ACTIONS)
     @Inject
     private Collection<Method> methods;
@@ -63,7 +69,7 @@ public class ServiceServerVerticle extends AbstractVerticle {
             instance = getInstance(declaringClass);
 
             final var annotation = method.getAnnotation(ApiAction.class);
-            final var service = annotation.service();
+            final var service = ofNullable(annotation.service()).filter(J::nonBlank).orElse(ServiceServerVerticle.this.service);
             final var action = annotation.action();
             address = String.join(":", service, action);
         }
