@@ -137,7 +137,7 @@ public abstract class ApiModule extends AbstractModule {
         return GraphQL.newGraphQL(graphQLSchema).build();
     }
 
-    protected void prepareRuntimeWiring(RuntimeWiring.Builder builder) {
+    protected void prepareRuntimeWiring(RuntimeWiring.Builder runtimeWiringBuilder) {
     }
 
     @Named(GRAPHQL_ACTIONS)
