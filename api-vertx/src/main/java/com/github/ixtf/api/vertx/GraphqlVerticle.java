@@ -24,36 +24,32 @@ import reactor.core.publisher.Mono;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
-import static com.github.ixtf.api.guice.ApiModule.SERVICE;
+import static com.github.ixtf.api.guice.ApiModule.GRAPHQL_ADDRESS;
 import static com.github.ixtf.guice.GuiceModule.injectMembers;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
 public class GraphqlVerticle extends AbstractVerticle implements Handler<Message<Buffer>> {
-    @Named(SERVICE)
+    @Named(GRAPHQL_ADDRESS)
     @Inject
-    private String service;
+    private String address;
     @Inject
     private GraphQL graphQL;
     @Inject
     private Optional<Tracer> tracerOpt;
 
-    protected String address() {
-        return service + ":graphql";
-    }
-
     protected Optional<Span> spanOpt(Message<Buffer> reply) {
         final var builder = ImmutableMap.<String, String>builder();
         reply.headers().forEach(entry -> builder.put(entry.getKey(), entry.getValue()));
         final var headers = builder.build();
-        return Util.spanOpt(tracerOpt, address(), headers);
+        return Util.spanOpt(tracerOpt, address, headers);
     }
 
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
         injectMembers(this);
-        vertx.eventBus().consumer(address(), this).completionHandler(startPromise);
+        vertx.eventBus().consumer(address, this).completionHandler(startPromise);
     }
 
     @Override

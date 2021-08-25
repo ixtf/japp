@@ -28,6 +28,7 @@ public abstract class ApiModule extends AbstractModule {
     public static final String SERVICE = "com.github.ixtf.api.guice:__SERVICE__";
     public static final String CONFIG = "com.github.ixtf.api.guice:__CONFIG__";
     public static final String ACTIONS = "com.github.ixtf.api.guice:__ACTIONS__";
+    public static final String GRAPHQL_ADDRESS = "com.github.ixtf.api.guice:__GRAPHQL_ADDRESS__";
 
     protected final Vertx vertx;
     protected final String service;
@@ -43,6 +44,7 @@ public abstract class ApiModule extends AbstractModule {
     protected void configure() {
         bind(Vertx.class).toInstance(vertx);
         bind(String.class).annotatedWith(Names.named(SERVICE)).toInstance(service);
+        bind(String.class).annotatedWith(Names.named(GRAPHQL_ADDRESS)).toInstance(service + ":graphql");
         bind(JsonObject.class).annotatedWith(Names.named(CONFIG)).toInstance(config);
         OptionalBinder.newOptionalBinder(binder(), Tracer.class);
     }
