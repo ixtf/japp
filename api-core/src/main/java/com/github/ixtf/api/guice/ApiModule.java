@@ -77,7 +77,7 @@ public abstract class ApiModule extends AbstractModule {
                 .acceptPackages(ActionPackages().toArray(String[]::new))
                 .acceptClasses(ActionClasses().toArray(String[]::new))
                 .scan()
-                .getClassesWithMethodAnnotation(annotationClass.getName())
+                .getClassesWithAnnotation(annotationClass.getName())
                 .loadClasses()
                 .parallelStream();
     }
