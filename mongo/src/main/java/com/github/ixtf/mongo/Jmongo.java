@@ -95,11 +95,11 @@ public class Jmongo {
     public <T> FindPublisher<T> findPublisher(MongoCollection<T> collection, Publisher<Bson> filter$) {
         return Flux.defer(() -> filter$).collectList().map(filters -> {
             if (J.isEmpty(filters)) {
-                return collection.find().batchSize(DEFAULT_BATCH_SIZE);
+                return collection.find().batchSize(DEFAULT_BATCH_SIZE).allowDiskUse(true);
             } else if (filters.size() == 1) {
-                return collection.find(filters.get(0)).batchSize(DEFAULT_BATCH_SIZE);
+                return collection.find(filters.get(0)).batchSize(DEFAULT_BATCH_SIZE).allowDiskUse(true);
             } else {
-                return collection.find(and(filters)).batchSize(DEFAULT_BATCH_SIZE);
+                return collection.find(and(filters)).batchSize(DEFAULT_BATCH_SIZE).allowDiskUse(true);
             }
         }).block();
     }
