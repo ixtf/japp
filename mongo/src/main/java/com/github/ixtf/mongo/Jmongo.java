@@ -39,7 +39,7 @@ public class Jmongo {
     public static final Mono<Bson> DELETED_FILTER$ = Mono.fromCallable(() -> eq(DELETED_COL, false));
     public static final int DEFAULT_BATCH_SIZE = 10_000;
 
-    public static Mono<Document> $match(Flux<Bson> condition$) {
+    public static Mono<Bson> $match(Flux<Bson> condition$) {
         return Flux.merge(condition$, DELETED_FILTER$).collectList().map(it -> new Document("$match", and(it)));
     }
 
@@ -52,7 +52,11 @@ public class Jmongo {
     }
 
     public static Bson $count() {
-        return new Document("$count", "count");
+        return $count("count");
+    }
+
+    public static Bson $count(String field) {
+        return new Document("$count", field);
     }
 
     public static Optional<Bson> $sortOpt(Collection<Sort> sorts) {
