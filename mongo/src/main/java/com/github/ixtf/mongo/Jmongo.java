@@ -3,6 +3,8 @@ package com.github.ixtf.mongo;
 import com.github.ixtf.J;
 import com.github.ixtf.data.EntityDTO;
 import com.github.ixtf.persistence.IEntity;
+import com.github.ixtf.persistence.Sort;
+import com.mongodb.client.model.Sorts;
 import com.mongodb.reactivestreams.client.FindPublisher;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoCollection;
@@ -21,18 +23,54 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.security.Principal;
+import java.util.Collection;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.github.ixtf.guice.GuiceModule.getInstance;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class Jmongo {
     public static final String ID_COL = "_id";
     public static final String DELETED_COL = "deleted";
     public static final Mono<Bson> DELETED_FILTER$ = Mono.fromCallable(() -> eq(DELETED_COL, false));
     public static final int DEFAULT_BATCH_SIZE = 10_000;
+
+    public static Mono<Document> $match(Flux<Bson> condition$) {
+        return Flux.merge(condition$, DELETED_FILTER$).collectList().map(it -> new Document("$match", and(it)));
+    }
+
+    public static Bson $skip(int skip) {
+        return new Document("$skip", skip);
+    }
+
+    public static Bson $limit(int limit) {
+        return new Document("$limit", limit);
+    }
+
+    public static Bson $count() {
+        return new Document("$count", "count");
+    }
+
+    public static Optional<Bson> $sortOpt(Collection<Sort> sorts) {
+        return sortOpt(sorts).map(it -> new Document("$sort", it));
+    }
+
+    public static Optional<Bson> sortOpt(Collection<Sort> sorts) {
+        final var collect = ofNullable(sorts).filter(J::nonEmpty).stream().flatMap(Collection::stream).map(it -> {
+            final var id = it.getId();
+            switch (it.getStart()) {
+                case asc:
+                    return Sorts.ascending(id);
+                default:
+                    return Sorts.descending(id);
+            }
+        }).collect(toUnmodifiableList());
+        return Optional.of(collect).filter(J::nonEmpty).map(Sorts::orderBy);
+    }
 
     public MongoUnitOfWork uow() {
         return new MongoUnitOfWork(this);
