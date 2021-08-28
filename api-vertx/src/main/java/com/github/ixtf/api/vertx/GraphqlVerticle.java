@@ -19,6 +19,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLBatch;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLInput;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLQuery;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
@@ -30,6 +31,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
+@Slf4j
 public class GraphqlVerticle extends AbstractVerticle implements Handler<Message<Buffer>> {
     @Named(GRAPHQL_ADDRESS)
     @Inject
@@ -68,6 +70,7 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
             spanOpt.ifPresent(Span::finish);
         }, e -> {
             reply.fail(400, e.getMessage());
+            log.error("", e);
             spanOpt.ifPresent(span -> span.setTag(Tags.ERROR, true).log(e.getMessage()).finish());
         });
     }
