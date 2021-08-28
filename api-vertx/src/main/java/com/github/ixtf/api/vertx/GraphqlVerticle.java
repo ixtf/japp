@@ -5,7 +5,6 @@ import com.github.ixtf.api.Util;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import io.opentracing.Span;
@@ -76,11 +75,12 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
     }
 
     private Future<JsonObject> handleQuery(GraphQLQuery query) {
-        final var builder = ExecutionInput.newExecutionInput();
-        builder.query(query.getQuery());
-        ofNullable(query.getOperationName()).filter(J::nonBlank).ifPresent(builder::operationName);
-        ofNullable(query.getVariables()).ifPresent(builder::variables);
-        final var completableFuture = graphQL.executeAsync(builder.build());
+        final var completableFuture = graphQL.executeAsync(builder -> {
+            builder.query(query.getQuery());
+            ofNullable(query.getOperationName()).filter(J::nonBlank).ifPresent(builder::operationName);
+            ofNullable(query.getVariables()).ifPresent(builder::variables);
+            return builder;
+        });
         return Future.fromCompletionStage(completableFuture, vertx.getOrCreateContext())
                 .map(ExecutionResult::toSpecification)
                 .map(JsonObject::new);
