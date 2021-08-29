@@ -73,22 +73,21 @@ public abstract class ApiModule extends AbstractModule {
     }
 
     protected Stream<Method> streamMethod(Class clazz) {
-        return cg_sr().getClassesWithMethodAnnotation(clazz.getName()).loadClasses().parallelStream()
+        return cg_sr().getClassesWithMethodAnnotation(clazz.getName()).loadClasses().stream()
                 .map(Class::getMethods)
                 .flatMap(Arrays::stream)
-                .parallel()
                 .filter(it -> Objects.nonNull(it.getAnnotation(clazz)));
     }
 
     protected Stream<Class<?>> streamClass(Class clazz) {
-        return cg_sr().getClassesWithAnnotation(clazz.getName()).loadClasses().parallelStream();
+        return cg_sr().getClassesWithAnnotation(clazz.getName()).loadClasses().stream();
     }
 
     @Named(ACTIONS)
     @Singleton
     @Provides
     private Collection<Method> ACTIONS() {
-        final var ret = streamMethod(ApiAction.class).collect(toUnmodifiableSet());
+        final var ret = streamMethod(ApiAction.class).parallel().collect(toUnmodifiableSet());
         ret.parallelStream().collect(groupingBy(it -> {
             final var annotation = it.getAnnotation(ApiAction.class);
             final var service = ofNullable(annotation.service()).filter(J::nonBlank).orElse(this.service);
@@ -154,14 +153,14 @@ public abstract class ApiModule extends AbstractModule {
         throw new RuntimeException();
     }
 
-    protected void prepareRuntimeWiring(RuntimeWiring.Builder runtimeWiringBuilder) {
+    protected void prepareRuntimeWiring(RuntimeWiring.Builder builder) {
     }
 
     @Named(GRAPHQL_ACTIONS)
     @Singleton
     @Provides
     private Collection<Class<?>> GRAPHQL_ACTIONS() {
-        final var ret = streamClass(GraphqlAction.class).collect(toUnmodifiableSet());
+        final var ret = streamClass(GraphqlAction.class).parallel().collect(toUnmodifiableSet());
         ret.parallelStream().collect(groupingBy(it -> {
             final var annotation = it.getAnnotation(GraphqlAction.class);
             final var type = annotation.type();
