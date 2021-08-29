@@ -122,9 +122,11 @@ public abstract class ApiModule extends AbstractModule {
             switch (annotation.type()) {
                 case QUERY: {
                     queryBuilder.put(action, dataFetcher);
+                    break;
                 }
                 case MUTATION: {
                     mutationBuilder.put(action, dataFetcher);
+                    break;
                 }
             }
         });
