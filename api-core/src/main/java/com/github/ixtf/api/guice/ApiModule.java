@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.github.ixtf.guice.GuiceModule.getInstance;
@@ -117,8 +118,7 @@ public abstract class ApiModule extends AbstractModule {
         classes.forEach(clazz -> {
             final var annotation = clazz.getAnnotation(GraphqlAction.class);
             final var action = annotation.action();
-            final var instance = (BiConsumer) getInstance(clazz);
-            final var dataFetcher = VertxDataFetcher.create(instance);
+            final var dataFetcher = generateDataFetcher(clazz);
             switch (annotation.type()) {
                 case QUERY: {
                     queryBuilder.put(action, dataFetcher);
@@ -137,6 +137,21 @@ public abstract class ApiModule extends AbstractModule {
         final var schemaGenerator = new SchemaGenerator();
         final var graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
         return GraphQL.newGraphQL(graphQLSchema).build();
+    }
+
+    @SuppressWarnings("rawtypes")
+    private DataFetcher<?> generateDataFetcher(Class<?> clazz) {
+        final var instance = getInstance(clazz);
+        if (instance instanceof DataFetcher) {
+            return (DataFetcher) instance;
+        } else if (instance instanceof BiConsumer) {
+            final var biConsumer = (BiConsumer) instance;
+            return VertxDataFetcher.create(biConsumer);
+        } else if (instance instanceof Function) {
+            final var function = (Function) instance;
+            return VertxDataFetcher.create(function);
+        }
+        throw new RuntimeException();
     }
 
     protected void prepareRuntimeWiring(RuntimeWiring.Builder runtimeWiringBuilder) {
