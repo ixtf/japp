@@ -26,8 +26,8 @@ public class GenericFieldRepresentation extends AbstractFieldRepresentation {
 
     GenericFieldRepresentation(FieldType type, Field field, String name, Class<? extends AttributeConverter> converter) {
         super(type, name, field, converter);
-        parameterizedType = ParameterizedType.class.cast(getNativeField().getGenericType());
-        rawType = Class.class.cast(parameterizedType.getRawType());
+        parameterizedType = (ParameterizedType) getNativeField().getGenericType();
+        rawType = (Class) parameterizedType.getRawType();
         // fixme Set<TreeSet<elementType>> 情况下会报错
         elementType = getActualType(parameterizedType.getActualTypeArguments()[0]);
         entityField = elementType.getAnnotation(Entity.class) != null;
@@ -36,10 +36,10 @@ public class GenericFieldRepresentation extends AbstractFieldRepresentation {
 
     private Class getActualType(Type type) {
         if (type instanceof ParameterizedType) {
-            final ParameterizedType pType = (ParameterizedType) type;
+            final var pType = (ParameterizedType) type;
             return getActualType(pType.getActualTypeArguments()[0]);
         }
-        return Class.class.cast(type);
+        return (Class) type;
     }
 
     @Override
@@ -48,7 +48,7 @@ public class GenericFieldRepresentation extends AbstractFieldRepresentation {
     }
 
     public Collector getCollector() {
-        Class<?> type = getNativeField().getType();
+        final var type = getNativeField().getType();
         if (Deque.class.equals(type) || Queue.class.equals(type)) {
             return Collectors.toCollection(LinkedList::new);
         } else if (List.class.isAssignableFrom(type) || Collection.class.equals(type) || Iterable.class.equals(type)) {
@@ -56,10 +56,10 @@ public class GenericFieldRepresentation extends AbstractFieldRepresentation {
         } else if (NavigableSet.class.equals(type) || SortedSet.class.equals(type)) {
             return Collectors.toCollection(TreeSet::new);
         } else if (Set.class.isAssignableFrom(type)) {
-            final Type genericType = getNativeField().getGenericType();
+            final var genericType = getNativeField().getGenericType();
             if (genericType instanceof ParameterizedType) {
-                final ParameterizedType parameterizedType = (ParameterizedType) genericType;
-                final Type subType = parameterizedType.getActualTypeArguments()[0];
+                final var pType = (ParameterizedType) genericType;
+                final var subType = pType.getActualTypeArguments()[0];
                 if (subType instanceof TreeSet) {
 
                 }
@@ -90,13 +90,13 @@ public class GenericFieldRepresentation extends AbstractFieldRepresentation {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("GenericFieldRepresentation{");
-        sb.append(", type=").append(type);
-        sb.append(", field=").append(nativeField);
-        sb.append(", name='").append(colName).append('\'');
-        sb.append(", fieldName='").append(fieldName).append('\'');
-        sb.append(", converter=").append(converter);
-        sb.append('}');
-        return sb.toString();
+        return new StringBuilder("GenericFieldRepresentation{")
+                .append(", type=").append(type)
+                .append(", field=").append(nativeField)
+                .append(", name='").append(colName).append('\'')
+                .append(", fieldName='").append(fieldName).append('\'')
+                .append(", converter=").append(converter)
+                .append('}')
+                .toString();
     }
 }

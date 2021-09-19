@@ -2,7 +2,6 @@ package com.github.ixtf.api;
 
 import com.google.inject.Module;
 import com.google.inject.*;
-import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.name.Named;
 import io.jaegertracing.Configuration;
 import io.opentracing.Tracer;
@@ -15,7 +14,6 @@ import io.vertx.ext.web.handler.CorsHandler;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -39,7 +37,7 @@ public class ApiModule extends AbstractModule {
         if (INJECTOR == null) {
             INJECTOR = Guice.createInjector(Stream.concat(
                     Stream.of(new ApiModule(vertx, config)),
-                    ofNullable(modules).map(Arrays::stream).stream().flatMap(Function.identity())
+                    ofNullable(modules).stream().flatMap(Arrays::stream)
             ).toArray(Module[]::new));
         }
     }
@@ -60,7 +58,7 @@ public class ApiModule extends AbstractModule {
     protected void configure() {
         bind(Vertx.class).toInstance(vertx);
         bind(JsonObject.class).annotatedWith(CONFIG).toInstance(config);
-        OptionalBinder.newOptionalBinder(binder(), Tracer.class);
+        bind(Tracer.class).toInstance(Configuration.fromEnv("api").getTracer());
     }
 
     @Singleton
@@ -96,19 +94,6 @@ public class ApiModule extends AbstractModule {
                 CONTENT_TYPE.toString()
         );
         return CorsHandler.create(allowedOriginPattern).allowedHeaders(allowedHeaders).allowCredentials(true);
-    }
-
-    @Singleton
-    @Provides
-    private Tracer Tracer() {
-        return ofNullable(config.getJsonObject("tracer")).map(it -> {
-            final var serviceName = it.getString("serviceName", "api");
-            final var agentHost = it.getString("agentHost");
-            final var samplerConfig = Configuration.SamplerConfiguration.fromEnv().withType("const").withParam(1);
-            final var senderConfiguration = new Configuration.SenderConfiguration().withAgentHost(agentHost);
-            final var reporterConfig = Configuration.ReporterConfiguration.fromEnv().withSender(senderConfiguration).withLogSpans(true);
-            return new Configuration(serviceName).withSampler(samplerConfig).withReporter(reporterConfig).getTracer();
-        }).orElse(null);
     }
 
 }

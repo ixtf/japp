@@ -7,6 +7,7 @@ import io.vertx.core.Launcher;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.tracing.TracingOptions;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import lombok.SneakyThrows;
@@ -31,7 +32,8 @@ public class ApiLauncher extends Launcher {
     public void beforeStartingVertx(VertxOptions options) {
         final var prometheusOptions = new VertxPrometheusOptions().setEnabled(true).setPublishQuantiles(true);
         final var metricsOptions = new MicrometerMetricsOptions().setEnabled(true).setPrometheusOptions(prometheusOptions);
-        options.setMaxEventLoopExecuteTime(Duration.ofSeconds(30).toNanos()).setMetricsOptions(metricsOptions);
+        final var tracingOptions = new TracingOptions();
+        options.setMaxEventLoopExecuteTime(Duration.ofSeconds(30).toNanos()).setTracingOptions(tracingOptions).setMetricsOptions(metricsOptions);
         ofNullable(System.getProperty("hazelcast.local.publicAddress")).ifPresent(it -> options.getEventBusOptions().setHost(it).setClusterPublicHost(it));
     }
 

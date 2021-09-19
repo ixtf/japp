@@ -6,7 +6,7 @@
 
     <groupId>com.github.ixtf.japp</groupId>
     <artifactId>bom</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -14,19 +14,18 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <jappVersion>1.0.0</jappVersion>
-        <vertxVersion>4.0.3</vertxVersion>
-        <micrometerVersion>1.6.5</micrometerVersion>
+        <vertxVersion>4.1.2</vertxVersion>
+        <micrometerVersion>1.7.3</micrometerVersion>
         <slf4jVersion>1.7.30</slf4jVersion>
         <logbackVersion>1.2.3</logbackVersion>
-        <jacksonVersion>2.12.2</jacksonVersion>
-        <reactorVersion>2020.0.5</reactorVersion>
+        <jacksonVersion>2.12.4</jacksonVersion>
+        <reactorVersion>2020.0.10</reactorVersion>
         <guiceVersion>5.0.1</guiceVersion>
-        <jaegerVersion>1.5.0</jaegerVersion>
-        <keycloakVersion>11.0.3</keycloakVersion>
-        <droolsVersion>7.51.0.Final</droolsVersion>
+        <jaegerVersion>1.6.0</jaegerVersion>
+        <keycloakVersion>13.0.0</keycloakVersion>
+        <droolsVersion>7.56.0.Final</droolsVersion>
         <grpcVersion>1.28.1</grpcVersion>
         <protobufVersion>3.11.4</protobufVersion>
-        <netifiVersion>1.6.10</netifiVersion>
     </properties>
 
     <dependencyManagement>
@@ -53,12 +52,12 @@
             </dependency>
             <dependency>
                 <groupId>com.github.ixtf.japp</groupId>
-                <artifactId>persistence-mongo</artifactId>
+                <artifactId>mongo</artifactId>
                 <version>${jappVersion}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.ixtf.japp</groupId>
-                <artifactId>rabbitmq</artifactId>
+                <artifactId>persistence-mongo</artifactId>
                 <version>${jappVersion}</version>
             </dependency>
             <dependency>
@@ -126,12 +125,12 @@
             <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java</artifactId>
-                <version>16.1</version>
+                <version>17.1</version>
             </dependency>
             <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java-extended-scalars</artifactId>
-                <version>15.0.0</version>
+                <version>17.0</version>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
@@ -226,14 +225,6 @@
                 <!--                <type>pom</type>-->
                 <!--                <scope>import</scope>-->
             </dependency>
-
-            <dependency>
-                <groupId>com.netifi</groupId>
-                <artifactId>netifi-bom</artifactId>
-                <version>${netifiVersion}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -244,7 +235,7 @@
         </repository>
         <repository>
             <id>maven.geo-solutions.it</id>
-            <url>http://maven.geo-solutions.it</url>
+            <url>https://maven.geo-solutions.it</url>
         </repository>
     </repositories>
 </project>

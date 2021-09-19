@@ -2,10 +2,12 @@ package com.github.ixtf.persistence.mongo;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.ixtf.J;
 import com.github.ixtf.persistence.EntityDTO;
 import com.github.ixtf.persistence.api.EntityConverter;
 import com.github.ixtf.persistence.reflection.ClassRepresentations;
 import com.github.ixtf.persistence.reflection.FieldRepresentation;
+import com.mongodb.reactivestreams.client.FindPublisher;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.MongoDatabase;
@@ -21,6 +23,7 @@ import reactor.core.publisher.Mono;
 import java.lang.reflect.InvocationTargetException;
 import java.security.Principal;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
@@ -32,6 +35,7 @@ import static java.util.Optional.ofNullable;
 public abstract class Jmongo {
     public static final String ID_COL = "_id";
     public static final String DELETED_COL = "deleted";
+    public static final Mono<Bson> DELETED_FILTER$ = Mono.fromCallable(() -> eq(DELETED_COL, false));
     private static final LoadingCache<Class<? extends JmongoOptions>, Jmongo> CACHE = Caffeine.newBuilder().build(clazz -> Jmongo.by(clazz.getDeclaredConstructor().newInstance()));
     private final LoadingCache<Pair<Class, Object>, Object> entityCache;
     private final EntityConverter entityConverter;
@@ -107,6 +111,18 @@ public abstract class Jmongo {
         return new MongoUnitOfWork(this);
     }
 
+    public <T> Mono<FindPublisher<T>> findPublisher(MongoCollection<T> collection, Publisher<Bson> filter$) {
+        return Flux.from(filter$).collectList().map(filters -> {
+            if (J.isEmpty(filters)) {
+                return collection.find();
+            } else if (filters.size() == 1) {
+                return collection.find(filters.get(0));
+            } else {
+                return collection.find(and(filters));
+            }
+        });
+    }
+
     public <T> Mono<T> find(Class<T> entityClass, Object id) {
         if (isCacheable(entityClass)) {
             return Mono.fromCallable(() -> {
@@ -171,7 +187,7 @@ public abstract class Jmongo {
 
     public <T> Flux<T> query(Class<T> entityClass, int skip, int limit) {
         final var condition = eq(DELETED_COL, false);
-        return Flux.from(collection(entityClass).find(condition).skip(skip).limit(limit)).map(it -> entityConverter.toEntity(entityClass, it));
+        return Flux.from(collection(entityClass).find(condition).batchSize(limit).skip(skip).limit(limit)).map(it -> entityConverter.toEntity(entityClass, it));
     }
 
     // 按条件查询
@@ -184,7 +200,7 @@ public abstract class Jmongo {
     public <T> Flux<T> query(Class<T> entityClass, Bson filter, int skip, int limit) {
         final var deletedFilter = eq(DELETED_COL, false);
         final var condition = and(filter, deletedFilter);
-        return Flux.from(collection(entityClass).find(condition).skip(skip).limit(limit)).map(it -> entityConverter.toEntity(entityClass, it));
+        return Flux.from(collection(entityClass).find(condition).batchSize(limit).skip(skip).limit(limit)).map(it -> entityConverter.toEntity(entityClass, it));
     }
 
     public <T> Flux<T> query(Class<T> entityClass, Optional<Bson> filterOpt) {
@@ -221,6 +237,49 @@ public abstract class Jmongo {
         final var idFieldName = classRepresentation.getId().map(FieldRepresentation::getFieldName).get();
         final var id = PropertyUtils.getProperty(entity, idFieldName);
         return exists(entity.getClass(), id);
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Publisher<Bson> filter$, int limit) {
+        return findPublisher(collection(clazz), Flux.merge(filter$, DELETED_FILTER$)).flatMapMany(publisher -> {
+            final var max = Math.max(limit, 10);
+            return publisher.limit(max).batchSize(max);
+        }).map(it -> toEntity(clazz, it));
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Stream<Bson> stream, int limit) {
+        return autocomplete(clazz, Mono.justOrEmpty(stream).flatMapMany(Flux::fromStream), limit);
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Iterable<Bson> iterable, int limit) {
+        return autocomplete(clazz, Mono.justOrEmpty(iterable).flatMapMany(Flux::fromIterable), limit);
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, int limit, Bson... array) {
+        return autocomplete(clazz, Mono.justOrEmpty(array).flatMapMany(Flux::fromArray), limit);
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, int limit, Optional<Bson>... array) {
+        return autocomplete(clazz, Mono.justOrEmpty(array).flatMapMany(Flux::fromArray).flatMap(Mono::justOrEmpty), limit);
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Publisher<Bson> filter$) {
+        return autocomplete(clazz, filter$, 10);
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Stream<Bson> stream) {
+        return autocomplete(clazz, Mono.justOrEmpty(stream).flatMapMany(Flux::fromStream));
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Iterable<Bson> iterable) {
+        return autocomplete(clazz, Mono.justOrEmpty(iterable).flatMapMany(Flux::fromIterable));
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Bson... array) {
+        return autocomplete(clazz, Mono.justOrEmpty(array).flatMapMany(Flux::fromArray));
+    }
+
+    public <T> Flux<T> autocomplete(Class<T> clazz, Optional<Bson>... array) {
+        return autocomplete(clazz, Mono.justOrEmpty(array).flatMapMany(Flux::fromArray).flatMap(Mono::justOrEmpty));
     }
 
 }

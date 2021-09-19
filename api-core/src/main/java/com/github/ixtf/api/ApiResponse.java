@@ -7,18 +7,12 @@ import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.commons.lang3.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-
-import static com.github.ixtf.Constant.MAPPER;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toUnmodifiableList;
-import static java.util.stream.Collectors.toUnmodifiableMap;
 
 @Accessors(chain = true)
 public class ApiResponse {
@@ -26,50 +20,36 @@ public class ApiResponse {
     @Setter
     private int status = 200;
     @Getter
-    private Map<String, String> headers = Maps.newConcurrentMap();
+    private final Map<String, String> headers = Maps.newConcurrentMap();
     @Setter
     private Object body;
 
-    public static Mono<?> bodyMono(Object o) {
-        if (o == null) {
-            return Mono.just(StringUtils.EMPTY);
-        }
-        if (o instanceof String || o instanceof byte[] || o instanceof ApiResponse) {
-            return Mono.just(o);
-        }
-        if (o instanceof JsonObject) {
-            final var v = (JsonObject) o;
-            return Mono.just(v.encode().getBytes(UTF_8));
-        }
-        if (o instanceof JsonArray) {
-            final var v = (JsonArray) o;
-            return Mono.just(v.encode().getBytes(UTF_8));
-        }
-        if (o instanceof CompletionStage) {
-            final var v = (CompletionStage) o;
-            return Mono.fromCompletionStage(v).flatMap(ApiResponse::bodyMono).defaultIfEmpty(StringUtils.EMPTY);
-        }
+    public static CompletionStage<?> bodyFuture(Object o) {
         if (o instanceof Mono) {
-            final var v = (Mono) o;
-            return v.flatMap(ApiResponse::bodyMono).defaultIfEmpty(StringUtils.EMPTY);
+            final var v = (Mono<?>) o;
+            return bodyFuture(v.toFuture());
         }
         if (o instanceof Flux) {
-            final var v = (Flux) o;
-            return v.map(ApiResponse::convertInnerValue).collectList().flatMap(ApiResponse::bodyMono);
+            final var v = (Flux<?>) o;
+            return bodyFuture(v.collectList().map(JsonArray::new));
         }
-        return Mono.fromCallable(() -> MAPPER.writeValueAsBytes(o));
-    }
-
-    private static Object convertInnerValue(Object o) {
         if (o instanceof JsonObject) {
             final var v = (JsonObject) o;
-            return v.stream().parallel().collect(toUnmodifiableMap(Entry::getKey, it -> convertInnerValue(it.getValue())));
+            return CompletableFuture.supplyAsync(v::toBuffer);
         }
         if (o instanceof JsonArray) {
             final var v = (JsonArray) o;
-            return v.stream().map(ApiResponse::convertInnerValue).collect(toUnmodifiableList());
+            return CompletableFuture.supplyAsync(v::toBuffer);
         }
-        return o;
+        if (o instanceof CompletionStage) {
+            final var v = (CompletionStage<?>) o;
+            return v.thenCompose(ApiResponse::bodyFuture);
+        }
+        return CompletableFuture.completedStage(o);
+    }
+
+    public CompletionStage<?> bodyFuture() {
+        return bodyFuture(body);
     }
 
     public ApiResponse putHeaders(final String key, final String value) {
@@ -83,9 +63,5 @@ public class ApiResponse {
 
     public ApiResponse putHeaders(final AsciiString key, final String value) {
         return putHeaders(key.toString(), value);
-    }
-
-    public Mono<?> bodyMono() {
-        return bodyMono(body);
     }
 }

@@ -2,14 +2,18 @@ package com.github.ixtf;
 
 import com.fasterxml.uuid.Generators;
 import com.github.ixtf.codec.Base58;
+import lombok.AccessLevel;
+import lombok.Cleanup;
+import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.Validate;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
@@ -17,12 +21,21 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * @author jzb 2018-08-17
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Jcodec {
 
-    public static final UUID _uuid() {
+    @SneakyThrows(IOException.class)
+    public static String sha256Hex(File file) {
+        @Cleanup final var fis = new FileInputStream(file);
+        return DigestUtils.sha256Hex(fis);
+    }
+
+    public static UUID _uuid() {
         return Generators.timeBasedGenerator().generate();
     }
 
@@ -30,15 +43,15 @@ public final class Jcodec {
      * @param names 注意:不要排序，不要 parallel stream，全部原始顺序
      * @return UUID
      */
-    public static final UUID _uuid(final String... names) {
-        final String join = String.join(",", names);
+    public static UUID _uuid(final String... names) {
+        final var join = String.join(",", names);
         Validate.notBlank(join);
-        final byte[] bytes = join.getBytes(StandardCharsets.UTF_8);
+        final var bytes = join.getBytes(UTF_8);
         return UUID.nameUUIDFromBytes(bytes);
     }
 
     public static String uuid58(final UUID uuid) {
-        ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+        final var bb = ByteBuffer.wrap(new byte[16]);
         bb.putLong(uuid.getMostSignificantBits());
         bb.putLong(uuid.getLeastSignificantBits());
         return Base58.encode(bb.array());
@@ -69,14 +82,14 @@ public final class Jcodec {
                 .filter(J::nonBlank)
                 .map(__ -> {
                     try {
-                        final byte[] salt = new byte[16];
+                        final var salt = new byte[16];
                         SecureRandom.getInstance("SHA1PRNG").nextBytes(salt);
-                        final int iterationCount = 30000;
-                        final int keySize = 160;
-                        final byte[] hash = password(password, salt, iterationCount, keySize);
-                        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        final var iterationCount = 30000;
+                        final var keySize = 160;
+                        final var hash = password(password, salt, iterationCount, keySize);
+                        final var baos = new ByteArrayOutputStream();
                         baos.write(255);
-                        final ObjectOutputStream oos = new ObjectOutputStream(baos);
+                        final var oos = new ObjectOutputStream(baos);
                         oos.write(hash.length);
                         oos.write(salt.length);
                         oos.write(hash);
@@ -95,29 +108,29 @@ public final class Jcodec {
     public static boolean checkPassword(final String encryptPassword, final String password) {
         try {
             Validate.notBlank(encryptPassword);
-            final InputStream is = new ByteArrayInputStream(Base64.decodeBase64(encryptPassword));
-            final int version = is.read();
+            final var is = new ByteArrayInputStream(Base64.decodeBase64(encryptPassword));
+            final var version = is.read();
             if (version != 255) {
                 throw new IOException("version mismatch");
             }
-            final ObjectInputStream ois = new ObjectInputStream(is);
-            final byte[] hash = new byte[ois.read()];
-            final byte[] salt = new byte[ois.read()];
+            final var ois = new ObjectInputStream(is);
+            final var hash = new byte[ois.read()];
+            final var salt = new byte[ois.read()];
             ois.read(hash);
             ois.read(salt);
-            final int iterationCount = ois.readInt();
-            final int keySize = ois.readInt();
-            final byte[] _hash = password(password, salt, iterationCount, keySize);
+            final var iterationCount = ois.readInt();
+            final var keySize = ois.readInt();
+            final var _hash = password(password, salt, iterationCount, keySize);
             return Arrays.equals(hash, _hash);
         } catch (Exception ex) {
             return false;
         }
     }
 
-    private static final byte[] password(final String password, final byte[] salt, final int iterationCount, final int keySize) throws IOException, InvalidKeySpecException, NoSuchAlgorithmException {
+    private static byte[] password(final String password, final byte[] salt, final int iterationCount, final int keySize) throws IOException, InvalidKeySpecException, NoSuchAlgorithmException {
         Validate.notBlank(password);
-        final PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iterationCount, keySize);
-        final SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+        final var spec = new PBEKeySpec(password.toCharArray(), salt, iterationCount, keySize);
+        final var factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
         return factory.generateSecret(spec).getEncoded();
     }
 }
