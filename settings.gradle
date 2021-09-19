@@ -21,13 +21,11 @@ include 'guice'
 include 'poi'
 include 'pinyin'
 
-include 'persistence-core'
-include 'persistence-mongo'
-include 'persistence-lucene'
-
 include 'api'
 include 'api-core'
 include 'api-vertx'
-include 'mongo'
+
 include 'persistence'
+include 'mongo'
+include 'lucene'
 
