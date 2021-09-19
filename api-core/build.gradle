@@ -1,5 +1,5 @@
 dependencies {
-    api project(":guice"),
+    api project(":core"), project(":guice"),
             "jakarta.ws.rs:jakarta.ws.rs-api",
             "io.projectreactor:reactor-core",
             "io.vertx:vertx-web-graphql",
