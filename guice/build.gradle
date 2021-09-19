@@ -1,4 +1,4 @@
 dependencies {
     api project(":core"),
-            "com.google.inject:guice:5.0.1"
+            "com.google.inject:guice"
 }

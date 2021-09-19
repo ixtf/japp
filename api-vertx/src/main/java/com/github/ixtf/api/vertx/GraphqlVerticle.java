@@ -1,114 +1,96 @@
 package com.github.ixtf.api.vertx;
 
-import com.github.ixtf.api.GraphqlAction;
+import com.github.ixtf.J;
+import com.github.ixtf.api.Util;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import graphql.ExecutionResult;
 import graphql.GraphQL;
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.handler.graphql.impl.GraphQLBatch;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLInput;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLQuery;
-import lombok.AccessLevel;
-import lombok.Getter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
-import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
-import static com.github.ixtf.guice.GuiceModule.getInstance;
+import static com.github.ixtf.api.guice.ApiModule.GRAPHQL_ADDRESS;
 import static com.github.ixtf.guice.GuiceModule.injectMembers;
-import static graphql.ExecutionInput.newExecutionInput;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toList;
 
+@Slf4j
 public class GraphqlVerticle extends AbstractVerticle implements Handler<Message<Buffer>> {
-    @Getter(lazy = true, value = AccessLevel.PRIVATE)
-    private static final GraphQL graphQL = _graphQL();
+    @Named(GRAPHQL_ADDRESS)
+    @Inject
+    private String address;
+    @Inject
+    private GraphQL graphQL;
     @Inject
     private Optional<Tracer> tracerOpt;
 
-    protected static String address() {
-        return "";
+    protected Optional<Span> spanOpt(Message<Buffer> reply) {
+        final var builder = ImmutableMap.<String, String>builder();
+        reply.headers().forEach(entry -> builder.put(entry.getKey(), entry.getValue()));
+        final var headers = builder.build();
+        return Util.spanOpt(tracerOpt, address, headers);
     }
-
-    protected static GraphQL _graphQL() {
-//        final var typeDefinitionRegistry = buildTypeDefinitionRegistry();
-//        final var runtimeWiring = buildRuntimeWiring(getInstance(Map.class, Names.named(GRAPHQL_ACTION_MAP)));
-//        final var schemaGenerator = new SchemaGenerator();
-//        final var graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
-//        return GraphQL.newGraphQL(graphQLSchema).build();
-        return null;
-    }
-
 
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
         injectMembers(this);
-        vertx.eventBus().consumer(address(), this).completionHandler(startPromise);
+        vertx.eventBus().consumer(address, this).completionHandler(startPromise);
     }
 
     @Override
     public void handle(Message<Buffer> reply) {
-        final var ctx = new VertxContext(reply, tracerOpt);
-        final var spanOpt = ctx.spanOpt();
+        final var spanOpt = spanOpt(reply);
         Mono.fromCompletionStage(() -> {
             final var graphQLInput = GraphQLInput.decode(reply.body());
-            // todo GraphQLBatch
-            final var graphQLQuery = (GraphQLQuery) graphQLInput;
-            final var executionInput = newExecutionInput()
-                    .query(graphQLQuery.getQuery())
-                    .context(ctx)
-                    .build();
-            return getGraphQL().executeAsync(executionInput);
-        }).map(executionResult -> {
-            final var specification = executionResult.toSpecification();
-            final var jsonObject = new JsonObject(specification);
-            return jsonObject.toBuffer();
+            if (graphQLInput instanceof GraphQLBatch) {
+                return handleBatch((GraphQLBatch) graphQLInput).map(JsonArray::toBuffer).toCompletionStage();
+            } else if (graphQLInput instanceof GraphQLQuery) {
+                return handleQuery((GraphQLQuery) graphQLInput).map(JsonObject::toBuffer).toCompletionStage();
+            }
+            throw new RuntimeException();
         }).subscribe(it -> {
             reply.reply(it);
             spanOpt.ifPresent(Span::finish);
         }, e -> {
             reply.fail(400, e.getMessage());
+            log.error("", e);
             spanOpt.ifPresent(span -> span.setTag(Tags.ERROR, true).log(e.getMessage()).finish());
         });
     }
 
-    private static class ReplyDataFetcher implements DataFetcher {
-        private final Object instance;
-        private final Method method;
-        private final String address;
-        @Getter
-        private final String operationName;
-        private final Logger log;
-
-        private ReplyDataFetcher(Method method) {
-            this.method = method;
-
-            final var declaringClass = method.getDeclaringClass();
-            instance = getInstance(declaringClass);
-
-            final var annotation = method.getAnnotation(GraphqlAction.class);
-            final var type = annotation.type();
-            final var action = annotation.action();
-            address = String.join(":", address(), type, action);
-
-            operationName = String.join(":", instance.getClass().getName(), method.getName());
-            log = LoggerFactory.getLogger(instance.getClass());
-        }
-
-        @Override
-        public Object get(DataFetchingEnvironment env) throws Exception {
-            final var source = env.getSource();
-            return null;
-        }
+    private Future<JsonObject> handleQuery(GraphQLQuery query) {
+        final var completableFuture = graphQL.executeAsync(builder -> {
+            builder.query(query.getQuery());
+            ofNullable(query.getOperationName()).filter(J::nonBlank).ifPresent(builder::operationName);
+            ofNullable(query.getVariables()).ifPresent(builder::variables);
+            return builder;
+        });
+        return Future.fromCompletionStage(completableFuture, vertx.getOrCreateContext())
+                .map(ExecutionResult::toSpecification)
+                .map(JsonObject::new);
     }
 
+    private Future<JsonArray> handleBatch(GraphQLBatch batch) {
+        return StreamSupport.stream(batch.spliterator(), false)
+                .map(q -> (Future) handleQuery(q))
+                .collect(collectingAndThen(toList(), CompositeFuture::all))
+                .map(CompositeFuture::list)
+                .map(JsonArray::new);
+    }
 }

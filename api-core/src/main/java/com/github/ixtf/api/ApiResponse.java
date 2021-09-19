@@ -24,9 +24,9 @@ public class ApiResponse {
     @Setter
     private Object body;
 
-    public static CompletionStage bodyFuture(Object o) {
+    public static CompletionStage<?> bodyFuture(Object o) {
         if (o instanceof Mono) {
-            final var v = (Mono) o;
+            final var v = (Mono<?>) o;
             return bodyFuture(v.toFuture());
         }
         if (o instanceof Flux) {
@@ -42,13 +42,13 @@ public class ApiResponse {
             return CompletableFuture.supplyAsync(v::toBuffer);
         }
         if (o instanceof CompletionStage) {
-            final var v = (CompletionStage) o;
+            final var v = (CompletionStage<?>) o;
             return v.thenCompose(ApiResponse::bodyFuture);
         }
         return CompletableFuture.completedStage(o);
     }
 
-    public CompletionStage bodyFuture() {
+    public CompletionStage<?> bodyFuture() {
         return bodyFuture(body);
     }
 

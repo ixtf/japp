@@ -1,5 +1,6 @@
 package com.github.ixtf.api.vertx;
 
+import com.github.ixtf.J;
 import com.github.ixtf.api.ApiAction;
 import com.github.ixtf.api.ApiResponse;
 import com.github.ixtf.exception.JError;
@@ -27,12 +28,18 @@ import java.util.concurrent.CompletionStage;
 import static com.github.ixtf.Constant.MAPPER;
 import static com.github.ixtf.api.ApiResponse.bodyFuture;
 import static com.github.ixtf.api.guice.ApiModule.ACTIONS;
+import static com.github.ixtf.api.guice.ApiModule.SERVICE;
 import static com.github.ixtf.guice.GuiceModule.getInstance;
 import static com.github.ixtf.guice.GuiceModule.injectMembers;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 @Slf4j
 public class ServiceServerVerticle extends AbstractVerticle {
+    @Named(SERVICE)
+    @Inject
+    private String service;
     @Named(ACTIONS)
     @Inject
     private Collection<Method> methods;
@@ -40,13 +47,16 @@ public class ServiceServerVerticle extends AbstractVerticle {
     private Optional<Tracer> tracerOpt;
 
     @Override
-    public void start(Promise<Void> startPromise) throws Exception {
+    public void start(Promise<Void> startPromise) {
         injectMembers(this);
-        CompositeFuture.all(methods.stream().map(method -> {
-            final var handler = new ReplyHandler(method);
-            final var consumer = vertx.eventBus().consumer(handler.address).handler(handler);
-            return Future.<Void>future(p -> consumer.completionHandler(p)).onFailure(e -> log.error(handler.address, e));
-        }).collect(toUnmodifiableList())).<Void>mapEmpty().onComplete(startPromise);
+        methods.stream().map(method -> {
+            final var future = Future.<Void>future(p -> {
+                final var handler = injectMembers(new ReplyHandler(method));
+                final var consumer = vertx.eventBus().consumer(handler.address).handler(handler);
+                consumer.completionHandler(p);
+            });
+            return (Future) future;
+        }).collect(collectingAndThen(toUnmodifiableList(), CompositeFuture::all)).<Void>mapEmpty().onComplete(startPromise);
     }
 
     private class ReplyHandler implements Handler<Message<Object>> {
@@ -63,7 +73,7 @@ public class ServiceServerVerticle extends AbstractVerticle {
             instance = getInstance(declaringClass);
 
             final var annotation = method.getAnnotation(ApiAction.class);
-            final var service = annotation.service();
+            final var service = ofNullable(annotation.service()).filter(J::nonBlank).orElse(ServiceServerVerticle.this.service);
             final var action = annotation.action();
             address = String.join(":", service, action);
         }
@@ -77,25 +87,22 @@ public class ServiceServerVerticle extends AbstractVerticle {
                     .subscribe(it -> onSuccess(reply, it, new DeliveryOptions(), spanOpt), e -> onFail(reply, e, spanOpt));
         }
 
-        private void onSuccess(Message<Object> reply, CompletionStage<?> completionStage, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
-            completionStage.whenComplete((v, e) -> {
-                if (e != null) {
-                    onFail(reply, e, spanOpt);
-                } else {
-                    onSuccess(reply, v, deliveryOptions, spanOpt);
-                }
-            });
-        }
-
-        private void onSuccess(Message<Object> reply, ApiResponse apiResponse, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
-            apiResponse.getHeaders().forEach((k, v) -> deliveryOptions.addHeader(k, v));
-            deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "" + apiResponse.getStatus());
-            onSuccess(reply, apiResponse.bodyFuture(), deliveryOptions, spanOpt);
-        }
-
         private void onSuccess(Message<Object> reply, Object o, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
             if (o == null || o instanceof String || o instanceof Buffer || o instanceof byte[]) {
                 reply.reply(o, deliveryOptions);
+            } else if (o instanceof CompletionStage) {
+                ((CompletionStage<?>) o).whenComplete((v, e) -> {
+                    if (e != null) {
+                        onFail(reply, e, spanOpt);
+                    } else {
+                        onSuccess(reply, v, deliveryOptions, spanOpt);
+                    }
+                });
+            } else if (o instanceof ApiResponse) {
+                final var apiResponse = (ApiResponse) o;
+                apiResponse.getHeaders().forEach(deliveryOptions::addHeader);
+                deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "" + apiResponse.getStatus());
+                onSuccess(reply, apiResponse.bodyFuture(), deliveryOptions, spanOpt);
             } else {
                 Mono.fromCallable(() -> MAPPER.writeValueAsBytes(o)).subscribe(it -> onSuccess(reply, it, deliveryOptions, spanOpt), e -> onFail(reply, e, spanOpt));
             }

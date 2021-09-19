@@ -1,7 +1,7 @@
 dependencies {
     api project(":persistence-core"),
             "io.projectreactor:reactor-core",
-            "org.mongodb:mongodb-driver-reactivestreams:4.2.3"
+            "org.mongodb:mongodb-driver-reactivestreams:4.3.1"
 
     testImplementation "net.bytebuddy:byte-buddy"
 }
