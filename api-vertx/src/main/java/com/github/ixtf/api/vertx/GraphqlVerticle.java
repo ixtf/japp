@@ -5,7 +5,7 @@ import com.github.ixtf.api.Util;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import graphql.ExecutionResult;
+import com.sun.security.auth.UserPrincipal;
 import graphql.GraphQL;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
@@ -19,17 +19,14 @@ import io.vertx.ext.web.handler.graphql.impl.GraphQLBatch;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLInput;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLQuery;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Mono;
 
+import java.security.Principal;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.StreamSupport;
 
 import static com.github.ixtf.api.guice.ApiModule.GRAPHQL_ADDRESS;
 import static com.github.ixtf.guice.GuiceModule.injectMembers;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
 
 @Slf4j
 public class GraphqlVerticle extends AbstractVerticle implements Handler<Message<Buffer>> {
@@ -60,10 +57,10 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
         try {
             final var graphQLInput = GraphQLInput.decode(reply.body());
             if (graphQLInput instanceof GraphQLQuery) {
-                final var jsonObject = handleQuery((GraphQLQuery) graphQLInput);
+                final var jsonObject = handleQuery(reply, (GraphQLQuery) graphQLInput);
                 reply.reply(jsonObject.toBuffer());
             } else if (graphQLInput instanceof GraphQLBatch) {
-                final var jsonArray = handleBatch((GraphQLBatch) graphQLInput);
+                final var jsonArray = handleBatch(reply, (GraphQLBatch) graphQLInput);
                 reply.reply(jsonArray.toBuffer());
             } else {
                 reply.fail(400, "no GraphQLInput");
@@ -78,19 +75,20 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
         }
     }
 
-    private JsonObject handleQuery(GraphQLQuery query) {
+    private JsonObject handleQuery(Message<Buffer> reply, GraphQLQuery query) {
         final var executionResult = graphQL.execute(builder -> {
             builder.query(query.getQuery());
             ofNullable(query.getOperationName()).filter(J::nonBlank).ifPresent(builder::operationName);
             ofNullable(query.getVariables()).ifPresent(builder::variables);
+            builder.graphQLContext(ctx -> reply.headers().forEach(entry -> ctx.of(entry.getKey(), entry.getValue())));
             return builder;
         });
         return new JsonObject(executionResult.toSpecification());
     }
 
-    private JsonArray handleBatch(GraphQLBatch batch) {
+    private JsonArray handleBatch(Message<Buffer> reply, GraphQLBatch batch) {
         final var jsonArray = new JsonArray();
-        batch.forEach(it -> jsonArray.add(handleQuery(it)));
+        batch.forEach(it -> jsonArray.add(handleQuery(reply, it)));
         return jsonArray;
     }
 }
