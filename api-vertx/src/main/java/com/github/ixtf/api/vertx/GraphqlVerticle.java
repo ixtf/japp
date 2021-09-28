@@ -21,6 +21,7 @@ import io.vertx.ext.web.handler.graphql.impl.GraphQLQuery;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
@@ -56,41 +57,42 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
     @Override
     public void handle(Message<Buffer> reply) {
         final var spanOpt = spanOpt(reply);
-        Mono.fromCompletionStage(() -> {
+        try {
             final var graphQLInput = GraphQLInput.decode(reply.body());
             if (graphQLInput instanceof GraphQLBatch) {
-                return handleBatch((GraphQLBatch) graphQLInput).map(JsonArray::toBuffer).toCompletionStage();
+                final var jsonArray = handleBatch((GraphQLBatch) graphQLInput);
+                final var buffer = jsonArray.toBuffer();
+                reply.reply(buffer);
             } else if (graphQLInput instanceof GraphQLQuery) {
-                return handleQuery((GraphQLQuery) graphQLInput).map(JsonObject::toBuffer).toCompletionStage();
+                final var jsonObject = handleQuery((GraphQLQuery) graphQLInput);
+                final var buffer = jsonObject.toBuffer();
+                reply.reply(buffer);
+            } else {
+                reply.fail(400, "no GraphQLInput");
             }
-            throw new RuntimeException();
-        }).subscribe(it -> {
-            reply.reply(it);
-            spanOpt.ifPresent(Span::finish);
-        }, e -> {
-            reply.fail(400, e.getMessage());
+        } catch (Throwable e) {
+            final var errorMessage = e.getMessage();
+            reply.fail(400, errorMessage);
             log.error("", e);
-            spanOpt.ifPresent(span -> span.setTag(Tags.ERROR, true).log(e.getMessage()).finish());
-        });
+            spanOpt.ifPresent(span -> span.setTag(Tags.ERROR, true).log(errorMessage).finish());
+        } finally {
+            spanOpt.ifPresent(Span::finish);
+        }
     }
 
-    private Future<JsonObject> handleQuery(GraphQLQuery query) {
-        final var completableFuture = graphQL.executeAsync(builder -> {
+    private JsonObject handleQuery(GraphQLQuery query) {
+        final var executionResult = graphQL.execute(builder -> {
             builder.query(query.getQuery());
             ofNullable(query.getOperationName()).filter(J::nonBlank).ifPresent(builder::operationName);
             ofNullable(query.getVariables()).ifPresent(builder::variables);
             return builder;
         });
-        return Future.fromCompletionStage(completableFuture, vertx.getOrCreateContext())
-                .map(ExecutionResult::toSpecification)
-                .map(JsonObject::new);
+        return new JsonObject(executionResult.toSpecification());
     }
 
-    private Future<JsonArray> handleBatch(GraphQLBatch batch) {
-        return StreamSupport.stream(batch.spliterator(), false)
-                .map(q -> (Future) handleQuery(q))
-                .collect(collectingAndThen(toList(), CompositeFuture::all))
-                .map(CompositeFuture::list)
-                .map(JsonArray::new);
+    private JsonArray handleBatch(GraphQLBatch batch) {
+        final var jsonArray = new JsonArray();
+        StreamSupport.stream(batch.spliterator(), false).map(this::handleQuery).forEach(jsonArray::add);
+        return jsonArray;
     }
 }
