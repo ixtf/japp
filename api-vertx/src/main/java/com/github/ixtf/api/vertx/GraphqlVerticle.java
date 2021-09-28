@@ -5,12 +5,13 @@ import com.github.ixtf.api.Util;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.sun.security.auth.UserPrincipal;
 import graphql.GraphQL;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
@@ -20,8 +21,6 @@ import io.vertx.ext.web.handler.graphql.impl.GraphQLInput;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLQuery;
 import lombok.extern.slf4j.Slf4j;
 
-import java.security.Principal;
-import java.util.Map;
 import java.util.Optional;
 
 import static com.github.ixtf.api.guice.ApiModule.GRAPHQL_ADDRESS;
