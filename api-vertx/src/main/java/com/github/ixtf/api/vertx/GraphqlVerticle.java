@@ -59,14 +59,12 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
         final var spanOpt = spanOpt(reply);
         try {
             final var graphQLInput = GraphQLInput.decode(reply.body());
-            if (graphQLInput instanceof GraphQLBatch) {
-                final var jsonArray = handleBatch((GraphQLBatch) graphQLInput);
-                final var buffer = jsonArray.toBuffer();
-                reply.reply(buffer);
-            } else if (graphQLInput instanceof GraphQLQuery) {
+            if (graphQLInput instanceof GraphQLQuery) {
                 final var jsonObject = handleQuery((GraphQLQuery) graphQLInput);
-                final var buffer = jsonObject.toBuffer();
-                reply.reply(buffer);
+                reply.reply(jsonObject.toBuffer());
+            } else if (graphQLInput instanceof GraphQLBatch) {
+                final var jsonArray = handleBatch((GraphQLBatch) graphQLInput);
+                reply.reply(jsonArray.toBuffer());
             } else {
                 reply.fail(400, "no GraphQLInput");
             }
@@ -92,7 +90,7 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
 
     private JsonArray handleBatch(GraphQLBatch batch) {
         final var jsonArray = new JsonArray();
-        StreamSupport.stream(batch.spliterator(), false).map(this::handleQuery).forEach(jsonArray::add);
+        batch.forEach(it -> jsonArray.add(handleQuery(it)));
         return jsonArray;
     }
 }
