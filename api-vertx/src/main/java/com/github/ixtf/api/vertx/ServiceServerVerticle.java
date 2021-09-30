@@ -90,16 +90,15 @@ public class ServiceServerVerticle extends AbstractVerticle {
         private void onSuccess(Message<Object> reply, Object o, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
             if (o == null || o instanceof String || o instanceof Buffer || o instanceof byte[]) {
                 reply.reply(o, deliveryOptions);
-            } else if (o instanceof CompletionStage) {
-                ((CompletionStage<?>) o).whenComplete((v, e) -> {
+            } else if (o instanceof final CompletionStage<?> completionStage) {
+                completionStage.whenComplete((v, e) -> {
                     if (e != null) {
                         onFail(reply, e, spanOpt);
                     } else {
                         onSuccess(reply, v, deliveryOptions, spanOpt);
                     }
                 });
-            } else if (o instanceof ApiResponse) {
-                final var apiResponse = (ApiResponse) o;
+            } else if (o instanceof final ApiResponse apiResponse) {
                 apiResponse.getHeaders().forEach(deliveryOptions::addHeader);
                 deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "" + apiResponse.getStatus());
                 onSuccess(reply, apiResponse.bodyFuture(), deliveryOptions, spanOpt);
