@@ -55,11 +55,11 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
         final var spanOpt = spanOpt(reply);
         try {
             final var graphQLInput = GraphQLInput.decode(reply.body());
-            if (graphQLInput instanceof GraphQLQuery) {
-                final var jsonObject = handleQuery(reply, (GraphQLQuery) graphQLInput);
+            if (graphQLInput instanceof final GraphQLQuery query) {
+                final var jsonObject = handleQuery(reply, query);
                 reply.reply(jsonObject.toBuffer());
-            } else if (graphQLInput instanceof GraphQLBatch) {
-                final var jsonArray = handleBatch(reply, (GraphQLBatch) graphQLInput);
+            } else if (graphQLInput instanceof final GraphQLBatch batch) {
+                final var jsonArray = handleBatch(reply, batch);
                 reply.reply(jsonArray.toBuffer());
             } else {
                 reply.fail(400, "no GraphQLInput");

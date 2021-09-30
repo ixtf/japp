@@ -25,24 +25,19 @@ public class ApiResponse {
     private Object body;
 
     public static CompletionStage<?> bodyFuture(Object o) {
-        if (o instanceof Mono) {
-            final var v = (Mono<?>) o;
+        if (o instanceof final Mono<?> v) {
             return bodyFuture(v.toFuture());
         }
-        if (o instanceof Flux) {
-            final var v = (Flux<?>) o;
+        if (o instanceof final Flux<?> v) {
             return bodyFuture(v.collectList().map(JsonArray::new));
         }
-        if (o instanceof JsonObject) {
-            final var v = (JsonObject) o;
+        if (o instanceof final JsonObject v) {
             return CompletableFuture.supplyAsync(v::toBuffer);
         }
-        if (o instanceof JsonArray) {
-            final var v = (JsonArray) o;
+        if (o instanceof final JsonArray v) {
             return CompletableFuture.supplyAsync(v::toBuffer);
         }
-        if (o instanceof CompletionStage) {
-            final var v = (CompletionStage<?>) o;
+        if (o instanceof final CompletionStage<?> v) {
             return v.thenCompose(ApiResponse::bodyFuture);
         }
         return CompletableFuture.completedStage(o);
