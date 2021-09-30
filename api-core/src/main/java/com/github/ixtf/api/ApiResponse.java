@@ -2,6 +2,7 @@ package com.github.ixtf.api;
 
 import com.google.common.collect.Maps;
 import io.netty.util.AsciiString;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
@@ -30,6 +31,9 @@ public class ApiResponse {
         }
         if (o instanceof final Flux<?> v) {
             return bodyFuture(v.collectList().map(JsonArray::new));
+        }
+        if (o instanceof final Future<?> future) {
+            return future.toCompletionStage();
         }
         if (o instanceof final JsonObject v) {
             return CompletableFuture.supplyAsync(v::toBuffer);
