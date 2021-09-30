@@ -119,14 +119,8 @@ public abstract class ApiModule extends AbstractModule {
             final var action = annotation.action();
             final var dataFetcher = generateDataFetcher(clazz);
             switch (annotation.type()) {
-                case QUERY: {
-                    queryBuilder.put(action, dataFetcher);
-                    break;
-                }
-                case MUTATION: {
-                    mutationBuilder.put(action, dataFetcher);
-                    break;
-                }
+                case QUERY -> queryBuilder.put(action, dataFetcher);
+                case MUTATION -> mutationBuilder.put(action, dataFetcher);
             }
         });
         final var runtimeWiring = runtimeWiringBuilder

@@ -50,10 +50,5 @@ public class Constant {
         public static final String TOKEN = "E00000_3";
         public static final String EB_ACTION = "E00000_4";
     }
-//    public static void main(String[] args) {
-//        UUID uuid = UUID.nameUUIDFromBytes("SHARE_JWT_KEY_ORG_JZB".getBytes(StandardCharsets.UTF_8));
-//        System.out.println(uuid);
-//        uuid = UUID.nameUUIDFromBytes("PERMANENT_JWT_KEY_ORG_JZB".getBytes(StandardCharsets.UTF_8));
-//        System.out.println(uuid);
-//    }
+
 }
