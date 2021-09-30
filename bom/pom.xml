@@ -13,7 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <jappVersion>1.0.0</jappVersion>
+        <jappVersion>3.0.0</jappVersion>
         <vertxVersion>4.1.2</vertxVersion>
         <micrometerVersion>1.7.3</micrometerVersion>
         <slf4jVersion>1.7.30</slf4jVersion>
