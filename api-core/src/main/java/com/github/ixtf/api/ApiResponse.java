@@ -1,8 +1,10 @@
 package com.github.ixtf.api;
 
 import com.google.common.collect.Maps;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.AsciiString;
 import io.vertx.core.Future;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
@@ -62,5 +64,11 @@ public class ApiResponse {
 
     public ApiResponse putHeaders(final AsciiString key, final String value) {
         return putHeaders(key.toString(), value);
+    }
+
+    public DeliveryOptions ensure(DeliveryOptions deliveryOptions) {
+        getHeaders().forEach(deliveryOptions::addHeader);
+        deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "" + getStatus());
+        return deliveryOptions;
     }
 }

@@ -6,7 +6,6 @@ import com.github.ixtf.api.ApiResponse;
 import com.github.ixtf.exception.JError;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
@@ -88,9 +87,7 @@ public class ServiceServerVerticle extends AbstractVerticle {
         }
 
         private void onSuccess(Message<Object> reply, Object o, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
-            if (o == null || o instanceof String || o instanceof Buffer || o instanceof byte[]) {
-                reply.reply(o, deliveryOptions);
-            } else if (o instanceof final CompletionStage<?> completionStage) {
+            if (o instanceof final CompletionStage<?> completionStage) {
                 completionStage.whenComplete((v, e) -> {
                     if (e != null) {
                         onFail(reply, e, spanOpt);
@@ -98,10 +95,10 @@ public class ServiceServerVerticle extends AbstractVerticle {
                         onSuccess(reply, v, deliveryOptions, spanOpt);
                     }
                 });
-            } else if (o instanceof final ApiResponse apiResponse) {
-                apiResponse.getHeaders().forEach(deliveryOptions::addHeader);
-                deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "" + apiResponse.getStatus());
-                onSuccess(reply, apiResponse.bodyFuture(), deliveryOptions, spanOpt);
+            } else if (o == null || o instanceof String || o instanceof Buffer || o instanceof byte[]) {
+                reply.reply(o, deliveryOptions);
+            } else if (o instanceof final ApiResponse v) {
+                onSuccess(reply, v.bodyFuture(), v.ensure(deliveryOptions), spanOpt);
             } else {
                 Mono.fromCallable(() -> MAPPER.writeValueAsBytes(o)).subscribe(it -> onSuccess(reply, it, deliveryOptions, spanOpt), e -> onFail(reply, e, spanOpt));
             }
