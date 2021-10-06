@@ -1,18 +1,14 @@
 package com.github.ixtf.api;
 
 import com.google.common.collect.Maps;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.AsciiString;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
+import io.vertx.core.eventbus.DeliveryOptions;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 @Accessors(chain = true)
 public class ApiResponse {
@@ -21,36 +17,9 @@ public class ApiResponse {
     private int status = 200;
     @Getter
     private final Map<String, String> headers = Maps.newConcurrentMap();
+    @Getter
     @Setter
     private Object body;
-
-    public static CompletionStage bodyFuture(Object o) {
-        if (o instanceof Mono) {
-            final var v = (Mono) o;
-            return bodyFuture(v.toFuture());
-        }
-        if (o instanceof Flux) {
-            final var v = (Flux<?>) o;
-            return bodyFuture(v.collectList().map(JsonArray::new));
-        }
-        if (o instanceof JsonObject) {
-            final var v = (JsonObject) o;
-            return CompletableFuture.supplyAsync(v::toBuffer);
-        }
-        if (o instanceof JsonArray) {
-            final var v = (JsonArray) o;
-            return CompletableFuture.supplyAsync(v::toBuffer);
-        }
-        if (o instanceof CompletionStage) {
-            final var v = (CompletionStage) o;
-            return v.thenCompose(ApiResponse::bodyFuture);
-        }
-        return CompletableFuture.completedStage(o);
-    }
-
-    public CompletionStage bodyFuture() {
-        return bodyFuture(body);
-    }
 
     public ApiResponse putHeaders(final String key, final String value) {
         headers.put(key, value);
@@ -63,5 +32,11 @@ public class ApiResponse {
 
     public ApiResponse putHeaders(final AsciiString key, final String value) {
         return putHeaders(key.toString(), value);
+    }
+
+    public DeliveryOptions ensure(DeliveryOptions deliveryOptions) {
+        getHeaders().forEach(deliveryOptions::addHeader);
+        deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "" + getStatus());
+        return deliveryOptions;
     }
 }

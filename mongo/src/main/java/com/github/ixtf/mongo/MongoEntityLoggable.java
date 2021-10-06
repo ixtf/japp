@@ -2,18 +2,14 @@ package com.github.ixtf.mongo;
 
 import com.github.ixtf.persistence.IOperator;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.bson.codecs.pojo.annotations.BsonId;
 
 import java.io.Serializable;
 import java.util.Date;
 
 public abstract class MongoEntityLoggable extends MongoEntityBase {
-    @BsonId
-    @Getter
-    @Setter
-    private String id;
     @Getter
     @Setter
     private Operator creator;
@@ -40,20 +36,18 @@ public abstract class MongoEntityLoggable extends MongoEntityBase {
     }
 
     public void log(Operator operator, Date date) {
+        setModifier(operator);
+        setModifyDateTime(date);
         if (getCreator() == null) {
             setCreator(operator);
-        } else {
-            setModifier(operator);
-        }
-        if (getCreateDateTime() == null) {
             setCreateDateTime(date);
-        } else {
-            setModifyDateTime(date);
         }
     }
 
+    @EqualsAndHashCode(onlyExplicitlyIncluded = true)
     @Data
     public static class Operator implements Serializable {
+        @EqualsAndHashCode.Include
         private String id;
         private String name;
 

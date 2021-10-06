@@ -6,7 +6,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface ApiAction {
-    String service();
+    String service() default "";
 
     String action();
 }

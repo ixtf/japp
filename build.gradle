@@ -1,17 +1,17 @@
 plugins {
     id "idea"
     id "maven-publish"
-    id "io.spring.dependency-management" version "1.0.9.RELEASE" apply false
-    id "io.freefair.lombok" version "6.0.0-m2" apply false
-    id "com.github.johnrengelman.shadow" version "7.0.0" apply false
-    id "com.palantir.docker" version "0.26.0" apply false
-    id "com.google.protobuf" version "0.8.16" apply false
-    id "io.swagger.core.v3.swagger-gradle-plugin" version "2.1.9" apply false
+    id "io.spring.dependency-management" apply false
+    id "io.freefair.lombok" apply false
+    id "com.github.johnrengelman.shadow" apply false
+    id "com.palantir.docker" apply false
+    id "com.google.protobuf" apply false
+    id "io.swagger.core.v3.swagger-gradle-plugin" apply false
 }
 
 subprojects {
     group "com.github.ixtf.japp"
-    version "1.0.0"
+    version "3.0.0"
 
     apply plugin: "java-library"
     apply plugin: "maven-publish"
@@ -44,8 +44,8 @@ subprojects {
     }
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
         withJavadocJar()
         withSourcesJar()
     }

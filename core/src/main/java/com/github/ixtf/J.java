@@ -50,7 +50,7 @@ public class J {
         return socket.getLocalAddress().getHostAddress();
     }
 
-    public static String strTpl(final String tpl, Map<String, String> map) {
+    public static <V> String strTpl(final String tpl, Map<String, V> map) {
         return StringSubstitutor.replace(tpl, map);
     }
 
@@ -156,7 +156,8 @@ public class J {
         return FileUtils.getTempDirectory();
     }
 
-    public static void moveFile(File srcFile, File destFile) throws IOException {
+    @SneakyThrows(IOException.class)
+    public static void moveFile(File srcFile, File destFile) {
         FileUtils.moveFile(srcFile, destFile);
     }
 
@@ -191,6 +192,10 @@ public class J {
     @SneakyThrows(IOException.class)
     public static JsonNode readJson(String json) {
         return MAPPER.readTree(json);
+    }
+
+    public static JsonNode readJsonFile(String s) {
+        return readJson(getFile(s));
     }
 
     @SneakyThrows(IOException.class)

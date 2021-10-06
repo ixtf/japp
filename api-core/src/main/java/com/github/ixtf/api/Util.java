@@ -3,6 +3,7 @@ package com.github.ixtf.api;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.ixtf.J;
 import com.sun.security.auth.UserPrincipal;
+import graphql.schema.DataFetchingEnvironment;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.TextMapAdapter;
@@ -14,10 +15,16 @@ import java.security.Principal;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.github.ixtf.Constant.MAPPER;
 import static io.opentracing.propagation.Format.Builtin.TEXT_MAP;
 import static java.util.Optional.ofNullable;
 
 public class Util {
+
+    public static <T> T checkAndGetCommand(DataFetchingEnvironment env, Class<T> clazz) {
+        final T command = MAPPER.convertValue(env.getArgument("command"), clazz);
+        return J.checkAndGetCommand(command);
+    }
 
     public static <T> T checkAndGetCommand(Class<T> clazz, JsonObject jsonObject) {
         return J.checkAndGetCommand(clazz, jsonObject.encode());

@@ -1,6 +1,5 @@
 package com.github.ixtf.api;
 
-import com.github.ixtf.api.proxy.KeycloakService;
 import com.google.inject.Inject;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.opentracing.Span;
@@ -56,8 +55,6 @@ public class ApiVerticle extends AbstractVerticle implements Handler<RoutingCont
     private OAuth2Options oAuth2Options;
     @Inject
     private CorsHandler corsHandler;
-    @Inject
-    private KeycloakService keycloakService;
 
     public static String apiAddress(RoutingContext rc) {
         final var service = rc.pathParam("service");
@@ -96,14 +93,6 @@ public class ApiVerticle extends AbstractVerticle implements Handler<RoutingCont
         final var sockJSBridgeOptions = new SockJSBridgeOptions().addOutboundPermitted(permitted);
         router.mountSubRouter("/eventbus", SockJSHandler.create(vertx).bridge(sockJSBridgeOptions));
 
-        router.route("/test/:address").handler(rc -> vertx.eventBus().<Buffer>request(rc.pathParam("address"), null).onComplete(ar -> {
-            if (ar.succeeded()) {
-                final var body = ar.result().body();
-                rc.response().end(body);
-            } else {
-                rc.fail(ar.cause());
-            }
-        }));
         router.route("/api/services/:service/actions/:action").handler(oAuth2AuthHandler).handler(this);
         router.route("/dl/services/:service/actions/:action/tokens/:token").handler(this);
 
@@ -155,14 +144,11 @@ public class ApiVerticle extends AbstractVerticle implements Handler<RoutingCont
             final var body = message.body();
             if (body == null) {
                 response.end();
-            } else if (body instanceof Buffer) {
-                final var buffer = (Buffer) body;
+            } else if (body instanceof final Buffer buffer) {
                 response.end(buffer);
-            } else if (body instanceof byte[]) {
-                final var bytes = (byte[]) body;
+            } else if (body instanceof final byte[] bytes) {
                 response.end(Buffer.buffer(bytes));
-            } else if (body instanceof String) {
-                final var s = (String) body;
+            } else if (body instanceof final String s) {
                 response.putHeader(CONTENT_TYPE, TEXT_PLAIN).end(s);
             } else {
                 onFailure(rc, new RuntimeException("body must be (null | Buffer | byte[] | String)"));
