@@ -23,7 +23,7 @@ public class SockJsEvent implements Serializable {
         this(address, type, null);
     }
 
-    public void send() {
+    public void publish() {
         final var vertx = getInstance(Vertx.class);
         final var data = new JsonObject().put("type", type);
         ofNullable(payload).map(it -> it instanceof String ? it : JsonObject.mapFrom(it)).ifPresent(it -> data.put("payload", it));
