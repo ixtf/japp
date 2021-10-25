@@ -23,7 +23,7 @@
         <guiceVersion>5.0.1</guiceVersion>
         <jaegerVersion>1.6.0</jaegerVersion>
         <keycloakVersion>13.0.0</keycloakVersion>
-        <droolsVersion>7.56.0.Final</droolsVersion>
+        <droolsVersion>7.60.0.Final</droolsVersion>
         <grpcVersion>1.28.1</grpcVersion>
         <protobufVersion>3.11.4</protobufVersion>
     </properties>
