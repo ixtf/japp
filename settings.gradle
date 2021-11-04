@@ -6,11 +6,11 @@ pluginManagement {
     }
     plugins {
         id "io.spring.dependency-management" version "1.0.11.RELEASE"
-        id "io.freefair.lombok" version "6.0.0-m2"
-        id "com.github.johnrengelman.shadow" version "7.0.0"
-        id "com.palantir.docker" version "0.26.0"
+        id "io.freefair.lombok" version "6.2.0"
+        id "com.github.johnrengelman.shadow" version "7.1.0"
+        id "com.palantir.docker" version "0.30.0"
         id "com.google.protobuf" version "0.8.16"
-        id "io.swagger.core.v3.swagger-gradle-plugin" version "2.1.9"
+        id "io.swagger.core.v3.swagger-gradle-plugin" version "2.1.11"
         id "io.dotinc.vertx-codegen-plugin" version "0.1.1"
     }
 }
