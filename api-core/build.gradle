@@ -3,7 +3,6 @@ dependencies {
             "jakarta.ws.rs:jakarta.ws.rs-api",
             "io.projectreactor:reactor-core",
             "io.vertx:vertx-web-graphql",
-            "com.graphql-java:graphql-java",
             "com.graphql-java:graphql-java-extended-scalars",
             "io.vertx:vertx-hazelcast",
             "io.vertx:vertx-reactive-streams",
