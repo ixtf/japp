@@ -19,10 +19,10 @@
         <slf4jVersion>1.7.30</slf4jVersion>
         <logbackVersion>1.2.3</logbackVersion>
         <jacksonVersion>2.12.4</jacksonVersion>
-        <reactorVersion>2020.0.10</reactorVersion>
+        <reactorVersion>2020.0.12</reactorVersion>
         <guiceVersion>5.0.1</guiceVersion>
         <jaegerVersion>1.6.0</jaegerVersion>
-        <keycloakVersion>13.0.0</keycloakVersion>
+        <keycloakVersion>15.0.2</keycloakVersion>
         <droolsVersion>7.60.0.Final</droolsVersion>
         <grpcVersion>1.28.1</grpcVersion>
         <protobufVersion>3.11.4</protobufVersion>
