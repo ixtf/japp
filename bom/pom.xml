@@ -14,7 +14,7 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <jappVersion>3.0.0</jappVersion>
-        <vertxVersion>4.1.5</vertxVersion>
+        <vertxVersion>4.2.1</vertxVersion>
         <micrometerVersion>1.7.3</micrometerVersion>
         <slf4jVersion>1.7.30</slf4jVersion>
         <logbackVersion>1.2.3</logbackVersion>
