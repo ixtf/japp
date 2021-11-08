@@ -37,7 +37,7 @@ import java.security.Principal;
 import java.time.Duration;
 import java.util.HashMap;
 
-import static com.github.ixtf.api.ApiModule.*;
+import static com.github.ixtf.api.ApiModule.injectMembers;
 import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderValues.*;
@@ -67,7 +67,7 @@ public class ApiVerticle extends AbstractVerticle implements Handler<RoutingCont
         injectMembers(this);
 
 //        new ServiceBinder(vertx).register(KeycloakService.class, keycloakService);
-        vertx.eventBus().consumer(KeycloakAdmin, reply -> reply.reply(getInstance(JsonObject.class, CONFIG).getJsonObject("keycloak-admin", new JsonObject())));
+//        vertx.eventBus().consumer(KeycloakAdmin, reply -> reply.reply(getInstance(JsonObject.class, CONFIG).getJsonObject("keycloak-admin", new JsonObject())));
 
         discover(vertx, oAuth2Options).flatMap(this::createHttpServer).<Void>mapEmpty().onComplete(startPromise);
     }
