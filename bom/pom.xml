@@ -57,7 +57,7 @@
             </dependency>
             <dependency>
                 <groupId>com.github.ixtf.japp</groupId>
-                <artifactId>persistence-lucene</artifactId>
+                <artifactId>lucene</artifactId>
                 <version>${jappVersion}</version>
             </dependency>
             <dependency>
