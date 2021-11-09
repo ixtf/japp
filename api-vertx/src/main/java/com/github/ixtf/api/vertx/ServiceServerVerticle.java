@@ -2,6 +2,7 @@ package com.github.ixtf.api.vertx;
 
 import com.github.ixtf.J;
 import com.github.ixtf.api.ApiAction;
+import com.github.ixtf.api.ApiContext;
 import com.github.ixtf.api.ApiResponse;
 import com.github.ixtf.exception.JError;
 import com.google.inject.Inject;
@@ -23,9 +24,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.security.Principal;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 
 import static com.github.ixtf.Constant.MAPPER;
 import static com.github.ixtf.api.guice.ApiModule.ACTIONS;
@@ -63,11 +68,13 @@ public class ServiceServerVerticle extends AbstractVerticle {
     private class ReplyHandler implements Handler<Message<Object>> {
         private final Object instance;
         private final Method method;
+        private final Function<ApiContext, Object>[] paramFuns;
         private final String address;
         private final Logger instanceLog;
 
         private ReplyHandler(Method method) {
             this.method = method;
+            paramFuns = paramFuns();
 
             final var declaringClass = method.getDeclaringClass();
             instanceLog = LoggerFactory.getLogger(declaringClass);
@@ -79,12 +86,38 @@ public class ServiceServerVerticle extends AbstractVerticle {
             address = String.join(":", service, action);
         }
 
+        private static Function<ApiContext, Object> paramFun(Parameter parameter) {
+            final var type = parameter.getType();
+            if (ApiContext.class.isAssignableFrom(type)) {
+                return (Function) Function.identity();
+            }
+            if (Principal.class.isAssignableFrom(type)) {
+                return ctx -> ctx.principal();
+            }
+            if (String.class.isAssignableFrom(type)) {
+                return ctx -> ctx.bodyAsString();
+            }
+            return ctx -> ctx.command(type);
+        }
+
+        private Function<ApiContext, Object>[] paramFuns() {
+            final var ret = new Function[method.getParameterCount()];
+            if (ret.length > 0) {
+                final var parameters = method.getParameters();
+                for (var i = 0; i < ret.length; i++) {
+                    ret[i] = paramFun(parameters[i]);
+                }
+            }
+            return ret;
+        }
+
         @Override
         public void handle(Message<Object> reply) {
             final var ctx = new VertxContext(reply, tracerOpt, address);
             final var spanOpt = ctx.spanOpt();
             try {
-                final var invoke = method.invoke(instance, ctx);
+                final var objects = Arrays.stream(paramFuns).map(it -> it.apply(ctx)).toArray();
+                final var invoke = method.invoke(instance, objects);
                 onSuccess(reply, invoke, new DeliveryOptions(), spanOpt);
             } catch (Throwable e) {
                 onFail(reply, e, spanOpt);
