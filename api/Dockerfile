@@ -1,5 +1,4 @@
-FROM mcr.microsoft.com/java/jre:11-zulu-alpine
-#FROM azul/zulu-openjdk:16-jre
+FROM mcr.microsoft.com/java/jre:17-zulu-alpine
 
 ENV TZ Asia/Shanghai
 ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport"

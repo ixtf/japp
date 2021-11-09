@@ -113,16 +113,13 @@ public final class Jpoi {
     }
 
     public static Optional<String> stringOpt(Cell cell) {
-        return ofNullable(cell).map(__ -> {
-            switch (cell.getCellType()) {
-                case STRING:
-                    return cell.getStringCellValue();
-                case NUMERIC:
-                    final Number numeric = cell.getNumericCellValue();
-                    return "" + numeric.intValue();
-                default:
-                    return null;
+        return ofNullable(cell).map(__ -> switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue();
+            case NUMERIC -> {
+                final Number numeric = cell.getNumericCellValue();
+                yield "" + numeric.intValue();
             }
+            default -> null;
         });
     }
 

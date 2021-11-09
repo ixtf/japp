@@ -119,14 +119,8 @@ public abstract class ApiModule extends AbstractModule {
             final var action = annotation.action();
             final var dataFetcher = generateDataFetcher(clazz);
             switch (annotation.type()) {
-                case QUERY: {
-                    queryBuilder.put(action, dataFetcher);
-                    break;
-                }
-                case MUTATION: {
-                    mutationBuilder.put(action, dataFetcher);
-                    break;
-                }
+                case QUERY -> queryBuilder.put(action, dataFetcher);
+                case MUTATION -> mutationBuilder.put(action, dataFetcher);
             }
         });
         final var runtimeWiring = runtimeWiringBuilder
@@ -143,11 +137,9 @@ public abstract class ApiModule extends AbstractModule {
         final var instance = getInstance(clazz);
         if (instance instanceof DataFetcher) {
             return (DataFetcher) instance;
-        } else if (instance instanceof BiConsumer) {
-            final var biConsumer = (BiConsumer) instance;
+        } else if (instance instanceof final BiConsumer biConsumer) {
             return VertxDataFetcher.create(biConsumer);
-        } else if (instance instanceof Function) {
-            final var function = (Function) instance;
+        } else if (instance instanceof final Function function) {
             return VertxDataFetcher.create(function);
         }
         throw new RuntimeException();

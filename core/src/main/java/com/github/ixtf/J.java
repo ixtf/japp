@@ -194,6 +194,10 @@ public class J {
         return MAPPER.readTree(json);
     }
 
+    public static JsonNode readJsonFile(String s) {
+        return readJson(getFile(s));
+    }
+
     @SneakyThrows(IOException.class)
     public static JsonNode readJson(byte[] bytes) {
         return MAPPER.readTree(bytes);

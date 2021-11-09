@@ -45,21 +45,10 @@ public class JmongoRefCodec implements Codec<JmongoRef> {
             final var name = reader.readName();
             final var value = reader.readString();
             switch (name) {
-                case COLLECTION_NAME_COL: {
-                    collectionName = value;
-                    break;
-                }
-                case ID_COL: {
-                    id = value;
-                    break;
-                }
-                case DATABASE_NAME_COL: {
-                    databaseName = value;
-                    break;
-                }
-                default: {
-                    throw new CodecConfigurationException(format("解码出错： '%s' for '%s'", JmongoRef.class.getClass().getName(), name));
-                }
+                case COLLECTION_NAME_COL -> collectionName = value;
+                case ID_COL -> id = value;
+                case DATABASE_NAME_COL -> databaseName = value;
+                default -> throw new CodecConfigurationException(format("解码出错： '%s' for '%s'", JmongoRef.class.getClass().getName(), name));
             }
         }
         reader.readEndDocument();

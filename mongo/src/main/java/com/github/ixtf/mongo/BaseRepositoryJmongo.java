@@ -90,7 +90,7 @@ public abstract class BaseRepositoryJmongo<T extends MongoEntityBase> implements
      *
      * @param entity entity
      */
-    protected void _delete(T entity) {
+    public void _delete(T entity) {
         jmongo.uow().registerDelete(entity).commit();
         invalidateBuild(entity);
     }

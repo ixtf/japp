@@ -6,7 +6,6 @@ import com.github.ixtf.api.ApiResponse;
 import com.github.ixtf.exception.JError;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
@@ -14,10 +13,13 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Method;
@@ -26,7 +28,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 import static com.github.ixtf.Constant.MAPPER;
-import static com.github.ixtf.api.ApiResponse.bodyFuture;
 import static com.github.ixtf.api.guice.ApiModule.ACTIONS;
 import static com.github.ixtf.api.guice.ApiModule.SERVICE;
 import static com.github.ixtf.guice.GuiceModule.getInstance;
@@ -82,29 +83,46 @@ public class ServiceServerVerticle extends AbstractVerticle {
         public void handle(Message<Object> reply) {
             final var ctx = new VertxContext(reply, tracerOpt, address);
             final var spanOpt = ctx.spanOpt();
-            Mono.fromCallable(() -> bodyFuture(method.invoke(instance, ctx)))
-                    .doFinally(__ -> spanOpt.ifPresent(Span::finish))
-                    .subscribe(it -> onSuccess(reply, it, new DeliveryOptions(), spanOpt), e -> onFail(reply, e, spanOpt));
+            try {
+                final var invoke = method.invoke(instance, ctx);
+                onSuccess(reply, invoke, new DeliveryOptions(), spanOpt);
+            } catch (Throwable e) {
+                onFail(reply, e, spanOpt);
+            }
         }
 
         private void onSuccess(Message<Object> reply, Object o, DeliveryOptions deliveryOptions, Optional<Span> spanOpt) {
             if (o == null || o instanceof String || o instanceof Buffer || o instanceof byte[]) {
                 reply.reply(o, deliveryOptions);
-            } else if (o instanceof CompletionStage) {
-                ((CompletionStage<?>) o).whenComplete((v, e) -> {
+                spanOpt.ifPresent(Span::finish);
+            } else if (o instanceof final CompletionStage<?> completionStage) {
+                completionStage.whenComplete((v, e) -> {
                     if (e != null) {
                         onFail(reply, e, spanOpt);
                     } else {
                         onSuccess(reply, v, deliveryOptions, spanOpt);
                     }
                 });
-            } else if (o instanceof ApiResponse) {
-                final var apiResponse = (ApiResponse) o;
-                apiResponse.getHeaders().forEach(deliveryOptions::addHeader);
-                deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "" + apiResponse.getStatus());
-                onSuccess(reply, apiResponse.bodyFuture(), deliveryOptions, spanOpt);
+            } else if (o instanceof final Future<?> v) {
+                v.onComplete(ar -> {
+                    if (ar.failed()) {
+                        onFail(reply, ar.cause(), spanOpt);
+                    } else {
+                        onSuccess(reply, ar.result(), deliveryOptions, spanOpt);
+                    }
+                });
+            } else if (o instanceof final JsonObject v) {
+                onSuccess(reply, v.toBuffer(), deliveryOptions, spanOpt);
+            } else if (o instanceof final JsonArray v) {
+                onSuccess(reply, v.toBuffer(), deliveryOptions, spanOpt);
+            } else if (o instanceof final ApiResponse v) {
+                onSuccess(reply, v.getBody(), v.ensure(deliveryOptions), spanOpt);
+            } else if (o instanceof final Mono<?> v) {
+                v.subscribe(it -> onSuccess(reply, it, deliveryOptions, spanOpt), e -> onFail(reply, e, spanOpt));
+            } else if (o instanceof final Flux<?> v) {
+                onSuccess(reply, v.collectList().map(JsonArray::new), deliveryOptions, spanOpt);
             } else {
-                Mono.fromCallable(() -> MAPPER.writeValueAsBytes(o)).subscribe(it -> onSuccess(reply, it, deliveryOptions, spanOpt), e -> onFail(reply, e, spanOpt));
+                onSuccess(reply, Mono.fromCallable(() -> MAPPER.writeValueAsBytes(o)), deliveryOptions, spanOpt);
             }
         }
 
@@ -114,10 +132,11 @@ public class ServiceServerVerticle extends AbstractVerticle {
                 onFail(reply, e.getCause(), spanOpt);
             } else if (e instanceof JError || e instanceof ConstraintViolationException) {
                 reply.fail(400, e.getMessage());
+                spanOpt.ifPresent(Span::finish);
             } else {
                 reply.fail(501, e.getMessage());
                 instanceLog.error(address, e);
-                spanOpt.ifPresent(span -> span.log(e.getMessage()));
+                spanOpt.ifPresent(span -> span.log(e.getMessage()).finish());
             }
         }
     }

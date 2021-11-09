@@ -6,24 +6,24 @@
 
     <groupId>com.github.ixtf.japp</groupId>
     <artifactId>bom</artifactId>
-    <version>2.0.0</version>
+    <version>3.0.0</version>
     <packaging>pom</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <jappVersion>1.0.0</jappVersion>
-        <vertxVersion>4.1.2</vertxVersion>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <jappVersion>3.0.0</jappVersion>
+        <vertxVersion>4.2.1</vertxVersion>
         <micrometerVersion>1.7.3</micrometerVersion>
         <slf4jVersion>1.7.30</slf4jVersion>
         <logbackVersion>1.2.3</logbackVersion>
         <jacksonVersion>2.12.4</jacksonVersion>
-        <reactorVersion>2020.0.10</reactorVersion>
+        <reactorVersion>2020.0.12</reactorVersion>
         <guiceVersion>5.0.1</guiceVersion>
         <jaegerVersion>1.6.0</jaegerVersion>
-        <keycloakVersion>13.0.0</keycloakVersion>
-        <droolsVersion>7.56.0.Final</droolsVersion>
+        <keycloakVersion>15.0.2</keycloakVersion>
+        <droolsVersion>7.60.0.Final</droolsVersion>
         <grpcVersion>1.28.1</grpcVersion>
         <protobufVersion>3.11.4</protobufVersion>
     </properties>
@@ -57,12 +57,7 @@
             </dependency>
             <dependency>
                 <groupId>com.github.ixtf.japp</groupId>
-                <artifactId>persistence-mongo</artifactId>
-                <version>${jappVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.ixtf.japp</groupId>
-                <artifactId>persistence-lucene</artifactId>
+                <artifactId>lucene</artifactId>
                 <version>${jappVersion}</version>
             </dependency>
             <dependency>
@@ -122,11 +117,6 @@
                 <version>${keycloakVersion}</version>
             </dependency>
 
-            <dependency>
-                <groupId>com.graphql-java</groupId>
-                <artifactId>graphql-java</artifactId>
-                <version>17.1</version>
-            </dependency>
             <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java-extended-scalars</artifactId>

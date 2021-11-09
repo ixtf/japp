@@ -1,5 +1,6 @@
 package com.github.ixtf.mongo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import org.apache.commons.lang3.Validate;
 import org.bson.BsonDocument;
@@ -21,6 +22,7 @@ public final class JmongoRef implements Serializable {
     private final String collectionName;
     @Getter
     private final String databaseName;
+    @JsonIgnore
     @Getter
     private final Mono<BsonDocument> bsonDocument$;
 

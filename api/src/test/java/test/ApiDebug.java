@@ -20,10 +20,9 @@ import java.net.UnknownHostException;
 public class ApiDebug extends ApiLauncher {
 
     public static void main(String[] args) {
-//        System.setProperty("vertx.hazelcast.config", "/home/data/api/cluster.xml");
+        System.setProperty("vertx.hazelcast.config", "/home/data/api/cluster.xml");
         System.setProperty("hazelcast.local.publicAddress", localIp());
         new ApiDebug().dispatch(new String[]{"-cluster"});
-//        new ApiDebug().dispatch(args);
     }
 
     @Override

@@ -37,7 +37,7 @@ import java.security.Principal;
 import java.time.Duration;
 import java.util.HashMap;
 
-import static com.github.ixtf.api.ApiModule.*;
+import static com.github.ixtf.api.ApiModule.injectMembers;
 import static io.netty.handler.codec.http.HttpHeaderNames.AUTHORIZATION;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderValues.*;
@@ -67,7 +67,7 @@ public class ApiVerticle extends AbstractVerticle implements Handler<RoutingCont
         injectMembers(this);
 
 //        new ServiceBinder(vertx).register(KeycloakService.class, keycloakService);
-        vertx.eventBus().consumer(KeycloakAdmin, reply -> reply.reply(getInstance(JsonObject.class, CONFIG).getJsonObject("keycloak-admin", new JsonObject())));
+//        vertx.eventBus().consumer(KeycloakAdmin, reply -> reply.reply(getInstance(JsonObject.class, CONFIG).getJsonObject("keycloak-admin", new JsonObject())));
 
         discover(vertx, oAuth2Options).flatMap(this::createHttpServer).<Void>mapEmpty().onComplete(startPromise);
     }
@@ -144,14 +144,11 @@ public class ApiVerticle extends AbstractVerticle implements Handler<RoutingCont
             final var body = message.body();
             if (body == null) {
                 response.end();
-            } else if (body instanceof Buffer) {
-                final var buffer = (Buffer) body;
+            } else if (body instanceof final Buffer buffer) {
                 response.end(buffer);
-            } else if (body instanceof byte[]) {
-                final var bytes = (byte[]) body;
+            } else if (body instanceof final byte[] bytes) {
                 response.end(Buffer.buffer(bytes));
-            } else if (body instanceof String) {
-                final var s = (String) body;
+            } else if (body instanceof final String s) {
                 response.putHeader(CONTENT_TYPE, TEXT_PLAIN).end(s);
             } else {
                 onFailure(rc, new RuntimeException("body must be (null | Buffer | byte[] | String)"));
