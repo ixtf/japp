@@ -67,7 +67,7 @@ public class ApiModule extends AbstractModule {
         final var config = this.config.getJsonObject("keycloak", new JsonObject());
         final var site = config.getString("site");
         final var clientID = config.getString("clientID", "api");
-        return new OAuth2Options().setSite(site).setClientID(clientID);
+        return new OAuth2Options().setSite(site).setClientId(clientID);
     }
 
     @Provides
