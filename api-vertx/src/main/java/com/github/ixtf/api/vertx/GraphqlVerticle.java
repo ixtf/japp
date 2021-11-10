@@ -24,10 +24,7 @@ import io.vertx.ext.web.handler.graphql.impl.GraphQLInput;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLQuery;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Collection;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static com.github.ixtf.api.guice.ApiModule.GRAPHQL_ADDRESS;
 import static com.github.ixtf.guice.GuiceModule.injectMembers;
@@ -72,7 +69,7 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
             } else if (graphQLInput instanceof final GraphQLBatch batch) {
                 final var deliveryOptions = new DeliveryOptions();
                 final var jsonArray = new JsonArray();
-                StreamSupport.stream(batch.spliterator(), false).forEach(it -> {
+                batch.forEach(it -> {
                     final var result = handleQuery(reply, it);
                     jsonArray.add(result.toSpecification());
                     if (J.nonEmpty(result.getErrors())) {
@@ -101,11 +98,5 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
             builder.graphQLContext(ctx -> reply.headers().forEach(entry -> ctx.of(entry.getKey(), entry.getValue())));
             return builder;
         });
-    }
-
-    private Collection<ExecutionResult> handleBatch(Message<Buffer> reply, GraphQLBatch batch) {
-        return StreamSupport.stream(batch.spliterator(), false)
-                .map(it -> handleQuery(reply, it))
-                .collect(Collectors.toUnmodifiableList());
     }
 }
