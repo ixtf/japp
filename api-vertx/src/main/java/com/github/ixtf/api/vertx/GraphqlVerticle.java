@@ -65,12 +65,12 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
                 if (J.nonEmpty(result.getErrors())) {
                     deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "400");
                 }
-                reply.reply(jsonObject.encode(), deliveryOptions);
+                reply.reply(jsonObject.toBuffer(), deliveryOptions);
             } else if (graphQLInput instanceof final GraphQLBatch batch) {
                 final var deliveryOptions = new DeliveryOptions();
                 final var jsonArray = new JsonArray();
-                batch.forEach(it -> {
-                    final var result = handleQuery(reply, it);
+                batch.forEach(query -> {
+                    final var result = handleQuery(reply, query);
                     jsonArray.add(result.toSpecification());
                     if (J.nonEmpty(result.getErrors())) {
                         deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "400");
