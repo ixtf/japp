@@ -5,6 +5,7 @@ import com.github.ixtf.api.Util;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import io.vertx.ext.web.handler.graphql.schema.VertxDataFetcher;
+import jakarta.ws.rs.QueryParam;
 import org.apache.commons.lang3.tuple.Pair;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -14,11 +15,13 @@ import java.lang.reflect.Parameter;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.github.ixtf.guice.GuiceModule.getInstance;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
@@ -85,6 +88,11 @@ public class GraphqlDataFetcher implements DataFetcher<Object> {
         }
         if (Principal.class.isAssignableFrom(type)) {
             return Util::principal;
+        }
+        final var queryParam = type.getAnnotation(QueryParam.class);
+        if (queryParam != null) {
+            final var value = queryParam.value();
+            return env -> env.getArgument(value);
         }
         if (String.class.isAssignableFrom(type)) {
             return env -> env.getArgument("command");
