@@ -5,7 +5,9 @@ import com.github.ixtf.api.Util;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import graphql.ExecutionResult;
 import graphql.GraphQL;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
@@ -13,6 +15,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -21,7 +24,10 @@ import io.vertx.ext.web.handler.graphql.impl.GraphQLInput;
 import io.vertx.ext.web.handler.graphql.impl.GraphQLQuery;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.github.ixtf.api.guice.ApiModule.GRAPHQL_ADDRESS;
 import static com.github.ixtf.guice.GuiceModule.injectMembers;
@@ -56,11 +62,24 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
         try {
             final var graphQLInput = GraphQLInput.decode(reply.body());
             if (graphQLInput instanceof final GraphQLQuery query) {
-                final var jsonObject = handleQuery(reply, query);
-                reply.reply(jsonObject.toBuffer());
+                final var deliveryOptions = new DeliveryOptions();
+                final var result = handleQuery(reply, query);
+                final var jsonObject = new JsonObject(result.toSpecification());
+                if (J.nonEmpty(result.getErrors())) {
+                    deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "400");
+                }
+                reply.reply(jsonObject.encode(), deliveryOptions);
             } else if (graphQLInput instanceof final GraphQLBatch batch) {
-                final var jsonArray = handleBatch(reply, batch);
-                reply.reply(jsonArray.toBuffer());
+                final var deliveryOptions = new DeliveryOptions();
+                final var jsonArray = new JsonArray();
+                StreamSupport.stream(batch.spliterator(), false).forEach(it -> {
+                    final var result = handleQuery(reply, it);
+                    jsonArray.add(result.toSpecification());
+                    if (J.nonEmpty(result.getErrors())) {
+                        deliveryOptions.addHeader(HttpResponseStatus.class.getName(), "400");
+                    }
+                });
+                reply.reply(jsonArray.toBuffer(), deliveryOptions);
             } else {
                 reply.fail(400, "no GraphQLInput");
             }
@@ -74,20 +93,19 @@ public class GraphqlVerticle extends AbstractVerticle implements Handler<Message
         }
     }
 
-    private JsonObject handleQuery(Message<Buffer> reply, GraphQLQuery query) {
-        final var executionResult = graphQL.execute(builder -> {
+    private ExecutionResult handleQuery(Message<Buffer> reply, GraphQLQuery query) {
+        return graphQL.execute(builder -> {
             builder.query(query.getQuery());
             ofNullable(query.getOperationName()).filter(J::nonBlank).ifPresent(builder::operationName);
             ofNullable(query.getVariables()).ifPresent(builder::variables);
             builder.graphQLContext(ctx -> reply.headers().forEach(entry -> ctx.of(entry.getKey(), entry.getValue())));
             return builder;
         });
-        return new JsonObject(executionResult.toSpecification());
     }
 
-    private JsonArray handleBatch(Message<Buffer> reply, GraphQLBatch batch) {
-        final var jsonArray = new JsonArray();
-        batch.forEach(it -> jsonArray.add(handleQuery(reply, it)));
-        return jsonArray;
+    private Collection<ExecutionResult> handleBatch(Message<Buffer> reply, GraphQLBatch batch) {
+        return StreamSupport.stream(batch.spliterator(), false)
+                .map(it -> handleQuery(reply, it))
+                .collect(Collectors.toUnmodifiableList());
     }
 }
