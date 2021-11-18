@@ -92,10 +92,19 @@ public class ServiceServerVerticle extends AbstractVerticle {
                 return (Function) Function.identity();
             }
             if (Principal.class.isAssignableFrom(type)) {
-                return ctx -> ctx.principal();
+                return ApiContext::principal;
             }
             if (String.class.isAssignableFrom(type)) {
-                return ctx -> ctx.bodyAsString();
+                return ApiContext::bodyAsString;
+            }
+            if (byte[].class.isAssignableFrom(type)) {
+                return ApiContext::body;
+            }
+            if (JsonObject.class.isAssignableFrom(type)) {
+                return ctx -> new JsonObject(Buffer.buffer(ctx.body()));
+            }
+            if (JsonArray.class.isAssignableFrom(type)) {
+                return ctx -> new JsonArray(Buffer.buffer(ctx.body()));
             }
             return ctx -> ctx.command(type);
         }
