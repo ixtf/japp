@@ -124,8 +124,9 @@ class ApiReplyHandler implements Handler<Message<Object>> {
             onSuccess(reply, v.toBuffer(), deliveryOptions, spanOpt);
         } else if (o instanceof final ApiResponse v) {
             onSuccess(reply, v.getBody(), v.ensure(deliveryOptions), spanOpt);
-        } else if (o instanceof final Mono<?> v) {
-            v.subscribe(it -> onSuccess(reply, it, deliveryOptions, spanOpt), e -> onFail(reply, e, spanOpt));
+        } else if (o instanceof final Mono v) {
+            final Mono<?> mono = v.defaultIfEmpty(Buffer.buffer());
+            mono.subscribe(it -> onSuccess(reply, it, deliveryOptions, spanOpt), e -> onFail(reply, e, spanOpt));
         } else if (o instanceof final Flux<?> v) {
             onSuccess(reply, v.collectList().map(JsonArray::new), deliveryOptions, spanOpt);
         } else {
