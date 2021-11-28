@@ -9,7 +9,6 @@ dependencies {
             "com.github.ben-manes.caffeine:caffeine:3.0.3",
             "com.google.guava:guava:30.1.1-jre",
             "ch.qos.logback:logback-classic",
-            "ch.qos.logback:logback-access",
             "com.fasterxml.jackson.datatype:jackson-datatype-jsr310",
             "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml",
             "com.fasterxml.jackson.datatype:jackson-datatype-jdk8",

@@ -18,7 +18,7 @@
 <!--        <vertxVersion>4.1.6</vertxVersion>-->
         <micrometerVersion>1.7.3</micrometerVersion>
         <slf4jVersion>1.7.30</slf4jVersion>
-        <logbackVersion>1.2.3</logbackVersion>
+        <logbackVersion>1.2.7</logbackVersion>
         <jacksonVersion>2.12.4</jacksonVersion>
         <reactorVersion>2020.0.12</reactorVersion>
         <guiceVersion>5.0.1</guiceVersion>
@@ -96,11 +96,6 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4jVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-access</artifactId>
-                <version>${logbackVersion}</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
