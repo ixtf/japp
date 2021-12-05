@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.EMPTY_LIST;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * @author jzb 2019-05-29
@@ -184,6 +185,14 @@ public class Jlucene {
     public static BooleanQuery.Builder add(BooleanQuery.Builder builder, String fieldName, Enum e) {
         ofNullable(e).map(Enum::name).ifPresent(it -> add(builder, fieldName, it));
         return builder;
+    }
+
+    public static BooleanQuery.Builder addEnum(BooleanQuery.Builder builder, String fieldName, Collection<? extends Enum> ss) {
+        final var collect = J.emptyIfNull(ss)
+                .parallelStream()
+                .map(Enum::name)
+                .collect(toUnmodifiableSet());
+        return add(builder,fieldName,collect);
     }
 
     public static BooleanQuery.Builder add(BooleanQuery.Builder builder, String fieldName, String s) {
