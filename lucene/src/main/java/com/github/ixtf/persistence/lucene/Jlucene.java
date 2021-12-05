@@ -204,6 +204,22 @@ public class Jlucene {
         return builder;
     }
 
+    public static BooleanQuery.Builder add(BooleanQuery.Builder builder, @NotBlank String fieldName, double start, double end) {
+        builder.add(DoublePoint.newRangeQuery(fieldName, start, end), BooleanClause.Occur.MUST);
+        return builder;
+    }
+
+    public static BooleanQuery.Builder add(BooleanQuery.Builder builder, @NotBlank String fieldName, Double start, Double end) {
+        if (start != null && end != null) {
+            builder.add(DoublePoint.newRangeQuery(fieldName, start, end), BooleanClause.Occur.MUST);
+        } else if (start != null) {
+            builder.add(DoublePoint.newRangeQuery(fieldName, start, Double.MAX_VALUE), BooleanClause.Occur.MUST);
+        } else if (end != null) {
+            builder.add(DoublePoint.newRangeQuery(fieldName, Double.MIN_VALUE, end), BooleanClause.Occur.MUST);
+        }
+        return builder;
+    }
+
     public static BooleanQuery.Builder add(BooleanQuery.Builder builder, @NotBlank String fieldName, long startL, long endL) {
         builder.add(LongPoint.newRangeQuery(fieldName, startL, endL), BooleanClause.Occur.MUST);
         return builder;
