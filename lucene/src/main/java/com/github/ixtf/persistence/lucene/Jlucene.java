@@ -3,7 +3,7 @@ package com.github.ixtf.persistence.lucene;
 import com.github.ixtf.J;
 import com.github.ixtf.persistence.IEntity;
 import com.github.ixtf.persistence.IEntityLoggable;
-import com.github.ixtf.persistence.IEntityLoggable.IOperator;
+import com.github.ixtf.persistence.IOperator;
 import io.github.classgraph.ClassGraph;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

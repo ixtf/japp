@@ -1,6 +1,7 @@
 package com.github.ixtf.mongo;
 
 import com.github.ixtf.persistence.IEntityLoggable;
+import com.github.ixtf.persistence.IOperator;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
