@@ -15,6 +15,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.ws.rs.QueryParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -57,6 +58,12 @@ class ApiReplyHandler implements Handler<Message<Object>> {
         }
         if (Principal.class.isAssignableFrom(type)) {
             return ApiContext::principal;
+        }
+        final var queryParam = parameter.getAnnotation(QueryParam.class);
+        if (queryParam != null) {
+            // FIXME: 2021/11/27 QueryParam
+//            final var value = queryParam.value();
+//            return ctx -> ctx.header(value);
         }
         if (String.class.isAssignableFrom(type)) {
             return ApiContext::bodyAsString;
