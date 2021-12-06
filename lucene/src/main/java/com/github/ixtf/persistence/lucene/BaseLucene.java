@@ -65,12 +65,24 @@ public abstract class BaseLucene<T extends IEntity> {
 
     @SneakyThrows(IOException.class)
     public void index(T entity) {
+        _index(entity);
+        indexWriter.commit();
+        taxoWriter.commit();
+    }
+
+    @SneakyThrows(IOException.class)
+    private void _index(T entity) {
         final Term term = new Term(ID, entity.getId());
         if (entity.isDeleted()) {
             indexWriter.deleteDocuments(term);
         } else {
             indexWriter.updateDocument(term, facetsConfig.build(taxoWriter, document(entity)));
         }
+    }
+
+    @SneakyThrows(IOException.class)
+    public void index(Collection<T> entities) {
+        entities.parallelStream().forEach(this::_index);
         indexWriter.commit();
         taxoWriter.commit();
     }
