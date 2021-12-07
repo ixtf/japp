@@ -1,6 +1,7 @@
 package com.github.ixtf.persistence.lucene;
 
 import com.github.ixtf.J;
+import com.github.ixtf.data.EntityDTO;
 import com.github.ixtf.persistence.IEntity;
 import com.github.ixtf.persistence.IEntityLoggable;
 import com.github.ixtf.persistence.IOperator;
@@ -95,6 +96,16 @@ public class Jlucene {
 
     public static void addFacet(@NotNull Document doc, @NotBlank String fieldName, IEntity entity) {
         final var v = ofNullable(entity).map(IEntity::getId).filter(J::nonBlank).orElse(NULL);
+        addFacet(doc, fieldName, v);
+    }
+
+    public static void add(@NotNull Document doc, @NotBlank String fieldName, EntityDTO entity) {
+        final var v = ofNullable(entity).map(EntityDTO::getId).filter(J::nonBlank).orElse(NULL);
+        add(doc, fieldName, v);
+    }
+
+    public static void addFacet(@NotNull Document doc, @NotBlank String fieldName, EntityDTO entity) {
+        final var v = ofNullable(entity).map(EntityDTO::getId).filter(J::nonBlank).orElse(NULL);
         addFacet(doc, fieldName, v);
     }
 
