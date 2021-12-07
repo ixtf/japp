@@ -99,9 +99,15 @@ public class Jlucene {
     }
 
     public static void addLoggable(@NotNull Document doc, IEntityLoggable entity) {
-        ofNullable(entity.getCreator()).map(IOperator::getId).filter(J::nonBlank).ifPresent(it -> addFacet(doc, "creator", it));
+        ofNullable(entity.getCreator()).map(IOperator::getId).filter(J::nonBlank).ifPresent(it -> {
+            add(doc, "creator", it);
+            addFacet(doc, "creator", it);
+        });
         add(doc, "createDateTime", entity.getCreateDateTime());
-        ofNullable(entity.getModifier()).map(IOperator::getId).filter(J::nonBlank).ifPresent(it -> addFacet(doc, "modifier", it));
+        ofNullable(entity.getModifier()).map(IOperator::getId).filter(J::nonBlank).ifPresent(it -> {
+            add(doc, "modifier", it);
+            addFacet(doc, "modifier", it);
+        });
         add(doc, "modifyDateTime", entity.getModifyDateTime());
     }
 
@@ -192,7 +198,7 @@ public class Jlucene {
                 .parallelStream()
                 .map(Enum::name)
                 .collect(toUnmodifiableSet());
-        return add(builder,fieldName,collect);
+        return add(builder, fieldName, collect);
     }
 
     public static BooleanQuery.Builder add(BooleanQuery.Builder builder, String fieldName, String s) {
