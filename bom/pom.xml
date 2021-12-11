@@ -20,7 +20,7 @@
         <slf4jVersion>1.7.30</slf4jVersion>
         <logbackVersion>1.2.7</logbackVersion>
         <jacksonVersion>2.12.4</jacksonVersion>
-        <reactorVersion>2020.0.12</reactorVersion>
+        <reactorVersion>2020.0.13</reactorVersion>
         <guiceVersion>5.0.1</guiceVersion>
         <jaegerVersion>1.6.0</jaegerVersion>
         <keycloakVersion>15.0.2</keycloakVersion>
