@@ -83,6 +83,9 @@ public abstract class BaseLucene<T extends IEntity> {
 
     @SneakyThrows(IOException.class)
     public void index(Collection<T> entities) {
+        if (J.isEmpty(entities)) {
+            return;
+        }
         entities.parallelStream().forEach(this::_index);
         indexWriter.commit();
         taxoWriter.commit();
@@ -98,7 +101,10 @@ public abstract class BaseLucene<T extends IEntity> {
 
     @SneakyThrows(IOException.class)
     public void remove(Collection<String> ids) {
-        final var terms = J.emptyIfNull(ids)
+        if (J.isEmpty(ids)) {
+            return;
+        }
+        final var terms = ids
                 .parallelStream()
                 .map(id -> new Term(ID, id))
                 .toArray(Term[]::new);
