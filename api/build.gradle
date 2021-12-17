@@ -5,8 +5,14 @@ plugins {
     id "com.palantir.docker"
 }
 
+dependencyManagement {
+    imports {
+        mavenBom "io.vertx:vertx-stack-depchain:4.1.6"
+    }
+}
+
 dependencies {
-    annotationProcessor "io.vertx:vertx-codegen:4.1.1:processor"
+    annotationProcessor "io.vertx:vertx-codegen:4.1.6:processor"
     annotationProcessor "io.vertx:vertx-service-proxy"
     implementation "ch.qos.logback:logback-classic",
             "com.google.inject:guice",
@@ -23,7 +29,7 @@ dependencies {
 }
 
 codeGen {
-    vertxVersion = "4.1.1"
+    vertxVersion = "4.1.6"
 }
 
 mainClassName = "com.github.ixtf.api.ApiLauncher"

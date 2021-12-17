@@ -4,6 +4,7 @@ package com.github.ixtf.persistence.lucene;
  * @author jzb 2018-08-24
  */
 
+import com.github.ixtf.J;
 import com.github.ixtf.persistence.IEntity;
 import lombok.Cleanup;
 import lombok.Getter;
@@ -64,13 +65,6 @@ public abstract class BaseLucene<T extends IEntity> {
     }
 
     @SneakyThrows(IOException.class)
-    public void index(T entity) {
-        _index(entity);
-        indexWriter.commit();
-        taxoWriter.commit();
-    }
-
-    @SneakyThrows(IOException.class)
     private void _index(T entity) {
         final Term term = new Term(ID, entity.getId());
         if (entity.isDeleted()) {
@@ -78,6 +72,13 @@ public abstract class BaseLucene<T extends IEntity> {
         } else {
             indexWriter.updateDocument(term, facetsConfig.build(taxoWriter, document(entity)));
         }
+    }
+
+    @SneakyThrows(IOException.class)
+    public void index(T entity) {
+        _index(entity);
+        indexWriter.commit();
+        taxoWriter.commit();
     }
 
     @SneakyThrows(IOException.class)
@@ -91,6 +92,17 @@ public abstract class BaseLucene<T extends IEntity> {
     public void remove(String id) {
         final Term term = new Term(ID, id);
         indexWriter.deleteDocuments(term);
+        indexWriter.commit();
+        taxoWriter.commit();
+    }
+
+    @SneakyThrows(IOException.class)
+    public void remove(Collection<String> ids) {
+        final var terms = J.emptyIfNull(ids)
+                .parallelStream()
+                .map(id -> new Term(ID, id))
+                .toArray(Term[]::new);
+        indexWriter.deleteDocuments(terms);
         indexWriter.commit();
         taxoWriter.commit();
     }
