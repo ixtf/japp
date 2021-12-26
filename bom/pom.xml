@@ -18,7 +18,7 @@
 <!--        <vertxVersion>4.1.6</vertxVersion>-->
         <micrometerVersion>1.7.3</micrometerVersion>
         <slf4jVersion>1.7.32</slf4jVersion>
-        <logbackVersion>1.2.7</logbackVersion>
+        <logbackVersion>1.2.10</logbackVersion>
         <jacksonVersion>2.13.1</jacksonVersion>
         <reactorVersion>2020.0.14</reactorVersion>
         <guiceVersion>5.0.1</guiceVersion>
