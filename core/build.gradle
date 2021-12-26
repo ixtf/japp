@@ -17,4 +17,7 @@ dependencies {
 
     testImplementation "io.smallrye.config:smallrye-config:2.2.0",
             "io.smallrye.config:smallrye-config-examples:1.10.0"
+
+    testImplementation "com.jcraft:jsch:0.1.55"
+    testImplementation "org.bouncycastle:bcprov-jdk15on:1.70"
 }

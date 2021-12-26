@@ -14,17 +14,17 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <jappVersion>3.0.0</jappVersion>
-        <vertxVersion>4.2.1</vertxVersion>
+        <vertxVersion>4.2.3</vertxVersion>
 <!--        <vertxVersion>4.1.6</vertxVersion>-->
         <micrometerVersion>1.7.3</micrometerVersion>
-        <slf4jVersion>1.7.30</slf4jVersion>
+        <slf4jVersion>1.7.32</slf4jVersion>
         <logbackVersion>1.2.7</logbackVersion>
-        <jacksonVersion>2.12.4</jacksonVersion>
-        <reactorVersion>2020.0.13</reactorVersion>
+        <jacksonVersion>2.13.1</jacksonVersion>
+        <reactorVersion>2020.0.14</reactorVersion>
         <guiceVersion>5.0.1</guiceVersion>
         <jaegerVersion>1.6.0</jaegerVersion>
         <keycloakVersion>15.0.2</keycloakVersion>
-        <droolsVersion>7.60.0.Final</droolsVersion>
+        <droolsVersion>7.63.0.Final</droolsVersion>
         <grpcVersion>1.28.1</grpcVersion>
         <protobufVersion>3.11.4</protobufVersion>
     </properties>
