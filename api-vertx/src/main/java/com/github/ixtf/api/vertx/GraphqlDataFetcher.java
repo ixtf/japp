@@ -4,6 +4,7 @@ import com.github.ixtf.api.GraphqlAction;
 import com.github.ixtf.api.Util;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import io.vertx.core.Future;
 import io.vertx.ext.web.handler.graphql.schema.VertxDataFetcher;
 import jakarta.ws.rs.QueryParam;
 import org.apache.commons.lang3.tuple.Pair;
@@ -114,6 +115,9 @@ public class GraphqlDataFetcher implements DataFetcher<Object> {
     }
     if (Flux.class.isAssignableFrom(type)) {
       return o -> ((Flux) o).collectList().toFuture();
+    }
+    if (Future.class.isAssignableFrom(type)) {
+      return o -> ((Future) o).toCompletionStage();
     }
     return Function.identity();
   }
