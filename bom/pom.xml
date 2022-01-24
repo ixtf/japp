@@ -14,13 +14,12 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <jappVersion>3.0.0</jappVersion>
-        <vertxVersion>4.2.3</vertxVersion>
-<!--        <vertxVersion>4.1.6</vertxVersion>-->
+        <vertxVersion>4.2.4</vertxVersion>
         <micrometerVersion>1.7.3</micrometerVersion>
         <slf4jVersion>1.7.32</slf4jVersion>
         <logbackVersion>1.2.10</logbackVersion>
         <jacksonVersion>2.13.1</jacksonVersion>
-        <reactorVersion>2020.0.14</reactorVersion>
+        <reactorVersion>2020.0.15</reactorVersion>
         <guiceVersion>5.0.1</guiceVersion>
         <jaegerVersion>1.6.0</jaegerVersion>
         <keycloakVersion>15.0.2</keycloakVersion>
