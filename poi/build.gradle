@@ -1,10 +1,12 @@
 dependencies {
     api project(":core"),
-            "org.apache.poi:poi:5.0.0",
-            "org.apache.poi:poi-scratchpad:5.0.0",
-            "org.apache.poi:poi-ooxml:5.0.0",
-            "org.apache.poi:poi-ooxml-schemas:4.1.2",
-            "org.apache.poi:ooxml-schemas:1.4"
+            "org.apache.poi:poi:5.1.0",
+            "org.apache.poi:poi-ooxml:5.1.0"
+            "org.apache.poi:poi-scratchpad:5.1.0"
+//            "org.apache.poi:poi-ooxml-schemas:4.1.2",
+//            "org.apache.poi:ooxml-schemas:1.4",
+//            "org.apache.logging.log4j:log4j-api:2.17.0",
+//            "org.apache.logging.log4j:log4j-core:2.17.0"
 
-    compileOnly "org.zwobble.mammoth:mammoth:1.4.2"
+    implementation "org.zwobble.mammoth:mammoth:1.4.2"
 }

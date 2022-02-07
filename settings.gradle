@@ -22,7 +22,6 @@ include 'poi'
 include 'pinyin'
 
 include 'api'
-include 'api-core'
 include 'api-vertx'
 
 include 'persistence'

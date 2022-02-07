@@ -1,6 +1,5 @@
 package com.github.ixtf.cli;
 
-
 // SaferExec.java
 // Andrew Davison, May 2010, ad@fivedots.coe.psu.ac.th
 
@@ -42,275 +41,384 @@ import java.io.InterruptedIOException;
 import java.util.Timer;
 import java.util.TimerTask;
 
-
 public class SaferExec {
-    private static final int MAX_WAIT = 5;
-    // a command can take at most 5 secs before being interrupted
+  private static final int MAX_WAIT = 5;
+  // a command can take at most 5 secs before being interrupted
 
+  /* The following are commands that need to be invoked inside a shell.
+     They may still not work because of incorrect privileges, missing
+     environment settings, differing shell versions, etc.
+     but invoking them in a shell may work :)
+  */
+  private static final String[] WIN_CMDS = { // shell commands in Windows
+    "assoc",
+    "call",
+    "cd",
+    "cls",
+    "color",
+    "copy",
+    "date",
+    "del",
+    "dir",
+    "echo",
+    "endlocal",
+    "erase",
+    "exit",
+    "for",
+    "ftype",
+    "goto",
+    "if",
+    "md",
+    "move",
+    "path",
+    "pause",
+    "popd",
+    "prompt",
+    "pushd",
+    "ren",
+    "rd",
+    "set",
+    "setlocal",
+    "shift",
+    "start",
+    "time",
+    "title",
+    "type",
+    "ver",
+    "verify",
+    "vol"
+  };
 
-    /* The following are commands that need to be invoked inside a shell.
-       They may still not work because of incorrect privileges, missing
-       environment settings, differing shell versions, etc.
-       but invoking them in a shell may work :)
-    */
-    private static final String[] WIN_CMDS = {      // shell commands in Windows
-            "assoc", "call", "cd", "cls", "color", "copy", "date", "del", "dir", "echo",
-            "endlocal", "erase", "exit", "for", "ftype", "goto", "if", "md", "move",
-            "path", "pause", "popd", "prompt", "pushd", "ren", "rd", "set", "setlocal",
-            "shift", "start", "time", "title", "type", "ver", "verify", "vol"};
+  private static final String[] UNIX_CMDS = { // for sh
+    "alias",
+    "bg",
+    "break",
+    "breaksw",
+    "case",
+    "cd",
+    "chdir",
+    "continue",
+    "default",
+    "dirs",
+    "echo",
+    "eval",
+    "exec",
+    "exit",
+    "fg",
+    "foreach",
+    "glob",
+    "goto",
+    "hashstat",
+    "history",
+    "if",
+    "jobs",
+    "limit",
+    "login",
+    "logout",
+    "nice",
+    "nohup",
+    "notify",
+    "onintr",
+    "popd",
+    "pushd",
+    "rehash",
+    "repeat",
+    "set",
+    "setenv",
+    "shift",
+    "source",
+    "stop ",
+    "suspend",
+    "switch",
+    "time",
+    "umask",
+    "unalias",
+    "unhash",
+    "unlimit",
+    "unset",
+    "unsetenv",
+    "wait",
+    "while",
+    "@"
+  };
 
-    private static final String[] UNIX_CMDS = {      // for sh
-            "alias", "bg", "break", "breaksw", "case", "cd", "chdir", "continue",
-            "default", "dirs", "echo", "eval", "exec", "exit", "fg", "foreach", "glob",
-            "goto", "hashstat", "history", "if", "jobs", "limit", "login", "logout",
-            "nice", "nohup", "notify", "onintr", "popd", "pushd", "rehash", "repeat",
-            "set", "setenv", "shift", "source", "stop ", "suspend", "switch", "time",
-            "umask", "unalias", "unhash", "unlimit", "unset", "unsetenv", "wait",
-            "while", "@"};
+  private static final String[] MAC_CMDS = { // not tested
+    "alias",
+    "bg",
+    "bind",
+    "break",
+    "builtin",
+    "caller",
+    "case",
+    "cd",
+    "command",
+    "complete",
+    "continue",
+    "declare",
+    "dirs",
+    "disown",
+    "echo",
+    "enable",
+    "eval",
+    "exec",
+    "exit",
+    "export",
+    "fg",
+    "for",
+    "getopts",
+    "hash",
+    "history",
+    "if",
+    "jobs",
+    "let",
+    "local",
+    "logout",
+    "popd",
+    "printf",
+    "pwd",
+    "read",
+    "readonly",
+    "return",
+    "select",
+    "set",
+    "shift",
+    "shopt",
+    "source",
+    "suspend",
+    "tail",
+    "test",
+    "times",
+    "trap",
+    "type",
+    "ulimit",
+    "unalias",
+    "unset",
+    "until",
+    "wait",
+    "while"
+  };
 
-    private static final String[] MAC_CMDS = {     // not tested
-            "alias", "bg", "bind", "break", "builtin", "caller", "case", "cd", "command",
-            "complete", "continue", "declare", "dirs", "disown", "echo", "enable", "eval",
-            "exec", "exit", "export", "fg", "for", "getopts", "hash", "history", "if",
-            "jobs", "let", "local", "logout", "popd", "printf", "pwd", "read", "readonly",
-            "return", "select", "set", "shift", "shopt", "source", "suspend", "tail", "test",
-            "times", "trap", "type", "ulimit", "unalias", "unset", "until", "wait", "while"};
+  private int waitTime; // time to wait in seconds before interrupting a command
+  private volatile boolean isInterrupted;
 
+  public SaferExec() {
+    waitTime = MAX_WAIT;
+  }
 
-    private int waitTime;   // time to wait in seconds before interrupting a command
-    private volatile boolean isInterrupted;
+  public SaferExec(int time) // in secs
+      {
+    waitTime = time;
+  }
 
-    public SaferExec() {
-        waitTime = MAX_WAIT;
+  public static void main(String[] args) {
+    SaferExec se = new SaferExec(); // or include a wait time in secs
+    System.out.println(se.exec(args)); // or use execV()
+  } // end of main()
+
+  public String exec(String... command)
+        // evaluate command, returning its result as a string
+      {
+    if (command.length == 1) { // input is one string, which may need tokenizing
+      // System.out.println("Tokenizing \"" + command + "\"");
+      String[] toks = command[0].split("\\s+"); // split across 1 or more spaces
+      return execToks(toks, false);
+    } else // command is made up of mulltiple tokens already
+    {
+      return execToks(command, false);
+    }
+  } // end of exec()
+
+  public String execV(String... command)
+        // return command's result *and* its exit value
+      {
+    if (command.length == 1) {
+      String[] toks = command[0].split("\\s+");
+      return execToks(toks, true);
+    } else {
+      return execToks(command, true);
+    }
+  } // end of execV()
+
+  // execute the command tokens
+  private String execToks(String[] commandToks, boolean wantExitValue) {
+    final var cmdStr = checkOSCmd(commandToks);
+    printCmd(cmdStr);
+
+    int exitValue = 1; // assume the worst: non-0 means an error
+
+    // interrupt this thread if it does not finish within the wait time period
+    Timer timer = null;
+    if (waitTime > 0) {
+      timer = new Timer(true);
+      final var interrupter = new InterruptTimerTask(Thread.currentThread(), this);
+      timer.schedule(interrupter, waitTime * 1000); // wait time is converted to ms
     }
 
+    final var launcher = new ProcessBuilder(cmdStr);
+    launcher.redirectErrorStream(true); // combine stderr and output from the process
 
-    public SaferExec(int time)   // in secs
-    {
-        waitTime = time;
-    }
+    Process p = null;
+    InputStream in = null;
+    final var sb = new StringBuffer();
+    isInterrupted = false;
+    try {
+      p = launcher.start();
 
-    public static void main(String[] args) {
-        SaferExec se = new SaferExec();          // or include a wait time in secs
-        System.out.println(se.exec(args));    // or use execV()
-    }  // end of main()
+      // save process' output in a string
+      in = p.getInputStream(); // this stream is the input to this app _from_ the process
+      int c;
+      while (((c = in.read()) != -1) && !isInterrupted) // data is read byte-by-byte
+      sb.append((char) c);
 
-    public String exec(String... command)
-    // evaluate command, returning its result as a string
-    {
-        if (command.length == 1) {    // input is one string, which may need tokenizing
-            // System.out.println("Tokenizing \"" + command + "\"");
-            String[] toks = command[0].split("\\s+");    // split across 1 or more spaces
-            return execToks(toks, false);
-        } else  // command is made up of mulltiple tokens already
-        {
-            return execToks(command, false);
-        }
-    }  // end of exec()
+      // if (isInterrupted)
+      //   System.out.println("Interrupted since output took longer than " + waitTime + " secs");
 
-    public String execV(String... command)
-    // return command's result *and* its exit value
-    {
-        if (command.length == 1) {
-            String[] toks = command[0].split("\\s+");
-            return execToks(toks, true);
-        } else {
-            return execToks(command, true);
-        }
-    }  // end of execV()
+      // GCJ hangs in waitFor() unless all 3 streams are explicitly closed
+      in.close();
+      p.getOutputStream().close();
+      p.getErrorStream().close();
 
-    private String execToks(String[] commandToks, boolean wantExitValue)
-    // execute the command tokens
-    {
-        String[] cmdStr = checkOSCmd(commandToks);
-        printCmd(cmdStr);
-
-        int exitValue = 1;    // assume the worst: non-0 means an error
-
-        // interrupt this thread if it does not finish within the wait time period
-        Timer timer = new Timer(true);
-        InterruptTimerTask interrupter = new InterruptTimerTask(Thread.currentThread(), this);
-        timer.schedule(interrupter, waitTime * 1000);   // wait time is converted to ms
-
-        ProcessBuilder launcher = new ProcessBuilder(cmdStr);
-        launcher.redirectErrorStream(true);  // combine stderr and output from the process
-
-        Process p = null;
-        InputStream in = null;
-        StringBuffer sb = new StringBuffer();
-        isInterrupted = false;
+      exitValue = p.waitFor();
+    } catch (InterruptedIOException e) {
+      System.out.println("Interrupted since output did not finish within " + waitTime + " secs");
+    } catch (InterruptedException e) {
+      System.out.println("Interrupted since command did not finish within " + waitTime + " secs");
+    } catch (Exception e) {
+      System.out.println(e);
+    } finally {
+      if (timer != null) {
+        timer.cancel();
+      }
+      Thread.interrupted(); // clear the interrupt flag in case the
+      // interrupter executed after waitFor() returned but before timer.cancel()
+      // was called. There's also Sun bug 6420270 to worry about.
+      if (in != null) {
         try {
-            p = launcher.start();
+          in.close();
+        } catch (IOException e) {
+        } // ignore this one
+      }
 
-            // save process' output in a string
-            in = p.getInputStream();   // this stream is the input to this app _from_ the process
-            int c;
-            while (((c = in.read()) != -1) && !isInterrupted)   // data is read byte-by-byte
-                sb.append((char) c);
+      if (p != null) {
+        p.destroy(); // stop the process
+      }
 
-            // if (isInterrupted)
-            //   System.out.println("Interrupted since output took longer than " + waitTime + " secs");
+      if (wantExitValue) {
+        sb.append("" + exitValue + "\n"); // add exit value to output
+      }
 
-            // GCJ hangs in waitFor() unless all 3 streams are explicitly closed
-            in.close();
-            p.getOutputStream().close();
-            p.getErrorStream().close();
+      if (exitValue != 0) // report a problem
+      {
+        System.out.println("Problem executing command; exit value = " + exitValue);
+      }
+    }
+    return sb.toString();
+  } // end of execToks()
 
-            exitValue = p.waitFor();
-        } catch (InterruptedIOException e) {
-            System.out.println("Interrupted since output did not finish within " + waitTime + " secs");
-        } catch (InterruptedException e) {
-            System.out.println("Interrupted since command did not finish within " + waitTime + " secs");
-        } catch (Exception e) {
-            System.out.println(e);
-        } finally {
-            timer.cancel();
-            Thread.interrupted();   // clear the interrupt flag in case the
-            // interrupter executed after waitFor() returned but before timer.cancel()
-            // was called. There's also Sun bug 6420270 to worry about.
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                }  // ignore this one
-            }
+  // secondary way to force an interrupt
+  public void setInterruptFlag() {
+    isInterrupted = true;
+  }
 
-            if (p != null) {
-                p.destroy();     // stop the process
-            }
+  // ----------------- OS specific -----------------------------------
+  // print the command tokens
+  private void printCmd(String[] cmdStr) {
+    System.out.print("Command = { ");
+    for (int i = 0; i < cmdStr.length; i++) System.out.print("\"" + cmdStr[i] + "\" ");
+    System.out.println("}");
+  } // end of printCmd()
 
-            if (wantExitValue) {
-                sb.append("" + exitValue + "\n");   // add exit value to output
-            }
+  // modify the command if its a shell command
+  private String[] checkOSCmd(String[] cmdStr) {
+    final var cmd = cmdStr[0].toLowerCase();
 
-            if (exitValue != 0)   // report a problem
-            {
-                System.out.println("Problem executing command; exit value = " + exitValue);
-            }
+    if (isWindows()) {
+      for (final var osCmd : WIN_CMDS)
+        if (cmd.equals(osCmd)) {
+          return addWinCmd(cmdStr);
         }
-        return sb.toString();
-    }  // end of execToks()
-
-    public void setInterruptFlag()
-    // secondary way to force an interrupt
-    {
-        isInterrupted = true;
+    } else if (isUnix()) {
+      for (final var osCmd : UNIX_CMDS)
+        if (cmd.equals(osCmd)) {
+          return addUnixCmd(cmdStr);
+        }
+    } else if (isMac()) { // not tested
+      for (final var osCmd : MAC_CMDS)
+        if (cmd.equals(osCmd)) {
+          return addMacCmd(cmdStr);
+        }
     }
 
+    return cmdStr;
+  } // end of checkOSCmd()
 
-    // ----------------- OS specific -----------------------------------
+  private boolean isWindows() {
+    final var os = System.getProperty("os.name").toLowerCase();
+    return (os.indexOf("win") >= 0);
+  }
 
-    private void printCmd(String[] cmdStr)
-    // print the command tokens
-    {
-        System.out.print("Command = { ");
-        for (int i = 0; i < cmdStr.length; i++)
-            System.out.print("\"" + cmdStr[i] + "\" ");
-        System.out.println("}");
-    }  // end of printCmd()
+  // unix or linux
+  private boolean isUnix() {
+    final var os = System.getProperty("os.name").toLowerCase();
+    return ((os.indexOf("nix") >= 0) || (os.indexOf("nux") >= 0));
+  }
 
-    private String[] checkOSCmd(String[] cmdStr)
-    // modify the command if its a shell command
-    {
-        String cmd = cmdStr[0].toLowerCase();
+  // not tested
+  private boolean isMac() {
+    final var os = System.getProperty("os.name").toLowerCase();
+    return (os.indexOf("mac") >= 0);
+  }
 
-        if (isWindows()) {
-            for (String osCmd : WIN_CMDS)
-                if (cmd.equals(osCmd)) {
-                    return addWinCmd(cmdStr);
-                }
-        } else if (isUnix()) {
-            for (String osCmd : UNIX_CMDS)
-                if (cmd.equals(osCmd)) {
-                    return addUnixCmd(cmdStr);
-                }
-        } else if (isMac()) {   // not tested
-            for (String osCmd : MAC_CMDS)
-                if (cmd.equals(osCmd)) {
-                    return addMacCmd(cmdStr);
-                }
-        }
+  // modify command to be executed using cmd /c in Windows
+  private String[] addWinCmd(String[] cmdStr) {
+    System.out.println("Adding \"cmd /c\" to Windows command");
+    final var useCmd = new String[] {"cmd", "/c"};
+    return concat(useCmd, cmdStr);
+  } // end of addWinCmd()
 
-        return cmdStr;
-    }  // end of checkOSCmd()
+  private String[] addUnixCmd(String[] cmdStr)
+        // modify command to be executed using sh -c in UNIX
+      {
+    System.out.println("Adding \"/bin/sh -c\" to Unix command");
+    final var useCmd = new String[] {"/bin/sh", "-c"};
+    return concat(useCmd, cmdStr);
+  } // end of addUnixCmd()
 
-    private boolean isWindows() {
-        String os = System.getProperty("os.name").toLowerCase();
-        return (os.indexOf("win") >= 0);
+  private String[] addMacCmd(String[] cmdStr) // not tested
+        // modify command to be executed using sh -c in OS X
+      {
+    System.out.println("Adding \"/bin/sh -c\" to Mac command");
+    final var useCmd = new String[] {"/bin/sh", "-c"};
+    return concat(useCmd, cmdStr);
+  } // end of addMacCmd()
+
+  // -------------------------------------------------------------
+
+  // create a new string array that is s1 + s2
+  private String[] concat(String[] s1, String[] s2) {
+    final var newS = new String[s1.length + s2.length];
+    int i;
+    for (i = 0; i < s1.length; i++) newS[i] = s1[i];
+    for (i = 0; i < s2.length; i++) newS[s1.length + i] = s2[i];
+    return newS;
+  } // end of addWinCmd()
+
+  // ------------------------------ test rig ----------------------
+
+  private class InterruptTimerTask extends TimerTask
+  // send an interrupt to the target thread after a specified time
+  {
+    private Thread target = null;
+    private SaferExec executor;
+
+    public InterruptTimerTask(Thread t, SaferExec se) {
+      target = t;
+      executor = se;
     }
 
-    private boolean isUnix()
-    // unix or linux
-    {
-        String os = System.getProperty("os.name").toLowerCase();
-        return ((os.indexOf("nix") >= 0) || (os.indexOf("nux") >= 0));
+    public void run() {
+      executor.setInterruptFlag();
+      target.interrupt();
     }
-
-    private boolean isMac()   // not tested
-    {
-        String os = System.getProperty("os.name").toLowerCase();
-        return (os.indexOf("mac") >= 0);
-    }
-
-    private String[] addWinCmd(String[] cmdStr)
-    // modify command to be executed using cmd /c in Windows
-    {
-        System.out.println("Adding \"cmd /c\" to Windows command");
-        String[] useCmd = new String[]{"cmd", "/c"};
-        return concat(useCmd, cmdStr);
-    }  // end of addWinCmd()
-
-    private String[] addUnixCmd(String[] cmdStr)
-    // modify command to be executed using sh -c in UNIX
-    {
-        System.out.println("Adding \"/bin/sh -c\" to Unix command");
-        String[] useCmd = new String[]{"/bin/sh", "-c"};
-        return concat(useCmd, cmdStr);
-    }  // end of addUnixCmd()
-
-    private String[] addMacCmd(String[] cmdStr)   // not tested
-    // modify command to be executed using sh -c in OS X
-    {
-        System.out.println("Adding \"/bin/sh -c\" to Mac command");
-        String[] useCmd = new String[]{"/bin/sh", "-c"};
-        return concat(useCmd, cmdStr);
-    }  // end of addMacCmd()
-
-
-    // -------------------------------------------------------------
-
-    private String[] concat(String[] s1, String[] s2)
-    // create a new string array that is s1 + s2
-    {
-        String[] newS = new String[s1.length + s2.length];
-        int i;
-        for (i = 0; i < s1.length; i++)
-            newS[i] = s1[i];
-        for (i = 0; i < s2.length; i++)
-            newS[s1.length + i] = s2[i];
-        return newS;
-    }  // end of addWinCmd()
-
-
-    // ------------------------------ test rig ----------------------
-
-    private class InterruptTimerTask extends TimerTask
-            // send an interrupt to the target thread after a specified time
-    {
-        private Thread target = null;
-        private SaferExec executor;
-
-        public InterruptTimerTask(Thread t, SaferExec se) {
-            target = t;
-            executor = se;
-        }
-
-        public void run() {
-            executor.setInterruptFlag();
-            target.interrupt();
-        }
-
-    }  // end of InterruptTimerTask class
-
-
-}  // end of SaferExec class
+  } // end of InterruptTimerTask class
+} // end of SaferExec class

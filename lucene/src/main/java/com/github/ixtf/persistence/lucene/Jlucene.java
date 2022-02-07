@@ -1,9 +1,10 @@
 package com.github.ixtf.persistence.lucene;
 
 import com.github.ixtf.J;
+import com.github.ixtf.data.EntityDTO;
 import com.github.ixtf.persistence.IEntity;
 import com.github.ixtf.persistence.IEntityLoggable;
-import com.github.ixtf.persistence.IEntityLoggable.IOperator;
+import com.github.ixtf.persistence.IOperator;
 import io.github.classgraph.ClassGraph;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -31,7 +32,7 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.EMPTY_LIST;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * @author jzb 2019-05-29
@@ -45,7 +46,7 @@ public class Jlucene {
                 .map(it -> it.scoreDocs)
                 .flatMap(Stream::of)
                 .map(it -> id(searcher, it))
-                .collect(toUnmodifiableList());
+                .toList();
     }
 
     public static Pair<Integer, Collection<String>> ids(IndexSearcher searcher, TotalHitCountCollector totalHitCountCollector, TopDocs topDocs, int first) {
@@ -56,7 +57,7 @@ public class Jlucene {
         final var ids = Arrays.stream(topDocs.scoreDocs)
                 .skip(first)
                 .map(scoreDoc -> id(searcher, scoreDoc))
-                .collect(toUnmodifiableList());
+                .toList();
         return Pair.of(totalHits, ids);
     }
 
@@ -66,8 +67,8 @@ public class Jlucene {
                 .flatMap(Arrays::stream)
                 .map(it -> it.label)
                 .distinct()
-                .collect(toUnmodifiableList());
-        return Pair.of(Long.valueOf(ids.size()), ids);
+                .toList();
+        return Pair.of((long) ids.size(), ids);
     }
 
     @SneakyThrows(IOException.class)
@@ -98,10 +99,26 @@ public class Jlucene {
         addFacet(doc, fieldName, v);
     }
 
+    public static void add(@NotNull Document doc, @NotBlank String fieldName, EntityDTO entity) {
+        final var v = ofNullable(entity).map(EntityDTO::getId).filter(J::nonBlank).orElse(NULL);
+        add(doc, fieldName, v);
+    }
+
+    public static void addFacet(@NotNull Document doc, @NotBlank String fieldName, EntityDTO entity) {
+        final var v = ofNullable(entity).map(EntityDTO::getId).filter(J::nonBlank).orElse(NULL);
+        addFacet(doc, fieldName, v);
+    }
+
     public static void addLoggable(@NotNull Document doc, IEntityLoggable entity) {
-        ofNullable(entity.getCreator()).map(IOperator::getId).filter(J::nonBlank).ifPresent(it -> addFacet(doc, "creator", it));
+        ofNullable(entity.getCreator()).map(IOperator::getId).filter(J::nonBlank).ifPresent(it -> {
+            add(doc, "creator", it);
+            addFacet(doc, "creator", it);
+        });
         add(doc, "createDateTime", entity.getCreateDateTime());
-        ofNullable(entity.getModifier()).map(IOperator::getId).filter(J::nonBlank).ifPresent(it -> addFacet(doc, "modifier", it));
+        ofNullable(entity.getModifier()).map(IOperator::getId).filter(J::nonBlank).ifPresent(it -> {
+            add(doc, "modifier", it);
+            addFacet(doc, "modifier", it);
+        });
         add(doc, "modifyDateTime", entity.getModifyDateTime());
     }
 
@@ -187,6 +204,14 @@ public class Jlucene {
         return builder;
     }
 
+    public static BooleanQuery.Builder addEnum(BooleanQuery.Builder builder, String fieldName, Collection<? extends Enum> ss) {
+        final var collect = J.emptyIfNull(ss)
+                .parallelStream()
+                .map(Enum::name)
+                .collect(toUnmodifiableSet());
+        return add(builder, fieldName, collect);
+    }
+
     public static BooleanQuery.Builder add(BooleanQuery.Builder builder, String fieldName, String s) {
         ofNullable(s).filter(J::nonBlank)
                 .map(it -> new TermQuery(new Term(fieldName, s)))
@@ -205,6 +230,22 @@ public class Jlucene {
         return builder;
     }
 
+    public static BooleanQuery.Builder add(BooleanQuery.Builder builder, @NotBlank String fieldName, double start, double end) {
+        builder.add(DoublePoint.newRangeQuery(fieldName, start, end), BooleanClause.Occur.MUST);
+        return builder;
+    }
+
+    public static BooleanQuery.Builder add(BooleanQuery.Builder builder, @NotBlank String fieldName, Double start, Double end) {
+        if (start != null && end != null) {
+            builder.add(DoublePoint.newRangeQuery(fieldName, start, end), BooleanClause.Occur.MUST);
+        } else if (start != null) {
+            builder.add(DoublePoint.newRangeQuery(fieldName, start, Double.MAX_VALUE), BooleanClause.Occur.MUST);
+        } else if (end != null) {
+            builder.add(DoublePoint.newRangeQuery(fieldName, Double.MIN_VALUE, end), BooleanClause.Occur.MUST);
+        }
+        return builder;
+    }
+
     public static BooleanQuery.Builder add(BooleanQuery.Builder builder, @NotBlank String fieldName, long startL, long endL) {
         builder.add(LongPoint.newRangeQuery(fieldName, startL, endL), BooleanClause.Occur.MUST);
         return builder;
@@ -213,22 +254,24 @@ public class Jlucene {
     public static BooleanQuery.Builder add(BooleanQuery.Builder builder, @NotBlank String fieldName, Date startDate, Date endDate) {
         if (startDate != null && endDate != null) {
             return add(builder, fieldName, startDate.getTime(), endDate.getTime());
+        } else if (startDate != null) {
+            return add(builder, fieldName, startDate.getTime(), Long.MAX_VALUE);
+        } else if (endDate != null) {
+            return add(builder, fieldName, 0, endDate.getTime());
         }
         return builder;
     }
 
     public static BooleanQuery.Builder add(BooleanQuery.Builder builder, @NotBlank String fieldName, LocalDate startLd, LocalDate endLd) {
-        if (startLd != null && endLd != null) {
-            return add(builder, fieldName, J.date(startLd), J.date(endLd));
-        }
-        return builder;
+        final var startDate = ofNullable(startLd).map(J::date).orElse(null);
+        final var endDate = ofNullable(endLd).map(J::date).orElse(null);
+        return add(builder, fieldName, startDate, endDate);
     }
 
     public static BooleanQuery.Builder add(BooleanQuery.Builder builder, @NotBlank String fieldName, LocalDateTime startLdt, LocalDateTime endLdt) {
-        if (startLdt != null && endLdt != null) {
-            return add(builder, fieldName, J.date(startLdt), J.date(endLdt));
-        }
-        return builder;
+        final var startDate = ofNullable(startLdt).map(J::date).orElse(null);
+        final var endDate = ofNullable(endLdt).map(J::date).orElse(null);
+        return add(builder, fieldName, startDate, endDate);
     }
 
     public static BooleanQuery.Builder addWildcard(BooleanQuery.Builder builder, @NotBlank String fieldName, String q) {

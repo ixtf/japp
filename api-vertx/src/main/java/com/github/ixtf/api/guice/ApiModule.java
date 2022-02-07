@@ -3,7 +3,7 @@ package com.github.ixtf.api.guice;
 import com.github.ixtf.J;
 import com.github.ixtf.api.ApiAction;
 import com.github.ixtf.api.GraphqlAction;
-import com.google.common.collect.ImmutableMap;
+import com.github.ixtf.api.vertx.GraphqlDataFetcher;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -20,7 +20,6 @@ import io.jaegertracing.Configuration;
 import io.opentracing.Tracer;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.handler.graphql.schema.VertxDataFetcher;
 import io.vertx.ext.web.handler.graphql.schema.VertxPropertyDataFetcher;
 
 import java.lang.reflect.Method;
@@ -28,11 +27,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.github.ixtf.guice.GuiceModule.getInstance;
 import static graphql.scalars.ExtendedScalars.*;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
@@ -42,7 +38,6 @@ public abstract class ApiModule extends AbstractModule {
     public static final String SERVICE = "com.github.ixtf.api.guice:__SERVICE__";
     public static final String CONFIG = "com.github.ixtf.api.guice:__CONFIG__";
     public static final String ACTIONS = "com.github.ixtf.api.guice:__ACTIONS__";
-    public static final String GRAPHQL_ACTIONS = "com.github.ixtf.api.guice:__GRAPHQL_ACTIONS__";
     public static final String GRAPHQL_ADDRESS = "com.github.ixtf.api.guice:__GRAPHQL_ADDRESS__";
 
     protected final Vertx vertx;
@@ -68,21 +63,6 @@ public abstract class ApiModule extends AbstractModule {
         bind(JsonObject.class).annotatedWith(Names.named(annotatedWith)).toInstance(config.getJsonObject(key, new JsonObject()));
     }
 
-    private ScanResult cg_sr() {
-        return new ClassGraph().enableAllInfo().acceptPackages(ActionPackages().toArray(String[]::new)).acceptClasses(ActionClasses().toArray(String[]::new)).scan();
-    }
-
-    protected Stream<Method> streamMethod(Class clazz) {
-        return cg_sr().getClassesWithMethodAnnotation(clazz.getName()).loadClasses().stream()
-                .map(Class::getMethods)
-                .flatMap(Arrays::stream)
-                .filter(it -> Objects.nonNull(it.getAnnotation(clazz)));
-    }
-
-    protected Stream<Class<?>> streamClass(Class clazz) {
-        return cg_sr().getClassesWithAnnotation(clazz.getName()).loadClasses().stream();
-    }
-
     @Named(ACTIONS)
     @Singleton
     @Provides
@@ -103,7 +83,7 @@ public abstract class ApiModule extends AbstractModule {
 
     @Singleton
     @Provides
-    private GraphQL GraphQL(TypeDefinitionRegistry typeDefinitionRegistry, @Named(GRAPHQL_ACTIONS) Collection<Class<?>> classes) {
+    private GraphQL GraphQL(TypeDefinitionRegistry typeDefinitionRegistry) {
         final var runtimeWiringBuilder = RuntimeWiring.newRuntimeWiring().scalar(GraphQLLong).scalar(GraphQLShort).scalar(GraphQLByte).scalar(GraphQLBigDecimal).scalar(GraphQLBigInteger).scalar(GraphQLChar).scalar(PositiveInt).scalar(NegativeInt).scalar(NonPositiveInt).scalar(NonNegativeInt).scalar(PositiveFloat).scalar(NegativeFloat).scalar(NonPositiveFloat).scalar(NonNegativeFloat).scalar(ExtendedScalars.Url).scalar(ExtendedScalars.Locale).scalar(ExtendedScalars.Date).scalar(ExtendedScalars.Time).scalar(ExtendedScalars.DateTime).scalar(ExtendedScalars.Object).scalar(ExtendedScalars.Json)
                 .wiringFactory(new WiringFactory() {
                     @Override
@@ -112,64 +92,42 @@ public abstract class ApiModule extends AbstractModule {
                     }
                 });
         prepareRuntimeWiring(runtimeWiringBuilder);
-        final var queryBuilder = ImmutableMap.<String, DataFetcher>builder();
-        final var mutationBuilder = ImmutableMap.<String, DataFetcher>builder();
-        classes.forEach(clazz -> {
-            final var annotation = clazz.getAnnotation(GraphqlAction.class);
-            final var action = annotation.action();
-            final var dataFetcher = generateDataFetcher(clazz);
-            switch (annotation.type()) {
-                case QUERY -> queryBuilder.put(action, dataFetcher);
-                case MUTATION -> mutationBuilder.put(action, dataFetcher);
+        GraphqlDataFetcher.generate(streamClass(GraphqlAction.class), streamMethod(GraphqlAction.class)).forEach(pair -> {
+            final var key = pair.getKey();
+            final var dataFetcher = pair.getValue();
+            final var action = key.action();
+            switch (key.type()) {
+                case QUERY -> runtimeWiringBuilder.type("Query", builder -> builder.dataFetcher(action, dataFetcher));
+                case MUTATION -> runtimeWiringBuilder.type("Mutation", builder -> builder.dataFetcher(action, dataFetcher));
             }
         });
-        final var runtimeWiring = runtimeWiringBuilder
-                .type("Query", builder -> builder.dataFetchers(queryBuilder.build()))
-                .type("Mutation", builder -> builder.dataFetchers(mutationBuilder.build()))
-                .build();
         final var schemaGenerator = new SchemaGenerator();
-        final var graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
+        final var graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiringBuilder.build());
         return GraphQL.newGraphQL(graphQLSchema).build();
     }
 
-    @SuppressWarnings("rawtypes")
-    private DataFetcher<?> generateDataFetcher(Class<?> clazz) {
-        final var instance = getInstance(clazz);
-        if (instance instanceof DataFetcher) {
-            return (DataFetcher) instance;
-        } else if (instance instanceof final BiConsumer biConsumer) {
-            return VertxDataFetcher.create(biConsumer);
-        } else if (instance instanceof final Function function) {
-            return VertxDataFetcher.create(function);
-        }
-        throw new RuntimeException();
+    private ScanResult cg_sr() {
+        return new ClassGraph().enableAllInfo().acceptPackages(ActionPackages().toArray(String[]::new)).acceptClasses(ActionClasses().toArray(String[]::new)).scan();
     }
 
-    protected void prepareRuntimeWiring(RuntimeWiring.Builder builder) {
+    protected Stream<Method> streamMethod(Class clazz) {
+        return cg_sr().getClassesWithMethodAnnotation(clazz.getName()).loadClasses().stream()
+                .map(Class::getMethods)
+                .flatMap(Arrays::stream)
+                .filter(it -> Objects.nonNull(it.getAnnotation(clazz)));
     }
 
-    @Named(GRAPHQL_ACTIONS)
-    @Singleton
-    @Provides
-    private Collection<Class<?>> GRAPHQL_ACTIONS() {
-        final var ret = streamClass(GraphqlAction.class).parallel().collect(toUnmodifiableSet());
-        ret.parallelStream().collect(groupingBy(it -> {
-            final var annotation = it.getAnnotation(GraphqlAction.class);
-            final var type = annotation.type();
-            final var action = annotation.action();
-            return String.join(":", type.name(), action);
-        })).forEach((k, v) -> {
-            if (v.size() > 1) {
-                throw new RuntimeException("graphql地址重复 [" + k + "]");
-            }
-        });
-        return ret;
+    protected Stream<Class<?>> streamClass(Class clazz) {
+        return cg_sr().getClassesWithAnnotation(clazz.getName()).loadClasses().stream();
     }
 
     protected abstract Collection<String> ActionPackages();
 
     protected Collection<String> ActionClasses() {
         return List.of();
+    }
+
+    protected void prepareRuntimeWiring(RuntimeWiring.Builder builder) {
     }
 
     @Singleton

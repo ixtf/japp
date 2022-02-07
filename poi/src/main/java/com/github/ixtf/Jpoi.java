@@ -1,12 +1,12 @@
 package com.github.ixtf;
 
-import lombok.Cleanup;
 import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -17,17 +17,17 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xwpf.usermodel.*;
 import org.openxmlformats.schemas.drawingml.x2006.main.CTPositiveSize2D;
 import org.openxmlformats.schemas.drawingml.x2006.picture.CTPicture;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTR;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRPr;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTStyles;
 import org.zwobble.mammoth.DocumentConverter;
 import org.zwobble.mammoth.Result;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Spliterator;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -41,21 +41,20 @@ public final class Jpoi {
         return wb(J.getFile(file));
     }
 
-    @SneakyThrows(IOException.class)
+    @SneakyThrows({IOException.class,InvalidFormatException.class})
     public static Workbook wb(File file) {
-        @Cleanup final var is = new FileInputStream(file);
         final var ext = FilenameUtils.getExtension(file.getName());
         if ("xlsx".equalsIgnoreCase(ext)) {
-            return new XSSFWorkbook(is);
+            return new XSSFWorkbook(file);
         }
-        return new HSSFWorkbook(is);
+        return new HSSFWorkbook(POIFSFileSystem.create(file));
     }
 
     public static Collection<CellRangeAddress> listCellRangeAddress(Sheet sheet) {
         return IntStream.range(0, sheet.getNumMergedRegions())
                 .parallel()
                 .mapToObj(sheet::getMergedRegion)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
     }
 
     public static Optional<CellRangeAddress> getCellRangeAddress(Collection<CellRangeAddress> rangeList, Cell cell) {
@@ -151,21 +150,21 @@ public final class Jpoi {
             append(dest, file);
     }
 
-    public static void append(XWPFDocument dest, File file) throws IOException {
-        try (FileInputStream fis = new FileInputStream(file); XWPFDocument src = new XWPFDocument(fis)) {
-            append(dest, src);
-        }
-    }
+//    public static void append(XWPFDocument dest, File file) throws IOException {
+//        try (FileInputStream fis = new FileInputStream(file); XWPFDocument src = new XWPFDocument(fis)) {
+//            append(dest, src);
+//        }
+//    }
 
-    public static void append(XWPFDocument dest, XWPFDocument src) {
-        if (dest.getStyles() == null) {
-            copyXWPFStyles(dest, src);
-        }
-
-        for (XWPFParagraph srcParagraph : CollectionUtils.emptyIfNull(src.getParagraphs())) {
-            copyParagraph(dest.createParagraph(), srcParagraph);
-        }
-    }
+//    public static void append(XWPFDocument dest, XWPFDocument src) {
+//        if (dest.getStyles() == null) {
+//            copyXWPFStyles(dest, src);
+//        }
+//
+//        for (XWPFParagraph srcParagraph : CollectionUtils.emptyIfNull(src.getParagraphs())) {
+//            copyParagraph(dest.createParagraph(), srcParagraph);
+//        }
+//    }
 
     private static void copyXWPFStyles(XWPFDocument dest, XWPFDocument src) {
         try {
@@ -179,78 +178,78 @@ public final class Jpoi {
         }
     }
 
-    private static void copyParagraph(XWPFParagraph dest, XWPFParagraph src) {
-        dest.setAlignment(src.getAlignment());
-        dest.setStyle(src.getStyle());
-        dest.setBorderBottom(src.getBorderBottom());
-        dest.setBorderTop(src.getBorderTop());
-        dest.setBorderLeft(src.getBorderLeft());
-        dest.setBorderRight(src.getBorderRight());
-        dest.setBorderBetween(src.getBorderBetween());
-        dest.setVerticalAlignment(src.getVerticalAlignment());
-        dest.setFontAlignment(src.getFontAlignment());
-        dest.setFirstLineIndent(src.getFirstLineIndent());
-        dest.setIndentationHanging(src.getIndentationHanging());
-        dest.setIndentationFirstLine(src.getIndentationFirstLine());
-        dest.setIndentationLeft(src.getIndentationLeft());
-        dest.setIndentationRight(src.getIndentationRight());
-        dest.setIndentFromLeft(src.getIndentFromLeft());
-        dest.setIndentFromRight(src.getIndentFromRight());
-        dest.setSpacingAfter(src.getSpacingAfter());
-        dest.setSpacingAfterLines(src.getSpacingAfterLines());
-        dest.setSpacingBefore(src.getSpacingBefore());
-        dest.setSpacingBeforeLines(src.getSpacingBeforeLines());
+//    private static void copyParagraph(XWPFParagraph dest, XWPFParagraph src) {
+//        dest.setAlignment(src.getAlignment());
+//        dest.setStyle(src.getStyle());
+//        dest.setBorderBottom(src.getBorderBottom());
+//        dest.setBorderTop(src.getBorderTop());
+//        dest.setBorderLeft(src.getBorderLeft());
+//        dest.setBorderRight(src.getBorderRight());
+//        dest.setBorderBetween(src.getBorderBetween());
+//        dest.setVerticalAlignment(src.getVerticalAlignment());
+//        dest.setFontAlignment(src.getFontAlignment());
+//        dest.setFirstLineIndent(src.getFirstLineIndent());
+//        dest.setIndentationHanging(src.getIndentationHanging());
+//        dest.setIndentationFirstLine(src.getIndentationFirstLine());
+//        dest.setIndentationLeft(src.getIndentationLeft());
+//        dest.setIndentationRight(src.getIndentationRight());
+//        dest.setIndentFromLeft(src.getIndentFromLeft());
+//        dest.setIndentFromRight(src.getIndentFromRight());
+//        dest.setSpacingAfter(src.getSpacingAfter());
+//        dest.setSpacingAfterLines(src.getSpacingAfterLines());
+//        dest.setSpacingBefore(src.getSpacingBefore());
+//        dest.setSpacingBeforeLines(src.getSpacingBeforeLines());
+//
+//        copyRuns(dest, src.getRuns());
+//    }
 
-        copyRuns(dest, src.getRuns());
-    }
+//    private static void copyRuns(XWPFParagraph paragraph, Collection<XWPFRun> runs) {
+//        for (XWPFRun run : CollectionUtils.emptyIfNull(runs)) {
+//            copyRun(paragraph, run);
+//        }
+//    }
 
-    private static void copyRuns(XWPFParagraph paragraph, Collection<XWPFRun> runs) {
-        for (XWPFRun run : CollectionUtils.emptyIfNull(runs)) {
-            copyRun(paragraph, run);
-        }
-    }
+//    private static void copyRun(XWPFParagraph paragraph, XWPFRun src) {
+//        XWPFRun dest = paragraph.createRun();
+//        dest.setText(src.getText(0));
+//        dest.setTextPosition(src.getTextPosition());
+//        dest.setFontFamily(src.getFontFamily());
+//        dest.setColor(src.getColor());
+//        dest.setBold(src.isBold());
+//        dest.setUnderline(src.getUnderline());
+//        dest.setEmbossed(src.isEmbossed());
+//        dest.setImprinted(src.isImprinted());
+//        dest.setItalic(src.isItalic());
+//        dest.setDoubleStrikethrough(src.isDoubleStrikeThrough());
+//        dest.setCapitalized(src.isCapitalized());
+//        dest.setCharacterSpacing(src.getCharacterSpacing());
+//        dest.setKerning(src.getKerning());
+//        dest.setShadow(src.isShadowed());
+//        dest.setSmallCaps(src.isSmallCaps());
+////        dest.setSubscript(src.getSubscript());
+//        if (src.getFontSize() > 0) {
+//            dest.setFontSize(src.getFontSize());
+//        }
+//
+//        ofNullable(src.getCTR())
+//                .ifPresent(ctr -> copyCTR(dest.getCTR(), ctr));
+//
+//        copyEmbeddedPictures(paragraph, src.getEmbeddedPictures());
+//    }
 
-    private static void copyRun(XWPFParagraph paragraph, XWPFRun src) {
-        XWPFRun dest = paragraph.createRun();
-        dest.setText(src.getText(0));
-        dest.setTextPosition(src.getTextPosition());
-        dest.setFontFamily(src.getFontFamily());
-        dest.setColor(src.getColor());
-        dest.setBold(src.isBold());
-        dest.setUnderline(src.getUnderline());
-        dest.setEmbossed(src.isEmbossed());
-        dest.setImprinted(src.isImprinted());
-        dest.setItalic(src.isItalic());
-        dest.setDoubleStrikethrough(src.isDoubleStrikeThrough());
-        dest.setCapitalized(src.isCapitalized());
-        dest.setCharacterSpacing(src.getCharacterSpacing());
-        dest.setKerning(src.getKerning());
-        dest.setShadow(src.isShadowed());
-        dest.setSmallCaps(src.isSmallCaps());
-//        dest.setSubscript(src.getSubscript());
-        if (src.getFontSize() > 0) {
-            dest.setFontSize(src.getFontSize());
-        }
-
-        ofNullable(src.getCTR())
-                .ifPresent(ctr -> copyCTR(dest.getCTR(), ctr));
-
-        copyEmbeddedPictures(paragraph, src.getEmbeddedPictures());
-    }
-
-    private static void copyCTR(CTR dest, CTR src) {
-        ofNullable(src.getRPr())
-                .ifPresent(ctrPr -> copyCTRPr(dest.addNewRPr(), ctrPr));
+//    private static void copyCTR(CTR dest, CTR src) {
+//        ofNullable(src.getRPr())
+//                .ifPresent(ctrPr -> copyCTRPr(dest.addNewRPr(), ctrPr));
 //        dest.setNoBreakHyphenArray(src.getNoBreakHyphenList());
 //        Optional.ofNullable(src.getBrList())
 //                .ifPresent(ctrPr -> copyCTRPr(dest.addNewRPr(), ctrPr));
-    }
+//    }
 
-    private static void copyCTRPr(CTRPr dest, CTRPr src) {
-        dest.setRtl(src.getRtl());
-        dest.setHighlight(src.getHighlight());
-        dest.setColor(src.getColor());
-        dest.setEffect(src.getEffect());
+//    private static void copyCTRPr(CTRPr dest, CTRPr src) {
+//        dest.setRtl(src.getRtl());
+//        dest.setHighlight(src.getHighlight());
+//        dest.setColor(src.getColor());
+//        dest.setEffect(src.getEffect());
 //        dest.setShadow(src.getShadow());
 
 //        dest.setB(src.getB());
@@ -287,7 +286,7 @@ public final class Jpoi {
 //        dest.setVertAlign(src.getVertAlign());
 //        dest.setW(src.getW());
 //        dest.setWebHidden(src.getWebHidden());
-    }
+//    }
 
     private static void copyEmbeddedPictures(XWPFParagraph paragraph, Collection<XWPFPicture> pictures) {
         for (XWPFPicture picture : CollectionUtils.emptyIfNull(pictures)) {
